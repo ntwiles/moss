@@ -3,5 +3,5 @@ pub enum Type {
     Int,
     Float,
     String,
-    Bool, // If you add boolean logic later
+    Bool,
 }

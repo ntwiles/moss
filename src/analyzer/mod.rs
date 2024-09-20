@@ -34,8 +34,7 @@ fn analyze_eq(left: &Expr, right: &Expr) -> TypedExpr {
         panic!("Invalid types for equality comparison");
     }
 
-    let ty = left.ty();
-    TypedExpr::Eq(Box::new(left), Box::new(right), ty)
+    TypedExpr::Eq(Box::new(left), Box::new(right), Type::Bool)
 }
 
 fn analyze_gt(left: &Expr, right: &Expr) -> TypedExpr {
@@ -51,8 +50,7 @@ fn analyze_gt(left: &Expr, right: &Expr) -> TypedExpr {
         panic!("Invalid types for greater than comparison");
     }
 
-    let ty = left.ty();
-    TypedExpr::Gt(Box::new(left), Box::new(right), ty)
+    TypedExpr::Gt(Box::new(left), Box::new(right), Type::Bool)
 }
 
 fn analyze_lt(left: &Expr, right: &Expr) -> TypedExpr {
@@ -68,8 +66,7 @@ fn analyze_lt(left: &Expr, right: &Expr) -> TypedExpr {
         panic!("Invalid types for less than comparison");
     }
 
-    let ty = left.ty();
-    TypedExpr::Lt(Box::new(left), Box::new(right), ty)
+    TypedExpr::Lt(Box::new(left), Box::new(right), Type::Bool)
 }
 
 fn analyze_add(left: &Expr, right: &Expr) -> TypedExpr {
