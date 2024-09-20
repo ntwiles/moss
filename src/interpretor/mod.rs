@@ -1,13 +1,8 @@
-use crate::analyzer::{ty::Type, typed_expr::TypedExpr, TypedLiteral};
+pub mod resolved_value;
 
-#[derive(Debug)]
-pub enum ResolvedValue {
-    Int(i32),
-    Float(f64),
-    String(String),
-    Bool(bool),
-    // ...other types as needed
-}
+use resolved_value::ResolvedValue;
+
+use crate::analyzer::{ty::Type, typed_expr::TypedExpr, TypedLiteral};
 
 pub fn eval_expr(expr: &TypedExpr) -> ResolvedValue {
     match expr {

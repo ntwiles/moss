@@ -26,5 +26,5 @@ fn main() {
     let analyzed = analyzer::analyze_expr(&parsed);
     let result = interpretor::eval_expr(&analyzed);
 
-    println!("{:?}", result);
+    println!("{}", result);
 }
