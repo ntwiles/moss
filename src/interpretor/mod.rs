@@ -58,6 +58,8 @@ pub fn eval_expr(expr: &TypedExpr) -> ResolvedValue {
             let left = eval_expr(left);
             let right = eval_expr(right);
 
+            // TODO: Handle division by zero.
+
             match (left, right) {
                 (ResolvedValue::Int(left), ResolvedValue::Int(right)) => {
                     ResolvedValue::Int(left / right)

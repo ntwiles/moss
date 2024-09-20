@@ -12,6 +12,8 @@ pub enum TypedLiteral {
     String(String),
 }
 
+// TODO: Create an error type instead of panicking.
+
 pub fn analyze_expr(expr: &Expr) -> TypedExpr {
     match expr {
         Expr::Eq(left, right) => analyze_eq(left, right),
