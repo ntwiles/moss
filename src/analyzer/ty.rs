@@ -4,4 +4,5 @@ pub enum Type {
     Float,
     String,
     Bool,
+    Void,
 }

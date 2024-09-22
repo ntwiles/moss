@@ -1,5 +1,6 @@
 use super::{ty::Type, TypedLiteral};
 
+// TODO: For some of these, the type is always clear and maybe we don't need to store it.
 #[derive(Debug)]
 pub enum TypedExpr {
     Eq(Box<TypedExpr>, Box<TypedExpr>, Type),
@@ -11,6 +12,7 @@ pub enum TypedExpr {
     Div(Box<TypedExpr>, Box<TypedExpr>, Type),
     Literal(TypedLiteral, Type),
     Negate(Box<TypedExpr>, Type),
+    Assign(String, Box<TypedExpr>, Type),
 }
 
 impl TypedExpr {
@@ -25,6 +27,7 @@ impl TypedExpr {
             TypedExpr::Div(_, _, ty) => *ty,
             TypedExpr::Literal(_, ty) => *ty,
             TypedExpr::Negate(_, ty) => *ty,
+            TypedExpr::Assign(_, _, ty) => *ty,
         }
     }
 }

@@ -29,6 +29,7 @@ fn analyze_expr(expr: Expr) -> Result<TypedExpr, TypeError> {
         Expr::Div(left, right) => analyze_div(*left, *right),
         Expr::Literal(literal) => analyze_literal(literal),
         Expr::Negate(inner) => analyze_negate(*inner),
+        Expr::Assignment(ident, value) => analyze_assign(ident, *value),
     }
 }
 
@@ -243,4 +244,16 @@ fn analyze_negate(inner: Expr) -> Result<TypedExpr, TypeError> {
 
     let ty = inner.ty();
     Ok(TypedExpr::Negate(Box::new(inner), ty))
+}
+
+fn analyze_assign(ident: String, value: Expr) -> Result<TypedExpr, TypeError> {
+    let inner = analyze_expr(value)?;
+
+    if inner.ty() == Type::Void {
+        return Err(TypeError {
+            message: "Cannot assign void value".to_string(),
+        });
+    }
+
+    Ok(TypedExpr::Assign(ident, Box::new(inner), Type::Void))
 }

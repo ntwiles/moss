@@ -6,6 +6,7 @@ pub enum ResolvedValue {
     Float(f64),
     String(String),
     Bool(bool),
+    Void,
 }
 
 impl ResolvedValue {
@@ -45,6 +46,7 @@ impl Display for ResolvedValue {
             ResolvedValue::Float(float) => write!(f, "{:.1}", float),
             ResolvedValue::String(string) => write!(f, "{}", string),
             ResolvedValue::Bool(bool) => write!(f, "{}", bool),
+            ResolvedValue::Void => write!(f, "Void"),
         }
     }
 }

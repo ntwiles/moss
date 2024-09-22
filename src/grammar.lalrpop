@@ -37,8 +37,14 @@ ExprList: Vec<Expr> = {
 };
 
 Expr: Expr = {
+    Assignment,
     Equality,
 };
+
+Assignment: Expr = {
+    "let" <i:Identifier> "=" <v:Expr> => Expr::Assignment(i, Box::new(v)),
+};
+
 
 Equality: Expr = {
     <l:Equality> "==" <r:Relational> => Expr::Eq(Box::new(l), Box::new(r)),
@@ -100,4 +106,8 @@ Float: f64 = {
 
 Str: String = {
     r#""[^"]*""# => <>.to_string(),
+};
+
+Identifier: String = {
+    r"[a-zA-Z_][a-zA-Z_0-9]*" => <>.to_string(),
 };

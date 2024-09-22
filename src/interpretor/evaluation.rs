@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::analyzer::{typed_expr::TypedExpr, TypedLiteral};
 
 use super::{
@@ -19,7 +21,8 @@ pub fn eval_expr(
         TypedExpr::Sub(l, r, _ty) => push_binary_op(control_stack, ControlOp::ApplySub, l, r),
         TypedExpr::Mult(l, r, _ty) => push_binary_op(control_stack, ControlOp::ApplyMult, l, r),
         TypedExpr::Div(l, r, _ty) => push_binary_op(control_stack, ControlOp::ApplyDiv, l, r),
-        TypedExpr::Negate(i, _ty) => push_unary_op(control_stack, ControlOp::ApplyNegate, *i),
+        TypedExpr::Negate(l, _ty) => push_unary_op(control_stack, ControlOp::ApplyNegate, *l),
+        TypedExpr::Assign(i, v, _ty) => push_unary_op(control_stack, ControlOp::ApplyAssign(i), *v),
     }
 }
 
@@ -99,4 +102,15 @@ pub fn eval_negate(value_stack: &mut Vec<ResolvedValue>) {
         ResolvedValue::Float(float) => ResolvedValue::Float(-float),
         _ => unreachable!(),
     });
+}
+
+pub fn eval_assign(
+    value_stack: &mut Vec<ResolvedValue>,
+    scope_stack: &mut Vec<HashMap<String, ResolvedValue>>,
+    ident: String,
+) {
+    let value = value_stack.pop().unwrap();
+    scope_stack.last_mut().unwrap().insert(ident, value);
+
+    value_stack.push(ResolvedValue::Void);
 }

@@ -9,6 +9,7 @@ pub enum Expr {
     Div(Box<Expr>, Box<Expr>),
     Literal(Literal),
     Negate(Box<Expr>),
+    Assignment(String, Box<Expr>),
 }
 
 #[derive(Clone, Debug)]

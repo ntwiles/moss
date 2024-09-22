@@ -14,4 +14,5 @@ pub enum ControlOp {
 
     // Unary operations
     ApplyNegate,
+    ApplyAssign(String),
 }
