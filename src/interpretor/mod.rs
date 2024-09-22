@@ -9,40 +9,27 @@ use evaluation::{
 };
 use resolved_value::ResolvedValue;
 
-pub struct Interpreter {
-    control_stack: Vec<ControlOp>,
-    value_stack: Vec<ResolvedValue>,
-}
+pub fn interpret_expr(expr: TypedExpr) -> ResolvedValue {
+    let mut control_stack = Vec::new();
+    let mut value_stack = Vec::new();
 
-impl Interpreter {
-    pub fn new() -> Self {
-        Interpreter {
-            control_stack: Vec::new(),
-            value_stack: Vec::new(),
+    control_stack.push(ControlOp::EvalExpr(expr));
+
+    while let Some(current_op) = control_stack.pop() {
+        match current_op {
+            ControlOp::EvalExpr(expr) => eval_expr(&mut control_stack, &mut value_stack, expr),
+            ControlOp::ApplyAdd => eval_add(&mut value_stack),
+            ControlOp::ApplySub => eval_sub(&mut value_stack),
+            ControlOp::ApplyMult => eval_mult(&mut value_stack),
+            ControlOp::ApplyDiv => eval_div(&mut value_stack),
+            ControlOp::ApplyEq => eval_eq(&mut value_stack),
+            ControlOp::ApplyGt => eval_gt(&mut value_stack),
+            ControlOp::ApplyLt => eval_lt(&mut value_stack),
+            ControlOp::ApplyNegate => eval_negate(&mut value_stack),
         }
     }
 
-    pub fn eval(&mut self, expr: TypedExpr) -> ResolvedValue {
-        self.control_stack.push(ControlOp::EvalExpr(expr));
-
-        while let Some(current_op) = self.control_stack.pop() {
-            match current_op {
-                ControlOp::EvalExpr(expr) => {
-                    eval_expr(&mut self.control_stack, &mut self.value_stack, expr)
-                }
-                ControlOp::ApplyAdd => eval_add(&mut self.value_stack),
-                ControlOp::ApplySub => eval_sub(&mut self.value_stack),
-                ControlOp::ApplyMult => eval_mult(&mut self.value_stack),
-                ControlOp::ApplyDiv => eval_div(&mut self.value_stack),
-                ControlOp::ApplyEq => eval_eq(&mut self.value_stack),
-                ControlOp::ApplyGt => eval_gt(&mut self.value_stack),
-                ControlOp::ApplyLt => eval_lt(&mut self.value_stack),
-                ControlOp::ApplyNegate => eval_negate(&mut self.value_stack),
-            }
-        }
-
-        self.value_stack.pop().unwrap()
-    }
+    value_stack.pop().unwrap()
 }
 
 fn push_unary_op(control_stack: &mut Vec<ControlOp>, op: ControlOp, expr: TypedExpr) {

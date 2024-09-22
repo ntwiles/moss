@@ -24,7 +24,7 @@ fn main() {
     let parsed = ProgramParser::new().parse(&code).unwrap();
 
     let analyzed = analyzer::analyze_expr(&parsed);
-    let result = interpretor::Interpreter::new().eval(analyzed);
+    let result = interpretor::interpret_expr(analyzed);
 
     println!("{}", result);
 }
