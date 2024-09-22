@@ -47,7 +47,7 @@ fn analyze_gt(left: &Expr, right: &Expr) -> TypedExpr {
         panic!("Invalid types for greater than comparison");
     }
 
-    // TODO: Support gt for strings.
+    // TODO: Support gt for strings?
     if left.ty() != Type::Int && left.ty() != Type::Float {
         panic!("Invalid types for greater than comparison");
     }
@@ -63,7 +63,7 @@ fn analyze_lt(left: &Expr, right: &Expr) -> TypedExpr {
         panic!("Invalid types for less than comparison");
     }
 
-    // TODO: Support lt for strings.
+    // TODO: Support lt for strings?
     if left.ty() != Type::Int && left.ty() != Type::Float {
         panic!("Invalid types for less than comparison");
     }
