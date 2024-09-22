@@ -2,6 +2,7 @@ pub mod ty;
 pub mod typed_expr;
 
 use super::ast::{Expr, Literal};
+use super::errors::type_error::TypeError;
 use ty::Type;
 use typed_expr::TypedExpr;
 
@@ -15,7 +16,7 @@ pub enum TypedLiteral {
 
 // TODO: Create an error type instead of panicking in this file.
 
-pub fn analyze_expr(expr: &Expr) -> TypedExpr {
+pub fn analyze_expr(expr: &Expr) -> Result<TypedExpr, TypeError> {
     match expr {
         Expr::Eq(left, right) => analyze_eq(left, right),
         Expr::Gt(left, right) => analyze_gt(left, right),
@@ -29,20 +30,26 @@ pub fn analyze_expr(expr: &Expr) -> TypedExpr {
     }
 }
 
-fn analyze_eq(left: &Expr, right: &Expr) -> TypedExpr {
-    let left = analyze_expr(left);
-    let right = analyze_expr(right);
+fn analyze_eq(left: &Expr, right: &Expr) -> Result<TypedExpr, TypeError> {
+    let left = analyze_expr(left)?;
+    let right = analyze_expr(right)?;
 
     if left.ty() != right.ty() {
-        panic!("Invalid types for equality comparison");
+        return Err(TypeError {
+            message: format!(
+                "Invalid types for equality comparison: {:?} != {:?}",
+                left.ty(),
+                right.ty()
+            ),
+        });
     }
 
-    TypedExpr::Eq(Box::new(left), Box::new(right), Type::Bool)
+    Ok(TypedExpr::Eq(Box::new(left), Box::new(right), Type::Bool))
 }
 
-fn analyze_gt(left: &Expr, right: &Expr) -> TypedExpr {
-    let left = analyze_expr(left);
-    let right = analyze_expr(right);
+fn analyze_gt(left: &Expr, right: &Expr) -> Result<TypedExpr, TypeError> {
+    let left = analyze_expr(left)?;
+    let right = analyze_expr(right)?;
 
     if left.ty() != right.ty() {
         panic!("Invalid types for greater than comparison");
@@ -53,12 +60,12 @@ fn analyze_gt(left: &Expr, right: &Expr) -> TypedExpr {
         panic!("Invalid types for greater than comparison");
     }
 
-    TypedExpr::Gt(Box::new(left), Box::new(right), Type::Bool)
+    Ok(TypedExpr::Gt(Box::new(left), Box::new(right), Type::Bool))
 }
 
-fn analyze_lt(left: &Expr, right: &Expr) -> TypedExpr {
-    let left = analyze_expr(left);
-    let right = analyze_expr(right);
+fn analyze_lt(left: &Expr, right: &Expr) -> Result<TypedExpr, TypeError> {
+    let left = analyze_expr(left)?;
+    let right = analyze_expr(right)?;
 
     if left.ty() != right.ty() {
         panic!("Invalid types for less than comparison");
@@ -69,12 +76,12 @@ fn analyze_lt(left: &Expr, right: &Expr) -> TypedExpr {
         panic!("Invalid types for less than comparison");
     }
 
-    TypedExpr::Lt(Box::new(left), Box::new(right), Type::Bool)
+    Ok(TypedExpr::Lt(Box::new(left), Box::new(right), Type::Bool))
 }
 
-fn analyze_add(left: &Expr, right: &Expr) -> TypedExpr {
-    let left = analyze_expr(left);
-    let right = analyze_expr(right);
+fn analyze_add(left: &Expr, right: &Expr) -> Result<TypedExpr, TypeError> {
+    let left = analyze_expr(left)?;
+    let right = analyze_expr(right)?;
 
     if left.ty() != right.ty() {
         panic!("Invalid types for addition");
@@ -85,12 +92,12 @@ fn analyze_add(left: &Expr, right: &Expr) -> TypedExpr {
     }
 
     let ty = left.ty();
-    TypedExpr::Add(Box::new(left), Box::new(right), ty)
+    Ok(TypedExpr::Add(Box::new(left), Box::new(right), ty))
 }
 
-fn analyze_sub(left: &Expr, right: &Expr) -> TypedExpr {
-    let left = analyze_expr(left);
-    let right = analyze_expr(right);
+fn analyze_sub(left: &Expr, right: &Expr) -> Result<TypedExpr, TypeError> {
+    let left = analyze_expr(left)?;
+    let right = analyze_expr(right)?;
 
     if left.ty() != right.ty() {
         panic!("Invalid types for subtraction");
@@ -101,12 +108,12 @@ fn analyze_sub(left: &Expr, right: &Expr) -> TypedExpr {
     }
 
     let ty = left.ty();
-    TypedExpr::Sub(Box::new(left), Box::new(right), ty)
+    Ok(TypedExpr::Sub(Box::new(left), Box::new(right), ty))
 }
 
-fn analyze_mult(left: &Expr, right: &Expr) -> TypedExpr {
-    let left = analyze_expr(left);
-    let right = analyze_expr(right);
+fn analyze_mult(left: &Expr, right: &Expr) -> Result<TypedExpr, TypeError> {
+    let left = analyze_expr(left)?;
+    let right = analyze_expr(right)?;
 
     if left.ty() != right.ty() {
         panic!("Invalid types for multiplication");
@@ -117,12 +124,12 @@ fn analyze_mult(left: &Expr, right: &Expr) -> TypedExpr {
     }
 
     let ty = left.ty();
-    TypedExpr::Mult(Box::new(left), Box::new(right), ty)
+    Ok(TypedExpr::Mult(Box::new(left), Box::new(right), ty))
 }
 
-fn analyze_div(left: &Expr, right: &Expr) -> TypedExpr {
-    let left = analyze_expr(left);
-    let right = analyze_expr(right);
+fn analyze_div(left: &Expr, right: &Expr) -> Result<TypedExpr, TypeError> {
+    let left = analyze_expr(left)?;
+    let right = analyze_expr(right)?;
 
     if left.ty() != right.ty() {
         panic!("Invalid types for division");
@@ -133,25 +140,25 @@ fn analyze_div(left: &Expr, right: &Expr) -> TypedExpr {
     }
 
     let ty = left.ty();
-    TypedExpr::Div(Box::new(left), Box::new(right), ty)
+    Ok(TypedExpr::Div(Box::new(left), Box::new(right), ty))
 }
 
-fn analyze_literal(literal: &crate::ast::Literal) -> TypedExpr {
-    match literal {
+fn analyze_literal(literal: &crate::ast::Literal) -> Result<TypedExpr, TypeError> {
+    Ok(match literal {
         Literal::Int(i) => TypedExpr::Literal(TypedLiteral::Int(*i), Type::Int),
         Literal::Float(f) => TypedExpr::Literal(TypedLiteral::Float(*f), Type::Float),
         Literal::String(s) => TypedExpr::Literal(TypedLiteral::String(s.clone()), Type::String),
         Literal::Bool(b) => TypedExpr::Literal(TypedLiteral::Bool(*b), Type::Bool),
-    }
+    })
 }
 
-fn analyze_negate(inner: &Expr) -> TypedExpr {
-    let inner = analyze_expr(inner);
+fn analyze_negate(inner: &Expr) -> Result<TypedExpr, TypeError> {
+    let inner = analyze_expr(inner)?;
 
     if inner.ty() != Type::Int && inner.ty() != Type::Float {
         panic!("Invalid types for negation");
     }
 
     let ty = inner.ty();
-    TypedExpr::Negate(Box::new(inner), ty)
+    Ok(TypedExpr::Negate(Box::new(inner), ty))
 }

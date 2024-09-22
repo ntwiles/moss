@@ -70,6 +70,7 @@ pub fn eval_eq(value_stack: &mut Vec<ResolvedValue>) {
         (ResolvedValue::Int(l), ResolvedValue::Int(r)) => ResolvedValue::Bool(l == r),
         (ResolvedValue::Float(l), ResolvedValue::Float(r)) => ResolvedValue::Bool(l == r),
         (ResolvedValue::String(l), ResolvedValue::String(r)) => ResolvedValue::Bool(l == r),
+        (ResolvedValue::Bool(l), ResolvedValue::Bool(r)) => ResolvedValue::Bool(l == r),
         _ => unreachable!(),
     });
 }

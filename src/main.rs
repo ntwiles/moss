@@ -1,5 +1,6 @@
 pub mod analyzer;
 mod ast;
+mod errors;
 pub mod interpretor;
 lalrpop_mod!(pub grammar);
 
@@ -16,15 +17,26 @@ fn main() {
     let code = match code {
         Ok(code) => code,
         Err(err) => {
-            println!("Error loading nala file: {}", err);
+            println!("Error loading file: {}", err);
             return;
         }
     };
 
-    let parsed = ProgramParser::new().parse(&code).unwrap();
+    let parsed = ProgramParser::new().parse(&code);
 
-    let analyzed = analyzer::analyze_expr(&parsed);
-    let result = interpretor::interpret_expr(analyzed);
+    if let Err(error) = parsed {
+        println!("Parse Error: {}", error);
+        return;
+    }
 
-    println!("{}", result);
+    let analyzed = analyzer::analyze_expr(&parsed.unwrap());
+
+    if let Err(error) = analyzed {
+        println!("Type Error: {}", error.message);
+        return;
+    }
+
+    let run_result = interpretor::interpret_expr(analyzed.unwrap());
+
+    println!("{}", run_result);
 }
