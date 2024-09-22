@@ -19,10 +19,8 @@ impl Interpreter {
     }
 
     pub fn eval(&mut self, expr: TypedExpr) -> ResolvedValue {
-        // Push the initial expression onto the control stack
         self.control_stack.push(ControlOp::EvalExpr(expr));
 
-        // Main loop to evaluate the control stack
         while let Some(current_op) = self.control_stack.pop() {
             match current_op {
                 ControlOp::EvalExpr(expr) => self.eval_expr(expr),
@@ -30,10 +28,13 @@ impl Interpreter {
                 ControlOp::ApplySub => self.eval_sub(),
                 ControlOp::ApplyMult => self.eval_mult(),
                 ControlOp::ApplyDiv => self.eval_div(),
+                ControlOp::ApplyEq => self.eval_eq(),
+                ControlOp::ApplyGt => self.eval_gt(),
+                ControlOp::ApplyLt => self.eval_lt(),
+                ControlOp::ApplyNegate => self.eval_negate(),
             }
         }
 
-        // Once the control stack is empty, return the final value from the value stack
         self.value_stack.pop().unwrap()
     }
 
@@ -51,7 +52,8 @@ impl Interpreter {
         self.control_stack.push(ControlOp::EvalExpr(*left));
     }
 
-    fn push_unary_op(&mut self, expr: TypedExpr) {
+    fn push_unary_op(&mut self, op: ControlOp, expr: TypedExpr) {
+        self.control_stack.push(op);
         self.control_stack.push(ControlOp::EvalExpr(expr));
     }
 
@@ -59,25 +61,23 @@ impl Interpreter {
     where
         F: Fn(ResolvedValue, ResolvedValue) -> ResolvedValue,
     {
-        // Pop two values from the value stack
         let right = self.value_stack.pop().unwrap();
         let left = self.value_stack.pop().unwrap();
 
-        // Apply the operator and push the result
-        let result = op(left, right);
-        self.value_stack.push(result);
+        self.value_stack.push(op(left, right));
     }
 
     pub fn eval_expr(&mut self, expr: TypedExpr) {
         match expr {
-            // TypedExpr::Eq(l, r, ty) => eval_eq(left, right, ty),
-            // TypedExpr::Gt(left, right, ty) => eval_gt(left, right, ty),
-            // TypedExpr::Lt(left, right, ty) => eval_lt(left, right, ty),
+            TypedExpr::Eq(l, r, _ty) => self.push_binary_op(ControlOp::ApplyEq, l, r),
+            TypedExpr::Gt(l, r, _ty) => self.push_binary_op(ControlOp::ApplyGt, l, r),
+            TypedExpr::Lt(l, r, _ty) => self.push_binary_op(ControlOp::ApplyLt, l, r),
             TypedExpr::Literal(literal, _) => self.eval_literal(literal),
             TypedExpr::Add(l, r, _ty) => self.push_binary_op(ControlOp::ApplyAdd, l, r),
             TypedExpr::Sub(l, r, _ty) => self.push_binary_op(ControlOp::ApplySub, l, r),
             TypedExpr::Mult(l, r, _ty) => self.push_binary_op(ControlOp::ApplyMult, l, r),
             TypedExpr::Div(l, r, _ty) => self.push_binary_op(ControlOp::ApplyDiv, l, r),
+            TypedExpr::Negate(inner, _ty) => self.push_unary_op(ControlOp::ApplyNegate, *inner),
             _ => unimplemented!(),
         }
     }
@@ -111,6 +111,41 @@ impl Interpreter {
         self.apply_binary_op(|l, r| match (l, r) {
             (ResolvedValue::Int(l), ResolvedValue::Int(r)) => ResolvedValue::Int(l / r),
             (ResolvedValue::Float(l), ResolvedValue::Float(r)) => ResolvedValue::Float(l / r),
+            _ => unreachable!(),
+        });
+    }
+
+    fn eval_eq(&mut self) {
+        self.apply_binary_op(|l, r| match (l, r) {
+            (ResolvedValue::Int(l), ResolvedValue::Int(r)) => ResolvedValue::Bool(l == r),
+            (ResolvedValue::Float(l), ResolvedValue::Float(r)) => ResolvedValue::Bool(l == r),
+            (ResolvedValue::String(l), ResolvedValue::String(r)) => ResolvedValue::Bool(l == r),
+            _ => unreachable!(),
+        });
+    }
+
+    fn eval_gt(&mut self) {
+        self.apply_binary_op(|l, r| match (l, r) {
+            (ResolvedValue::Int(l), ResolvedValue::Int(r)) => ResolvedValue::Bool(l > r),
+            (ResolvedValue::Float(l), ResolvedValue::Float(r)) => ResolvedValue::Bool(l > r),
+            _ => unreachable!(),
+        });
+    }
+
+    fn eval_lt(&mut self) {
+        self.apply_binary_op(|l, r| match (l, r) {
+            (ResolvedValue::Int(l), ResolvedValue::Int(r)) => ResolvedValue::Bool(l < r),
+            (ResolvedValue::Float(l), ResolvedValue::Float(r)) => ResolvedValue::Bool(l < r),
+            _ => unreachable!(),
+        });
+    }
+
+    fn eval_negate(&mut self) {
+        let inner = self.value_stack.pop().unwrap();
+
+        self.value_stack.push(match inner {
+            ResolvedValue::Int(int) => ResolvedValue::Int(-int),
+            ResolvedValue::Float(float) => ResolvedValue::Float(-float),
             _ => unreachable!(),
         });
     }
