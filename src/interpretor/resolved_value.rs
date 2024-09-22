@@ -8,6 +8,36 @@ pub enum ResolvedValue {
     Bool(bool),
 }
 
+impl ResolvedValue {
+    pub fn unwrap_int(&self) -> i32 {
+        match self {
+            ResolvedValue::Int(int) => *int,
+            _ => panic!(),
+        }
+    }
+
+    pub fn unwrap_float(&self) -> f64 {
+        match self {
+            ResolvedValue::Float(float) => *float,
+            _ => panic!(),
+        }
+    }
+
+    pub fn unwrap_string(&self) -> String {
+        match self {
+            ResolvedValue::String(string) => string.clone(),
+            _ => panic!(),
+        }
+    }
+
+    pub fn unwrap_bool(&self) -> bool {
+        match self {
+            ResolvedValue::Bool(bool) => *bool,
+            _ => panic!(),
+        }
+    }
+}
+
 impl Display for ResolvedValue {
     fn fmt(&self, f: &mut Formatter) -> Result {
         match self {

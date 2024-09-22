@@ -1,7 +1,7 @@
-mod analyzer;
+pub mod analyzer;
 mod ast;
-mod interpretor;
-lalrpop_mod!(grammar);
+pub mod interpretor;
+lalrpop_mod!(pub grammar);
 
 use grammar::ProgramParser;
 use lalrpop_util::lalrpop_mod;

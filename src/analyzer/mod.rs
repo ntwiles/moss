@@ -1,7 +1,7 @@
 pub mod ty;
 pub mod typed_expr;
 
-use crate::ast::Expr;
+use super::ast::Expr;
 use ty::Type;
 use typed_expr::TypedExpr;
 

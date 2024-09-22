@@ -1,11 +1,13 @@
 [package]
-name = "lang-2"
+name = "lang_2"
 version = "0.1.0"
 edition = "2021"
 
+[lib]
+path = "src/lib.rs"
+
 [build-dependencies]
 lalrpop = "0.21.0"
-
 
 [dependencies]
 lalrpop = "0.21.0"
