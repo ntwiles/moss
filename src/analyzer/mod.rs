@@ -37,7 +37,7 @@ fn analyze_eq(left: &Expr, right: &Expr) -> Result<TypedExpr, TypeError> {
     if left.ty() != right.ty() {
         return Err(TypeError {
             message: format!(
-                "Invalid types for equality comparison: {:?} != {:?}",
+                "Invalid types for == comparison: {:?} != {:?}",
                 left.ty(),
                 right.ty()
             ),
@@ -52,12 +52,24 @@ fn analyze_gt(left: &Expr, right: &Expr) -> Result<TypedExpr, TypeError> {
     let right = analyze_expr(right)?;
 
     if left.ty() != right.ty() {
-        panic!("Invalid types for greater than comparison");
+        return Err(TypeError {
+            message: format!(
+                "Invalid types for > comparison: {:?} != {:?}",
+                left.ty(),
+                right.ty()
+            ),
+        });
     }
 
     // TODO: Support gt for strings?
     if left.ty() != Type::Int && left.ty() != Type::Float {
-        panic!("Invalid types for greater than comparison");
+        return Err(TypeError {
+            message: format!(
+                "Invalid types for > comparison: {:?} != {:?}",
+                left.ty(),
+                right.ty()
+            ),
+        });
     }
 
     Ok(TypedExpr::Gt(Box::new(left), Box::new(right), Type::Bool))
@@ -68,12 +80,24 @@ fn analyze_lt(left: &Expr, right: &Expr) -> Result<TypedExpr, TypeError> {
     let right = analyze_expr(right)?;
 
     if left.ty() != right.ty() {
-        panic!("Invalid types for less than comparison");
+        return Err(TypeError {
+            message: format!(
+                "Invalid types for < comparison: {:?} != {:?}",
+                left.ty(),
+                right.ty()
+            ),
+        });
     }
 
     // TODO: Support lt for strings?
     if left.ty() != Type::Int && left.ty() != Type::Float {
-        panic!("Invalid types for less than comparison");
+        return Err(TypeError {
+            message: format!(
+                "Invalid types for < comparison: {:?} != {:?}",
+                left.ty(),
+                right.ty()
+            ),
+        });
     }
 
     Ok(TypedExpr::Lt(Box::new(left), Box::new(right), Type::Bool))
@@ -84,11 +108,23 @@ fn analyze_add(left: &Expr, right: &Expr) -> Result<TypedExpr, TypeError> {
     let right = analyze_expr(right)?;
 
     if left.ty() != right.ty() {
-        panic!("Invalid types for addition");
+        return Err(TypeError {
+            message: format!(
+                "Invalid types for + operation: {:?} != {:?}",
+                left.ty(),
+                right.ty()
+            ),
+        });
     }
 
     if left.ty() != Type::Int && left.ty() != Type::Float && left.ty() != Type::String {
-        panic!("Invalid types for addition");
+        return Err(TypeError {
+            message: format!(
+                "Invalid types for + operation: {:?} != {:?}",
+                left.ty(),
+                right.ty()
+            ),
+        });
     }
 
     let ty = left.ty();
@@ -100,11 +136,23 @@ fn analyze_sub(left: &Expr, right: &Expr) -> Result<TypedExpr, TypeError> {
     let right = analyze_expr(right)?;
 
     if left.ty() != right.ty() {
-        panic!("Invalid types for subtraction");
+        return Err(TypeError {
+            message: format!(
+                "Invalid types for - operation: {:?} != {:?}",
+                left.ty(),
+                right.ty()
+            ),
+        });
     }
 
     if left.ty() != Type::Int && left.ty() != Type::Float {
-        panic!("Invalid types for subtraction");
+        return Err(TypeError {
+            message: format!(
+                "Invalid types for - operation: {:?} != {:?}",
+                left.ty(),
+                right.ty()
+            ),
+        });
     }
 
     let ty = left.ty();
@@ -116,11 +164,23 @@ fn analyze_mult(left: &Expr, right: &Expr) -> Result<TypedExpr, TypeError> {
     let right = analyze_expr(right)?;
 
     if left.ty() != right.ty() {
-        panic!("Invalid types for multiplication");
+        return Err(TypeError {
+            message: format!(
+                "Invalid types for * operation: {:?} != {:?}",
+                left.ty(),
+                right.ty()
+            ),
+        });
     }
 
     if left.ty() != Type::Int && left.ty() != Type::Float {
-        panic!("Invalid types for multiplication");
+        return Err(TypeError {
+            message: format!(
+                "Invalid types for * operation: {:?} != {:?}",
+                left.ty(),
+                right.ty()
+            ),
+        });
     }
 
     let ty = left.ty();
@@ -132,12 +192,26 @@ fn analyze_div(left: &Expr, right: &Expr) -> Result<TypedExpr, TypeError> {
     let right = analyze_expr(right)?;
 
     if left.ty() != right.ty() {
-        panic!("Invalid types for division");
+        return Err(TypeError {
+            message: format!(
+                "Invalid types for / operation: {:?} != {:?}",
+                left.ty(),
+                right.ty()
+            ),
+        });
     }
 
     if left.ty() != Type::Int && left.ty() != Type::Float {
-        panic!("Invalid types for division");
+        return Err(TypeError {
+            message: format!(
+                "Invalid types for / operation: {:?} != {:?}",
+                left.ty(),
+                right.ty()
+            ),
+        });
     }
+
+    // TODO: Check for division by zero
 
     let ty = left.ty();
     Ok(TypedExpr::Div(Box::new(left), Box::new(right), ty))
@@ -156,7 +230,9 @@ fn analyze_negate(inner: &Expr) -> Result<TypedExpr, TypeError> {
     let inner = analyze_expr(inner)?;
 
     if inner.ty() != Type::Int && inner.ty() != Type::Float {
-        panic!("Invalid types for negation");
+        return Err(TypeError {
+            message: format!("Invalid type for negation (-) operation: {:?}", inner.ty()),
+        });
     }
 
     let ty = inner.ty();
