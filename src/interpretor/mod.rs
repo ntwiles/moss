@@ -78,7 +78,6 @@ impl Interpreter {
             TypedExpr::Mult(l, r, _ty) => self.push_binary_op(ControlOp::ApplyMult, l, r),
             TypedExpr::Div(l, r, _ty) => self.push_binary_op(ControlOp::ApplyDiv, l, r),
             TypedExpr::Negate(inner, _ty) => self.push_unary_op(ControlOp::ApplyNegate, *inner),
-            _ => unimplemented!(),
         }
     }
 
