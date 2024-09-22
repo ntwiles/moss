@@ -12,7 +12,7 @@ pub enum TypedLiteral {
     String(String),
 }
 
-// TODO: Create an error type instead of panicking.
+// TODO: Create an error type instead of panicking in this file.
 
 pub fn analyze_expr(expr: &Expr) -> TypedExpr {
     match expr {
