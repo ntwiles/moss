@@ -9,11 +9,13 @@ use evaluation::{
 };
 use resolved_value::ResolvedValue;
 
-pub fn interpret_expr(expr: TypedExpr) -> ResolvedValue {
+pub fn interpret_expr(exprs: Vec<TypedExpr>) -> ResolvedValue {
     let mut control_stack = Vec::new();
     let mut value_stack = Vec::new();
 
-    control_stack.push(ControlOp::EvalExpr(expr));
+    for expr in exprs.into_iter().rev() {
+        control_stack.push(ControlOp::EvalExpr(expr));
+    }
 
     while let Some(current_op) = control_stack.pop() {
         match current_op {

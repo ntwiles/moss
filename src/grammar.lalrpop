@@ -23,8 +23,17 @@ match {
 
 }
 
-pub Program: Expr = {
-    <expr: Expr> => expr
+pub Program: Vec<Expr> = {
+    <exprs:ExprList> => exprs
+};
+
+ExprList: Vec<Expr> = {
+    <first:Expr> ";" <rest:ExprList> => {
+        let mut exprs = vec![first];
+        exprs.extend(rest);
+        exprs
+    },
+    <expr:Expr> ";" => vec![expr],
 };
 
 Expr: Expr = {
