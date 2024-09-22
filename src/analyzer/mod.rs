@@ -1,7 +1,7 @@
 pub mod ty;
 pub mod typed_expr;
 
-use super::ast::Expr;
+use super::ast::{Expr, Literal};
 use ty::Type;
 use typed_expr::TypedExpr;
 
@@ -10,6 +10,7 @@ pub enum TypedLiteral {
     Int(i32),
     Float(f64),
     String(String),
+    Bool(bool),
 }
 
 // TODO: Create an error type instead of panicking in this file.
@@ -137,13 +138,10 @@ fn analyze_div(left: &Expr, right: &Expr) -> TypedExpr {
 
 fn analyze_literal(literal: &crate::ast::Literal) -> TypedExpr {
     match literal {
-        crate::ast::Literal::Int(int) => TypedExpr::Literal(TypedLiteral::Int(*int), Type::Int),
-        crate::ast::Literal::Float(float) => {
-            TypedExpr::Literal(TypedLiteral::Float(*float), Type::Float)
-        }
-        crate::ast::Literal::String(string) => {
-            TypedExpr::Literal(TypedLiteral::String(string.clone()), Type::String)
-        }
+        Literal::Int(i) => TypedExpr::Literal(TypedLiteral::Int(*i), Type::Int),
+        Literal::Float(f) => TypedExpr::Literal(TypedLiteral::Float(*f), Type::Float),
+        Literal::String(s) => TypedExpr::Literal(TypedLiteral::String(s.clone()), Type::String),
+        Literal::Bool(b) => TypedExpr::Literal(TypedLiteral::Bool(*b), Type::Bool),
     }
 }
 

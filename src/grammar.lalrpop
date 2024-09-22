@@ -3,14 +3,24 @@ use crate::ast::{self, Expr};
 grammar;
 
 match {
-    "{", "}", "(", ")", "[", "]", ";", ":", ".", ",", "::", "::<", "=>",
+    // delimiters
+    "{", "}", "(", ")", "[", "]", ";", ":", ".", ",",
+
+    // declaration
     "let",
+
+    // operators
     "=", "==", ">", "<", "+", "-", "*", "/",
 
-    r"[a-zA-Z_][a-zA-Z_0-9]*",  // symbols
-    r"[0-9]+",                  // int literals
-    r"[0-9]+\.[0-9]+",          // float literals
-    r#""[^"]*""#,               // string literals
+    // literals
+    "true", "false",
+    r"[0-9]+",         // int
+    r"[0-9]+\.[0-9]+", // float
+    r#""[^"]*""#,      // string
+
+    // symbols
+    r"[a-zA-Z_][a-zA-Z_0-9]*",  
+
 }
 
 pub Program: Expr = {
@@ -63,7 +73,13 @@ Literal: ast::Literal = {
     Int => ast::Literal::Int(<>),
     Float => ast::Literal::Float(<>),
     Str => ast::Literal::String(<>),
+    Bool => ast::Literal::Bool(<>),
 }
+
+Bool: bool = {
+    "true" => true,
+    "false" => false,
+};
 
 Int: i32 = {
     r"[0-9]+" => <>.parse().unwrap(),

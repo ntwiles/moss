@@ -28,6 +28,7 @@ pub fn eval_literal(value_stack: &mut Vec<ResolvedValue>, literal: TypedLiteral)
         TypedLiteral::Int(int) => value_stack.push(ResolvedValue::Int(int)),
         TypedLiteral::Float(float) => value_stack.push(ResolvedValue::Float(float)),
         TypedLiteral::String(string) => value_stack.push(ResolvedValue::String(string)),
+        TypedLiteral::Bool(boolean) => value_stack.push(ResolvedValue::Bool(boolean)),
     }
 }
 
