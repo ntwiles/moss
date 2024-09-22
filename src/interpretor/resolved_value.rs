@@ -12,7 +12,7 @@ impl Display for ResolvedValue {
     fn fmt(&self, f: &mut Formatter) -> Result {
         match self {
             ResolvedValue::Int(int) => write!(f, "{}", int),
-            ResolvedValue::Float(float) => write!(f, "{}", float),
+            ResolvedValue::Float(float) => write!(f, "{:.1}", float),
             ResolvedValue::String(string) => write!(f, "{}", string),
             ResolvedValue::Bool(bool) => write!(f, "{}", bool),
         }

@@ -1,138 +1,117 @@
+mod control_op;
 pub mod resolved_value;
 
+use crate::analyzer::{typed_expr::TypedExpr, TypedLiteral};
+use control_op::ControlOp;
 use resolved_value::ResolvedValue;
 
-use crate::analyzer::{ty::Type, typed_expr::TypedExpr, TypedLiteral};
-
-pub fn eval_expr(expr: &TypedExpr) -> ResolvedValue {
-    match expr {
-        TypedExpr::Eq(left, right, ty) => eval_eq(left, right, ty),
-        TypedExpr::Gt(left, right, ty) => eval_gt(left, right, ty),
-        TypedExpr::Lt(left, right, ty) => eval_lt(left, right, ty),
-        TypedExpr::Add(left, right, _ty) => {
-            let left = eval_expr(left);
-            let right = eval_expr(right);
-
-            match (left, right) {
-                (ResolvedValue::Int(left), ResolvedValue::Int(right)) => {
-                    ResolvedValue::Int(left + right)
-                }
-                (ResolvedValue::Float(left), ResolvedValue::Float(right)) => {
-                    ResolvedValue::Float(left + right)
-                }
-                (ResolvedValue::String(left), ResolvedValue::String(right)) => {
-                    ResolvedValue::String(left + &right)
-                }
-                _ => unreachable!(),
-            }
-        }
-        TypedExpr::Sub(left, right, _ty) => {
-            let left = eval_expr(left);
-            let right = eval_expr(right);
-
-            match (left, right) {
-                (ResolvedValue::Int(left), ResolvedValue::Int(right)) => {
-                    ResolvedValue::Int(left - right)
-                }
-                (ResolvedValue::Float(left), ResolvedValue::Float(right)) => {
-                    ResolvedValue::Float(left - right)
-                }
-                _ => unreachable!(),
-            }
-        }
-        TypedExpr::Mult(left, right, _ty) => {
-            let left = eval_expr(left);
-            let right = eval_expr(right);
-
-            match (left, right) {
-                (ResolvedValue::Int(left), ResolvedValue::Int(right)) => {
-                    ResolvedValue::Int(left * right)
-                }
-                (ResolvedValue::Float(left), ResolvedValue::Float(right)) => {
-                    ResolvedValue::Float(left * right)
-                }
-                _ => unreachable!(),
-            }
-        }
-        TypedExpr::Div(left, right, _ty) => {
-            let left = eval_expr(left);
-            let right = eval_expr(right);
-
-            // TODO: Handle division by zero.
-
-            match (left, right) {
-                (ResolvedValue::Int(left), ResolvedValue::Int(right)) => {
-                    ResolvedValue::Int(left / right)
-                }
-                (ResolvedValue::Float(left), ResolvedValue::Float(right)) => {
-                    ResolvedValue::Float(left / right)
-                }
-                _ => unreachable!(),
-            }
-        }
-        TypedExpr::Literal(literal, _) => match literal {
-            TypedLiteral::Int(int) => ResolvedValue::Int(*int),
-            TypedLiteral::Float(float) => ResolvedValue::Float(*float),
-            TypedLiteral::String(string) => ResolvedValue::String(string.clone()),
-        },
-        TypedExpr::Negate(expr, _) => {
-            let expr = eval_expr(expr);
-            match expr {
-                ResolvedValue::Int(int) => ResolvedValue::Int(-int),
-                ResolvedValue::Float(float) => ResolvedValue::Float(-float),
-                _ => unreachable!(),
-            }
-        }
-    }
+pub struct Interpreter {
+    control_stack: Vec<ControlOp>,
+    value_stack: Vec<ResolvedValue>,
 }
 
-fn eval_eq(left: &TypedExpr, right: &TypedExpr, _: &Type) -> ResolvedValue {
-    let left = eval_expr(left);
-    let right = eval_expr(right);
-
-    match (left, right) {
-        (ResolvedValue::Int(left), ResolvedValue::Int(right)) => ResolvedValue::Bool(left == right),
-        (ResolvedValue::Float(left), ResolvedValue::Float(right)) => {
-            ResolvedValue::Bool(left == right)
+impl Interpreter {
+    pub fn new() -> Self {
+        Interpreter {
+            control_stack: Vec::new(),
+            value_stack: Vec::new(),
         }
-        (ResolvedValue::String(left), ResolvedValue::String(right)) => {
-            ResolvedValue::Bool(left == right)
-        }
-        (ResolvedValue::Bool(left), ResolvedValue::Bool(right)) => {
-            ResolvedValue::Bool(left == right)
-        }
-        _ => unreachable!(),
     }
-}
 
-fn eval_gt(left: &TypedExpr, right: &TypedExpr, _: &Type) -> ResolvedValue {
-    let left = eval_expr(left);
-    let right = eval_expr(right);
+    pub fn eval(&mut self, expr: TypedExpr) -> ResolvedValue {
+        // Push the initial expression onto the control stack
+        self.control_stack.push(ControlOp::EvalExpr(expr));
 
-    match (left, right) {
-        (ResolvedValue::Int(left), ResolvedValue::Int(right)) => ResolvedValue::Bool(left > right),
-        (ResolvedValue::Float(left), ResolvedValue::Float(right)) => {
-            ResolvedValue::Bool(left > right)
+        // Main loop to evaluate the control stack
+        while let Some(current_op) = self.control_stack.pop() {
+            match current_op {
+                ControlOp::EvalExpr(expr) => self.eval_expr(expr),
+                ControlOp::ApplyAdd => self.eval_add(),
+                ControlOp::ApplySub => self.eval_sub(),
+                ControlOp::ApplyMult => self.eval_mult(),
+                ControlOp::ApplyDiv => self.eval_div(),
+            }
         }
-        (ResolvedValue::String(left), ResolvedValue::String(right)) => {
-            ResolvedValue::Bool(left > right)
-        }
-        _ => unreachable!(),
+
+        // Once the control stack is empty, return the final value from the value stack
+        self.value_stack.pop().unwrap()
     }
-}
 
-fn eval_lt(left: &TypedExpr, right: &TypedExpr, _: &Type) -> ResolvedValue {
-    let left = eval_expr(left);
-    let right = eval_expr(right);
+    fn eval_literal(&mut self, literal: TypedLiteral) {
+        match literal {
+            TypedLiteral::Int(int) => self.value_stack.push(ResolvedValue::Int(int)),
+            TypedLiteral::Float(float) => self.value_stack.push(ResolvedValue::Float(float)),
+            TypedLiteral::String(string) => self.value_stack.push(ResolvedValue::String(string)),
+        }
+    }
 
-    match (left, right) {
-        (ResolvedValue::Int(left), ResolvedValue::Int(right)) => ResolvedValue::Bool(left < right),
-        (ResolvedValue::Float(left), ResolvedValue::Float(right)) => {
-            ResolvedValue::Bool(left < right)
+    fn push_binary_op(&mut self, op: ControlOp, left: Box<TypedExpr>, right: Box<TypedExpr>) {
+        self.control_stack.push(op);
+        self.control_stack.push(ControlOp::EvalExpr(*right));
+        self.control_stack.push(ControlOp::EvalExpr(*left));
+    }
+
+    fn push_unary_op(&mut self, expr: TypedExpr) {
+        self.control_stack.push(ControlOp::EvalExpr(expr));
+    }
+
+    fn apply_binary_op<F>(&mut self, op: F)
+    where
+        F: Fn(ResolvedValue, ResolvedValue) -> ResolvedValue,
+    {
+        // Pop two values from the value stack
+        let right = self.value_stack.pop().unwrap();
+        let left = self.value_stack.pop().unwrap();
+
+        // Apply the operator and push the result
+        let result = op(left, right);
+        self.value_stack.push(result);
+    }
+
+    pub fn eval_expr(&mut self, expr: TypedExpr) {
+        match expr {
+            // TypedExpr::Eq(l, r, ty) => eval_eq(left, right, ty),
+            // TypedExpr::Gt(left, right, ty) => eval_gt(left, right, ty),
+            // TypedExpr::Lt(left, right, ty) => eval_lt(left, right, ty),
+            TypedExpr::Literal(literal, _) => self.eval_literal(literal),
+            TypedExpr::Add(l, r, _ty) => self.push_binary_op(ControlOp::ApplyAdd, l, r),
+            TypedExpr::Sub(l, r, _ty) => self.push_binary_op(ControlOp::ApplySub, l, r),
+            TypedExpr::Mult(l, r, _ty) => self.push_binary_op(ControlOp::ApplyMult, l, r),
+            TypedExpr::Div(l, r, _ty) => self.push_binary_op(ControlOp::ApplyDiv, l, r),
+            _ => unimplemented!(),
         }
-        (ResolvedValue::String(left), ResolvedValue::String(right)) => {
-            ResolvedValue::Bool(left < right)
-        }
-        _ => unreachable!(),
+    }
+
+    fn eval_add(&mut self) {
+        self.apply_binary_op(|l, r| match (l, r) {
+            (ResolvedValue::Int(l), ResolvedValue::Int(r)) => ResolvedValue::Int(l + r),
+            (ResolvedValue::Float(l), ResolvedValue::Float(r)) => ResolvedValue::Float(l + r),
+            (ResolvedValue::String(l), ResolvedValue::String(r)) => ResolvedValue::String(l + &r),
+            _ => unreachable!(),
+        });
+    }
+
+    fn eval_sub(&mut self) {
+        self.apply_binary_op(|l, r| match (l, r) {
+            (ResolvedValue::Int(l), ResolvedValue::Int(r)) => ResolvedValue::Int(l - r),
+            (ResolvedValue::Float(l), ResolvedValue::Float(r)) => ResolvedValue::Float(l - r),
+            _ => unreachable!(),
+        });
+    }
+
+    fn eval_mult(&mut self) {
+        self.apply_binary_op(|l, r| match (l, r) {
+            (ResolvedValue::Int(l), ResolvedValue::Int(r)) => ResolvedValue::Int(l * r),
+            (ResolvedValue::Float(l), ResolvedValue::Float(r)) => ResolvedValue::Float(l * r),
+            _ => unreachable!(),
+        });
+    }
+
+    fn eval_div(&mut self) {
+        self.apply_binary_op(|l, r| match (l, r) {
+            (ResolvedValue::Int(l), ResolvedValue::Int(r)) => ResolvedValue::Int(l / r),
+            (ResolvedValue::Float(l), ResolvedValue::Float(r)) => ResolvedValue::Float(l / r),
+            _ => unreachable!(),
+        });
     }
 }
