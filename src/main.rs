@@ -36,7 +36,7 @@ fn main() {
         return;
     }
 
-    let run_result = interpretor::interpret_expr(analyzed.unwrap());
+    let run_result = interpretor::interpret_exprs(analyzed.unwrap());
 
     println!("{}", run_result);
 }

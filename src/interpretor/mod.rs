@@ -9,7 +9,7 @@ use evaluation::{
 };
 use resolved_value::ResolvedValue;
 
-pub fn interpret_expr(exprs: Vec<TypedExpr>) -> ResolvedValue {
+pub fn interpret_exprs(exprs: Vec<TypedExpr>) -> ResolvedValue {
     let mut control_stack = Vec::new();
     let mut value_stack = Vec::new();
 
