@@ -211,7 +211,11 @@ fn analyze_div(left: &Expr, right: &Expr) -> Result<TypedExpr, TypeError> {
         });
     }
 
-    // TODO: Check for division by zero
+    if let TypedExpr::Literal(TypedLiteral::Int(0), _) = right {
+        return Err(TypeError {
+            message: "Division by zero".to_string(),
+        });
+    }
 
     let ty = left.ty();
     Ok(TypedExpr::Div(Box::new(left), Box::new(right), ty))
