@@ -106,7 +106,7 @@ Float: f64 = {
 };
 
 Str: String = {
-    r#""[^"]*""# => <>.to_string(),
+    r#""[^"]*""# => <>[1..<>.len()-1].to_string(),  // Remove the first and last characters (the quotes)
 };
 
 Identifier: String = {

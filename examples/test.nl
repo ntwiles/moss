@@ -1,2 +1,2 @@
-let foo = 2 + 3;
-foo;
+let foo = "hello"; 
+foo + " world";

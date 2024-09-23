@@ -103,3 +103,27 @@ fn boolean_literal_false() {
 
     assert_eq!(result.unwrap_bool(), false);
 }
+
+#[test]
+fn string_concatenation() {
+    let parsed = ProgramParser::new()
+        .parse("\"hello\" + \" world\";")
+        .unwrap();
+
+    let analyzed = analyzer::analyze_exprs(parsed).unwrap();
+    let result = interpretor::interpret_exprs(analyzed);
+
+    assert_eq!(result.unwrap_string(), "hello world");
+}
+
+#[test]
+fn string_concatenation_assigned() {
+    let parsed = ProgramParser::new()
+        .parse("let foo = \"hello\"; foo + \" world\";")
+        .unwrap();
+
+    let analyzed = analyzer::analyze_exprs(parsed).unwrap();
+    let result = interpretor::interpret_exprs(analyzed);
+
+    assert_eq!(result.unwrap_string(), "hello world");
+}

@@ -117,7 +117,6 @@ pub fn eval_assign(
     ident: String,
 ) {
     let value = value_stack.pop().unwrap();
-    println!("Assigning {} to {}", value, ident);
     scope_stack.last_mut().unwrap().insert(ident, value);
 
     value_stack.push(ResolvedValue::Void);
