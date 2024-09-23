@@ -1,6 +1,6 @@
-use lang_2::analyzer;
-use lang_2::grammar::ProgramParser;
-use lang_2::interpretor;
+use moss::analyzer;
+use moss::grammar::ProgramParser;
+use moss::interpretor;
 
 #[test]
 fn assignment_basic() {
