@@ -1,6 +1,8 @@
 pub mod ty;
 pub mod typed_expr;
 
+use std::collections::HashMap;
+
 use super::ast::{Expr, Literal};
 use super::errors::type_error::TypeError;
 use ty::Type;
@@ -14,28 +16,44 @@ pub enum TypedLiteral {
     Bool(bool),
 }
 
+type Scope = HashMap<String, Type>;
+
+// This should maybe have a wrapper analyize_program for initializing scopes.
 pub fn analyze_exprs(exprs: Vec<Expr>) -> Result<Vec<TypedExpr>, TypeError> {
-    exprs.into_iter().map(|expr| analyze_expr(expr)).collect()
+    let mut scope_stack = Vec::<Scope>::new();
+    scope_stack.push(HashMap::new());
+
+    exprs
+        .into_iter()
+        .map(|expr| analyze_expr(&mut scope_stack, expr))
+        .collect()
 }
 
-fn analyze_expr(expr: Expr) -> Result<TypedExpr, TypeError> {
+fn analyze_expr(scope_stack: &mut Vec<Scope>, expr: Expr) -> Result<TypedExpr, TypeError> {
     match expr {
-        Expr::Eq(left, right) => analyze_eq(*left, *right),
-        Expr::Gt(left, right) => analyze_gt(*left, *right),
-        Expr::Lt(left, right) => analyze_lt(*left, *right),
-        Expr::Add(left, right) => analyze_add(*left, *right),
-        Expr::Sub(left, right) => analyze_sub(*left, *right),
-        Expr::Mult(left, right) => analyze_mult(*left, *right),
-        Expr::Div(left, right) => analyze_div(*left, *right),
         Expr::Literal(literal) => analyze_literal(literal),
-        Expr::Negate(inner) => analyze_negate(*inner),
-        Expr::Assignment(ident, value) => analyze_assign(ident, *value),
+        Expr::Identifier(ident) => analyze_identifier(scope_stack, ident),
+
+        Expr::Eq(left, right) => analyze_eq(scope_stack, *left, *right),
+        Expr::Gt(left, right) => analyze_gt(scope_stack, *left, *right),
+        Expr::Lt(left, right) => analyze_lt(scope_stack, *left, *right),
+        Expr::Add(left, right) => analyze_add(scope_stack, *left, *right),
+        Expr::Sub(left, right) => analyze_sub(scope_stack, *left, *right),
+        Expr::Mult(left, right) => analyze_mult(scope_stack, *left, *right),
+        Expr::Div(left, right) => analyze_div(scope_stack, *left, *right),
+
+        Expr::Negate(inner) => analyze_negate(scope_stack, *inner),
+        Expr::Assignment(ident, expr) => analyze_assign(scope_stack, ident, *expr),
     }
 }
 
-fn analyze_eq(left: Expr, right: Expr) -> Result<TypedExpr, TypeError> {
-    let left = analyze_expr(left)?;
-    let right = analyze_expr(right)?;
+fn analyze_eq(
+    scope_stack: &mut Vec<Scope>,
+    left: Expr,
+    right: Expr,
+) -> Result<TypedExpr, TypeError> {
+    let left = analyze_expr(scope_stack, left)?;
+    let right = analyze_expr(scope_stack, right)?;
 
     if left.ty() != right.ty() {
         return Err(TypeError {
@@ -50,9 +68,13 @@ fn analyze_eq(left: Expr, right: Expr) -> Result<TypedExpr, TypeError> {
     Ok(TypedExpr::Eq(Box::new(left), Box::new(right), Type::Bool))
 }
 
-fn analyze_gt(left: Expr, right: Expr) -> Result<TypedExpr, TypeError> {
-    let left = analyze_expr(left)?;
-    let right = analyze_expr(right)?;
+fn analyze_gt(
+    scope_stack: &mut Vec<Scope>,
+    left: Expr,
+    right: Expr,
+) -> Result<TypedExpr, TypeError> {
+    let left = analyze_expr(scope_stack, left)?;
+    let right = analyze_expr(scope_stack, right)?;
 
     if left.ty() != right.ty() {
         return Err(TypeError {
@@ -78,9 +100,13 @@ fn analyze_gt(left: Expr, right: Expr) -> Result<TypedExpr, TypeError> {
     Ok(TypedExpr::Gt(Box::new(left), Box::new(right), Type::Bool))
 }
 
-fn analyze_lt(left: Expr, right: Expr) -> Result<TypedExpr, TypeError> {
-    let left = analyze_expr(left)?;
-    let right = analyze_expr(right)?;
+fn analyze_lt(
+    scope_stack: &mut Vec<Scope>,
+    left: Expr,
+    right: Expr,
+) -> Result<TypedExpr, TypeError> {
+    let left = analyze_expr(scope_stack, left)?;
+    let right = analyze_expr(scope_stack, right)?;
 
     if left.ty() != right.ty() {
         return Err(TypeError {
@@ -106,9 +132,13 @@ fn analyze_lt(left: Expr, right: Expr) -> Result<TypedExpr, TypeError> {
     Ok(TypedExpr::Lt(Box::new(left), Box::new(right), Type::Bool))
 }
 
-fn analyze_add(left: Expr, right: Expr) -> Result<TypedExpr, TypeError> {
-    let left = analyze_expr(left)?;
-    let right = analyze_expr(right)?;
+fn analyze_add(
+    scope_stack: &mut Vec<Scope>,
+    left: Expr,
+    right: Expr,
+) -> Result<TypedExpr, TypeError> {
+    let left = analyze_expr(scope_stack, left)?;
+    let right = analyze_expr(scope_stack, right)?;
 
     if left.ty() != right.ty() {
         return Err(TypeError {
@@ -134,9 +164,13 @@ fn analyze_add(left: Expr, right: Expr) -> Result<TypedExpr, TypeError> {
     Ok(TypedExpr::Add(Box::new(left), Box::new(right), ty))
 }
 
-fn analyze_sub(left: Expr, right: Expr) -> Result<TypedExpr, TypeError> {
-    let left = analyze_expr(left)?;
-    let right = analyze_expr(right)?;
+fn analyze_sub(
+    scope_stack: &mut Vec<Scope>,
+    left: Expr,
+    right: Expr,
+) -> Result<TypedExpr, TypeError> {
+    let left = analyze_expr(scope_stack, left)?;
+    let right = analyze_expr(scope_stack, right)?;
 
     if left.ty() != right.ty() {
         return Err(TypeError {
@@ -162,9 +196,13 @@ fn analyze_sub(left: Expr, right: Expr) -> Result<TypedExpr, TypeError> {
     Ok(TypedExpr::Sub(Box::new(left), Box::new(right), ty))
 }
 
-fn analyze_mult(left: Expr, right: Expr) -> Result<TypedExpr, TypeError> {
-    let left = analyze_expr(left)?;
-    let right = analyze_expr(right)?;
+fn analyze_mult(
+    scope_stack: &mut Vec<Scope>,
+    left: Expr,
+    right: Expr,
+) -> Result<TypedExpr, TypeError> {
+    let left = analyze_expr(scope_stack, left)?;
+    let right = analyze_expr(scope_stack, right)?;
 
     if left.ty() != right.ty() {
         return Err(TypeError {
@@ -190,9 +228,13 @@ fn analyze_mult(left: Expr, right: Expr) -> Result<TypedExpr, TypeError> {
     Ok(TypedExpr::Mult(Box::new(left), Box::new(right), ty))
 }
 
-fn analyze_div(left: Expr, right: Expr) -> Result<TypedExpr, TypeError> {
-    let left = analyze_expr(left)?;
-    let right = analyze_expr(right)?;
+fn analyze_div(
+    scope_stack: &mut Vec<Scope>,
+    left: Expr,
+    right: Expr,
+) -> Result<TypedExpr, TypeError> {
+    let left = analyze_expr(scope_stack, left)?;
+    let right = analyze_expr(scope_stack, right)?;
 
     if left.ty() != right.ty() {
         return Err(TypeError {
@@ -233,8 +275,8 @@ fn analyze_literal(literal: Literal) -> Result<TypedExpr, TypeError> {
     })
 }
 
-fn analyze_negate(inner: Expr) -> Result<TypedExpr, TypeError> {
-    let inner = analyze_expr(inner)?;
+fn analyze_negate(scope_stack: &mut Vec<Scope>, inner: Expr) -> Result<TypedExpr, TypeError> {
+    let inner = analyze_expr(scope_stack, inner)?;
 
     if inner.ty() != Type::Int && inner.ty() != Type::Float {
         return Err(TypeError {
@@ -246,8 +288,12 @@ fn analyze_negate(inner: Expr) -> Result<TypedExpr, TypeError> {
     Ok(TypedExpr::Negate(Box::new(inner), ty))
 }
 
-fn analyze_assign(ident: String, value: Expr) -> Result<TypedExpr, TypeError> {
-    let inner = analyze_expr(value)?;
+fn analyze_assign(
+    scope_stack: &mut Vec<Scope>,
+    ident: String,
+    value: Expr,
+) -> Result<TypedExpr, TypeError> {
+    let inner = analyze_expr(scope_stack, value)?;
 
     if inner.ty() == Type::Void {
         return Err(TypeError {
@@ -255,5 +301,23 @@ fn analyze_assign(ident: String, value: Expr) -> Result<TypedExpr, TypeError> {
         });
     }
 
+    scope_stack
+        .last_mut()
+        .unwrap()
+        .insert(ident.clone(), inner.ty());
+
     Ok(TypedExpr::Assign(ident, Box::new(inner), Type::Void))
+}
+
+fn analyze_identifier(scope_stack: &mut Vec<Scope>, ident: String) -> Result<TypedExpr, TypeError> {
+    let ty = scope_stack
+        .iter()
+        .rev()
+        .find_map(|scope| scope.get(&ident))
+        .cloned()
+        .ok_or(TypeError {
+            message: format!("Identifier {} not found", ident),
+        })?;
+
+    Ok(TypedExpr::Identifier(ident, ty))
 }

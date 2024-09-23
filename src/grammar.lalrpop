@@ -82,6 +82,7 @@ PostfixExpression: Expr = {
 // Stubbed out for now
 Primary: Expr = {
     Literal => Expr::Literal(<>),
+    Identifier => Expr::Identifier(<>),
 };
 
 Literal: ast::Literal = {

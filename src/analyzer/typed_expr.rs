@@ -3,6 +3,7 @@ use super::{ty::Type, TypedLiteral};
 // TODO: For some of these, the type is always clear and maybe we don't need to store it.
 #[derive(Debug)]
 pub enum TypedExpr {
+    // Binary operations
     Eq(Box<TypedExpr>, Box<TypedExpr>, Type),
     Gt(Box<TypedExpr>, Box<TypedExpr>, Type),
     Lt(Box<TypedExpr>, Box<TypedExpr>, Type),
@@ -10,9 +11,14 @@ pub enum TypedExpr {
     Sub(Box<TypedExpr>, Box<TypedExpr>, Type),
     Mult(Box<TypedExpr>, Box<TypedExpr>, Type),
     Div(Box<TypedExpr>, Box<TypedExpr>, Type),
-    Literal(TypedLiteral, Type),
+
+    // Unary operations
     Negate(Box<TypedExpr>, Type),
     Assign(String, Box<TypedExpr>, Type),
+
+    // Primaries
+    Literal(TypedLiteral, Type),
+    Identifier(String, Type),
 }
 
 impl TypedExpr {
@@ -28,6 +34,7 @@ impl TypedExpr {
             TypedExpr::Literal(_, ty) => *ty,
             TypedExpr::Negate(_, ty) => *ty,
             TypedExpr::Assign(_, _, ty) => *ty,
+            TypedExpr::Identifier(_, ty) => *ty,
         }
     }
 }

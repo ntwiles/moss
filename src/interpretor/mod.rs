@@ -12,12 +12,14 @@ use evaluation::{
 };
 use resolved_value::ResolvedValue;
 
+pub type Scope = HashMap<String, ResolvedValue>;
+
 pub fn interpret_exprs(exprs: Vec<TypedExpr>) -> ResolvedValue {
     let mut control_stack = Vec::new();
     let mut value_stack = Vec::new();
-    let mut scope_stack = Vec::new();
+    let mut scope_stack = Vec::<Scope>::new();
 
-    scope_stack.push(HashMap::<String, ResolvedValue>::new());
+    scope_stack.push(HashMap::new());
 
     for expr in exprs.into_iter().rev() {
         control_stack.push(ControlOp::EvalExpr(expr));
@@ -25,7 +27,9 @@ pub fn interpret_exprs(exprs: Vec<TypedExpr>) -> ResolvedValue {
 
     while let Some(current_op) = control_stack.pop() {
         match current_op {
-            ControlOp::EvalExpr(expr) => eval_expr(&mut control_stack, &mut value_stack, expr),
+            ControlOp::EvalExpr(expr) => {
+                eval_expr(&mut scope_stack, &mut control_stack, &mut value_stack, expr)
+            }
             ControlOp::ApplyAdd => eval_add(&mut value_stack),
             ControlOp::ApplySub => eval_sub(&mut value_stack),
             ControlOp::ApplyMult => eval_mult(&mut value_stack),

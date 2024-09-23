@@ -1,6 +1,6 @@
 use std::fmt::{Display, Formatter, Result};
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum ResolvedValue {
     Int(i32),
     Float(f64),

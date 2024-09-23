@@ -4,16 +4,17 @@ use crate::analyzer::{typed_expr::TypedExpr, TypedLiteral};
 
 use super::{
     apply_binary_op, control_op::ControlOp, push_binary_op, push_unary_op,
-    resolved_value::ResolvedValue,
+    resolved_value::ResolvedValue, Scope,
 };
 
 pub fn eval_expr(
+    scope_stack: &mut Vec<Scope>,
     control_stack: &mut Vec<ControlOp>,
     value_stack: &mut Vec<ResolvedValue>,
     expr: TypedExpr,
 ) {
     match expr {
-        TypedExpr::Literal(literal, _) => eval_literal(value_stack, literal),
+        // Binary operations
         TypedExpr::Eq(l, r, _ty) => push_binary_op(control_stack, ControlOp::ApplyEq, l, r),
         TypedExpr::Gt(l, r, _ty) => push_binary_op(control_stack, ControlOp::ApplyGt, l, r),
         TypedExpr::Lt(l, r, _ty) => push_binary_op(control_stack, ControlOp::ApplyLt, l, r),
@@ -21,8 +22,14 @@ pub fn eval_expr(
         TypedExpr::Sub(l, r, _ty) => push_binary_op(control_stack, ControlOp::ApplySub, l, r),
         TypedExpr::Mult(l, r, _ty) => push_binary_op(control_stack, ControlOp::ApplyMult, l, r),
         TypedExpr::Div(l, r, _ty) => push_binary_op(control_stack, ControlOp::ApplyDiv, l, r),
+
+        // Unary operations
         TypedExpr::Negate(l, _ty) => push_unary_op(control_stack, ControlOp::ApplyNegate, *l),
         TypedExpr::Assign(i, v, _ty) => push_unary_op(control_stack, ControlOp::ApplyAssign(i), *v),
+
+        // Primaries
+        TypedExpr::Literal(literal, _) => eval_literal(value_stack, literal),
+        TypedExpr::Identifier(ident, _) => eval_identifier(scope_stack, value_stack, ident),
     }
 }
 
@@ -110,7 +117,23 @@ pub fn eval_assign(
     ident: String,
 ) {
     let value = value_stack.pop().unwrap();
+    println!("Assigning {} to {}", value, ident);
     scope_stack.last_mut().unwrap().insert(ident, value);
 
     value_stack.push(ResolvedValue::Void);
+}
+
+pub fn eval_identifier(
+    scope_stack: &mut Vec<Scope>,
+    value_stack: &mut Vec<ResolvedValue>,
+    ident: String,
+) {
+    let value = scope_stack
+        .iter()
+        .rev()
+        .find_map(|scope| scope.get(&ident))
+        .unwrap()
+        .clone();
+
+    value_stack.push(value);
 }
