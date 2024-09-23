@@ -7,8 +7,8 @@ use std::collections::HashMap;
 use crate::analyzer::typed_expr::TypedExpr;
 use control_op::ControlOp;
 use evaluation::{
-    eval_add, eval_assign, eval_div, eval_eq, eval_expr, eval_gt, eval_lt, eval_mult, eval_negate,
-    eval_sub,
+    eval_add, eval_assign, eval_div, eval_eq, eval_expr, eval_func_call, eval_gt, eval_lt,
+    eval_mult, eval_negate, eval_sub,
 };
 use resolved_value::ResolvedValue;
 
@@ -27,8 +27,8 @@ pub fn interpret_exprs(exprs: Vec<TypedExpr>) -> ResolvedValue {
 
     while let Some(current_op) = control_stack.pop() {
         match current_op {
-            ControlOp::EvalExpr(expr) => {
-                eval_expr(&mut scope_stack, &mut control_stack, &mut value_stack, expr)
+            ControlOp::EvalExpr(e) => {
+                eval_expr(&mut scope_stack, &mut control_stack, &mut value_stack, e)
             }
             ControlOp::ApplyAdd => eval_add(&mut value_stack),
             ControlOp::ApplySub => eval_sub(&mut value_stack),
@@ -39,6 +39,7 @@ pub fn interpret_exprs(exprs: Vec<TypedExpr>) -> ResolvedValue {
             ControlOp::ApplyLt => eval_lt(&mut value_stack),
             ControlOp::ApplyNegate => eval_negate(&mut value_stack),
             ControlOp::ApplyAssign(ident) => eval_assign(&mut value_stack, &mut scope_stack, ident),
+            ControlOp::ApplyFuncCall => eval_func_call(&mut value_stack),
         }
     }
 
@@ -59,6 +60,15 @@ fn push_binary_op(
     control_stack.push(op);
     control_stack.push(ControlOp::EvalExpr(*right));
     control_stack.push(ControlOp::EvalExpr(*left));
+}
+
+fn push_func_call(control_stack: &mut Vec<ControlOp>, exprs: Vec<TypedExpr>) {
+    println!("Pushing func call");
+    for expr in exprs.into_iter().rev() {
+        control_stack.push(ControlOp::EvalExpr(expr));
+    }
+
+    control_stack.push(ControlOp::ApplyFuncCall);
 }
 
 fn apply_binary_op<F>(value_stack: &mut Vec<ResolvedValue>, op: F)

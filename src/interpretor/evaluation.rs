@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::analyzer::{typed_expr::TypedExpr, TypedLiteral};
 
 use super::{
-    apply_binary_op, control_op::ControlOp, push_binary_op, push_unary_op,
+    apply_binary_op, control_op::ControlOp, push_binary_op, push_func_call, push_unary_op,
     resolved_value::ResolvedValue, Scope,
 };
 
@@ -27,10 +27,13 @@ pub fn eval_expr(
         TypedExpr::Negate(l, _ty) => push_unary_op(control_stack, ControlOp::ApplyNegate, *l),
         TypedExpr::Assign(i, v, _ty) => push_unary_op(control_stack, ControlOp::ApplyAssign(i), *v),
 
+        // Postfix operations
+        TypedExpr::FuncCall(b, _ty) => push_func_call(control_stack, b),
+
         // Primaries
-        TypedExpr::Literal(literal, _) => eval_literal(value_stack, literal),
-        TypedExpr::Identifier(ident, _) => eval_identifier(scope_stack, value_stack, ident),
-        TypedExpr::Function(exprs, _) => eval_function(value_stack, exprs),
+        TypedExpr::Literal(literal, _ty) => eval_literal(value_stack, literal),
+        TypedExpr::Identifier(ident, _ty) => eval_identifier(scope_stack, value_stack, ident),
+        TypedExpr::FuncDeclare(exprs, _ty) => eval_func_declare(value_stack, exprs),
     }
 }
 
@@ -96,6 +99,7 @@ pub fn eval_lt(value_stack: &mut Vec<ResolvedValue>) {
 }
 
 // Unary operations
+// TODO: Create apply_unary_op
 pub fn eval_negate(value_stack: &mut Vec<ResolvedValue>) {
     let inner = value_stack.pop().unwrap();
 
@@ -115,6 +119,13 @@ pub fn eval_assign(
     scope_stack.last_mut().unwrap().insert(ident, value);
 
     value_stack.push(ResolvedValue::Void);
+}
+
+// Postfix operations
+pub fn eval_func_call(value_stack: &mut Vec<ResolvedValue>) {
+    let return_value = value_stack.pop().unwrap();
+
+    println!("Return value: {:?}", return_value);
 }
 
 // Primaries
@@ -142,6 +153,6 @@ pub fn eval_identifier(
     value_stack.push(value);
 }
 
-pub fn eval_function(value_stack: &mut Vec<ResolvedValue>, exprs: Vec<TypedExpr>) {
+pub fn eval_func_declare(value_stack: &mut Vec<ResolvedValue>, exprs: Vec<TypedExpr>) {
     value_stack.push(ResolvedValue::Function(exprs));
 }

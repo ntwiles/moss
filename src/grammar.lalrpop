@@ -78,6 +78,7 @@ Unary: Expr = {
 
 // Stubbed out for now
 PostfixExpression: Expr = {
+    <primary:Primary> "(" ")" => Expr::FuncCall(Box::new(primary)),
     Primary,
 };
 
@@ -100,7 +101,7 @@ Identifier: String = {
 };
 
 Function: Expr = {
-    "|" "|" "=>" "{" <body:ExprList> "}" => Expr::Function(body),
+    "|" "|" "=>" "{" <body:ExprList> "}" => Expr::FuncDeclare(body),
 };
 
 Bool: bool = {

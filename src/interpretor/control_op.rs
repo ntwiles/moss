@@ -12,6 +12,9 @@ pub enum ControlOp {
     ApplyGt,
     ApplyLt,
 
+    // Postfix operations
+    ApplyFuncCall,
+
     // Unary operations
     ApplyNegate,
     ApplyAssign(String),

@@ -16,10 +16,13 @@ pub enum TypedExpr {
     Negate(Box<TypedExpr>, Type),
     Assign(String, Box<TypedExpr>, Type),
 
+    // Postfix operations
+    FuncCall(Vec<TypedExpr>, Type),
+
     // Primaries
     Literal(TypedLiteral, Type),
     Identifier(String, Type),
-    Function(Vec<TypedExpr>, Type),
+    FuncDeclare(Vec<TypedExpr>, Type),
 }
 
 impl TypedExpr {
@@ -36,7 +39,8 @@ impl TypedExpr {
             TypedExpr::Negate(_, ty) => *ty,
             TypedExpr::Assign(_, _, ty) => *ty,
             TypedExpr::Identifier(_, ty) => *ty,
-            TypedExpr::Function(_, ty) => *ty,
+            TypedExpr::FuncCall(_, ty) => *ty,
+            TypedExpr::FuncDeclare(_, ty) => *ty,
         }
     }
 }

@@ -16,7 +16,7 @@ pub enum TypedLiteral {
     Bool(bool),
 }
 
-type Scope = HashMap<String, Type>;
+type Scope = HashMap<String, TypedExpr>;
 
 pub fn analyze_program(exprs: Vec<Expr>) -> Result<Vec<TypedExpr>, TypeError> {
     let mut scope_stack = Vec::<Scope>::new();
@@ -35,6 +35,8 @@ fn analyze_exprs(
         .collect()
 }
 
+// Binary operations
+
 fn analyze_expr(scope_stack: &mut Vec<Scope>, expr: Expr) -> Result<TypedExpr, TypeError> {
     match expr {
         Expr::Literal(literal) => analyze_literal(literal),
@@ -50,7 +52,8 @@ fn analyze_expr(scope_stack: &mut Vec<Scope>, expr: Expr) -> Result<TypedExpr, T
 
         Expr::Negate(inner) => analyze_negate(scope_stack, *inner),
         Expr::Assignment(ident, expr) => analyze_assign(scope_stack, ident, *expr),
-        Expr::Function(exprs) => analyze_function(scope_stack, exprs),
+        Expr::FuncDeclare(exprs) => analyze_func_declare(scope_stack, exprs),
+        Expr::FuncCall(callee) => analyze_func_call(scope_stack, *callee),
     }
 }
 
@@ -273,14 +276,7 @@ fn analyze_div(
     Ok(TypedExpr::Div(Box::new(left), Box::new(right), ty))
 }
 
-fn analyze_literal(literal: Literal) -> Result<TypedExpr, TypeError> {
-    Ok(match literal {
-        Literal::Int(i) => TypedExpr::Literal(TypedLiteral::Int(i), Type::Int),
-        Literal::Float(f) => TypedExpr::Literal(TypedLiteral::Float(f), Type::Float),
-        Literal::String(s) => TypedExpr::Literal(TypedLiteral::String(s), Type::String),
-        Literal::Bool(b) => TypedExpr::Literal(TypedLiteral::Bool(b), Type::Bool),
-    })
-}
+// Unary operations
 
 fn analyze_negate(scope_stack: &mut Vec<Scope>, inner: Expr) -> Result<TypedExpr, TypeError> {
     let inner = analyze_expr(scope_stack, inner)?;
@@ -311,13 +307,51 @@ fn analyze_assign(
     scope_stack
         .last_mut()
         .unwrap()
-        .insert(ident.clone(), inner.ty());
+        .insert(ident.clone(), inner.clone());
 
     Ok(TypedExpr::Assign(ident, Box::new(inner), Type::Void))
 }
 
+// Postfix operations
+
+fn analyze_func_call(scope_stack: &mut Vec<Scope>, callee: Expr) -> Result<TypedExpr, TypeError> {
+    let callee = analyze_expr(scope_stack, callee)?;
+
+    let callee = if let TypedExpr::Identifier(ident, _) = callee {
+        scope_stack
+            .iter()
+            .rev()
+            .find_map(|scope| scope.get(&ident))
+            .cloned()
+            .ok_or(TypeError {
+                message: format!("Identifier {} not found", ident),
+            })?
+    } else {
+        callee
+    };
+
+    if let TypedExpr::FuncDeclare(exprs, _) = callee {
+        Ok(TypedExpr::FuncCall(exprs, Type::Void))
+    } else {
+        Err(TypeError {
+            message: format!("Cannot call non-function: {:?}", callee.ty()),
+        })
+    }
+}
+
+// Primaries
+
+fn analyze_literal(literal: Literal) -> Result<TypedExpr, TypeError> {
+    Ok(match literal {
+        Literal::Int(i) => TypedExpr::Literal(TypedLiteral::Int(i), Type::Int),
+        Literal::Float(f) => TypedExpr::Literal(TypedLiteral::Float(f), Type::Float),
+        Literal::String(s) => TypedExpr::Literal(TypedLiteral::String(s), Type::String),
+        Literal::Bool(b) => TypedExpr::Literal(TypedLiteral::Bool(b), Type::Bool),
+    })
+}
+
 fn analyze_identifier(scope_stack: &mut Vec<Scope>, ident: String) -> Result<TypedExpr, TypeError> {
-    let ty = scope_stack
+    let exprs = scope_stack
         .iter()
         .rev()
         .find_map(|scope| scope.get(&ident))
@@ -326,14 +360,14 @@ fn analyze_identifier(scope_stack: &mut Vec<Scope>, ident: String) -> Result<Typ
             message: format!("Identifier {} not found", ident),
         })?;
 
-    Ok(TypedExpr::Identifier(ident, ty))
+    Ok(TypedExpr::Identifier(ident, exprs.ty()))
 }
 
-fn analyze_function(
+fn analyze_func_declare(
     scope_stack: &mut Vec<Scope>,
     exprs: Vec<Expr>,
 ) -> Result<TypedExpr, TypeError> {
     let analyzed = analyze_exprs(scope_stack, exprs)?;
 
-    Ok(TypedExpr::Function(analyzed, Type::Function))
+    Ok(TypedExpr::FuncDeclare(analyzed, Type::Function))
 }

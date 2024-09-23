@@ -13,10 +13,13 @@ pub enum Expr {
     Negate(Box<Expr>),
     Assignment(String, Box<Expr>),
 
+    // Postfix operations
+    FuncCall(Box<Expr>),
+
     // Primaries
     Literal(Literal),
     Identifier(String),
-    Function(Vec<Expr>),
+    FuncDeclare(Vec<Expr>),
 }
 
 #[derive(Clone, Debug)]
