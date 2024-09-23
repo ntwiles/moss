@@ -40,6 +40,13 @@ impl ResolvedValue {
             _ => panic!(),
         }
     }
+
+    pub fn unwrap_void(&self) {
+        match self {
+            ResolvedValue::Void => (),
+            _ => panic!(),
+        }
+    }
 }
 
 impl Display for ResolvedValue {
