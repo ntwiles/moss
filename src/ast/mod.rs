@@ -1,7 +1,6 @@
 #[derive(Debug)]
 pub enum Expr {
-    Literal(Literal),
-    Identifier(String),
+    // Binary operations
     Eq(Box<Expr>, Box<Expr>),
     Gt(Box<Expr>, Box<Expr>),
     Lt(Box<Expr>, Box<Expr>),
@@ -10,8 +9,14 @@ pub enum Expr {
     Mult(Box<Expr>, Box<Expr>),
     Div(Box<Expr>, Box<Expr>),
 
+    // Unary operations
     Negate(Box<Expr>),
     Assignment(String, Box<Expr>),
+
+    // Primaries
+    Literal(Literal),
+    Identifier(String),
+    Function(Vec<Expr>),
 }
 
 #[derive(Clone, Debug)]

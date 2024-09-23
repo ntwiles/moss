@@ -8,7 +8,7 @@ use super::errors::type_error::TypeError;
 use ty::Type;
 use typed_expr::TypedExpr;
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum TypedLiteral {
     Int(i32),
     Float(f64),
@@ -18,14 +18,20 @@ pub enum TypedLiteral {
 
 type Scope = HashMap<String, Type>;
 
-// This should maybe have a wrapper analyize_program for initializing scopes.
-pub fn analyze_exprs(exprs: Vec<Expr>) -> Result<Vec<TypedExpr>, TypeError> {
+pub fn analyze_program(exprs: Vec<Expr>) -> Result<Vec<TypedExpr>, TypeError> {
     let mut scope_stack = Vec::<Scope>::new();
     scope_stack.push(HashMap::new());
 
+    analyze_exprs(&mut scope_stack, exprs)
+}
+
+fn analyze_exprs(
+    scope_stack: &mut Vec<Scope>,
+    exprs: Vec<Expr>,
+) -> Result<Vec<TypedExpr>, TypeError> {
     exprs
         .into_iter()
-        .map(|expr| analyze_expr(&mut scope_stack, expr))
+        .map(|expr| analyze_expr(scope_stack, expr))
         .collect()
 }
 
@@ -44,6 +50,7 @@ fn analyze_expr(scope_stack: &mut Vec<Scope>, expr: Expr) -> Result<TypedExpr, T
 
         Expr::Negate(inner) => analyze_negate(scope_stack, *inner),
         Expr::Assignment(ident, expr) => analyze_assign(scope_stack, ident, *expr),
+        Expr::Function(exprs) => analyze_function(scope_stack, exprs),
     }
 }
 
@@ -320,4 +327,13 @@ fn analyze_identifier(scope_stack: &mut Vec<Scope>, ident: String) -> Result<Typ
         })?;
 
     Ok(TypedExpr::Identifier(ident, ty))
+}
+
+fn analyze_function(
+    scope_stack: &mut Vec<Scope>,
+    exprs: Vec<Expr>,
+) -> Result<TypedExpr, TypeError> {
+    let analyzed = analyze_exprs(scope_stack, exprs)?;
+
+    Ok(TypedExpr::Function(analyzed, Type::Function))
 }

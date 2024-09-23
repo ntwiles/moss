@@ -29,7 +29,7 @@ fn main() {
         return;
     }
 
-    let analyzed = analyzer::analyze_exprs(parsed.unwrap());
+    let analyzed = analyzer::analyze_program(parsed.unwrap());
 
     if let Err(error) = analyzed {
         println!("Type Error: {}", error.message);

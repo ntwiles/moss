@@ -30,17 +30,11 @@ pub fn eval_expr(
         // Primaries
         TypedExpr::Literal(literal, _) => eval_literal(value_stack, literal),
         TypedExpr::Identifier(ident, _) => eval_identifier(scope_stack, value_stack, ident),
+        TypedExpr::Function(exprs, _) => eval_function(value_stack, exprs),
     }
 }
 
-pub fn eval_literal(value_stack: &mut Vec<ResolvedValue>, literal: TypedLiteral) {
-    match literal {
-        TypedLiteral::Int(int) => value_stack.push(ResolvedValue::Int(int)),
-        TypedLiteral::Float(float) => value_stack.push(ResolvedValue::Float(float)),
-        TypedLiteral::String(string) => value_stack.push(ResolvedValue::String(string)),
-        TypedLiteral::Bool(boolean) => value_stack.push(ResolvedValue::Bool(boolean)),
-    }
-}
+// Binary operations
 
 pub fn eval_add(value_stack: &mut Vec<ResolvedValue>) {
     apply_binary_op(value_stack, |l, r| match (l, r) {
@@ -101,6 +95,7 @@ pub fn eval_lt(value_stack: &mut Vec<ResolvedValue>) {
     });
 }
 
+// Unary operations
 pub fn eval_negate(value_stack: &mut Vec<ResolvedValue>) {
     let inner = value_stack.pop().unwrap();
 
@@ -122,6 +117,16 @@ pub fn eval_assign(
     value_stack.push(ResolvedValue::Void);
 }
 
+// Primaries
+pub fn eval_literal(value_stack: &mut Vec<ResolvedValue>, literal: TypedLiteral) {
+    match literal {
+        TypedLiteral::Int(int) => value_stack.push(ResolvedValue::Int(int)),
+        TypedLiteral::Float(float) => value_stack.push(ResolvedValue::Float(float)),
+        TypedLiteral::String(string) => value_stack.push(ResolvedValue::String(string)),
+        TypedLiteral::Bool(boolean) => value_stack.push(ResolvedValue::Bool(boolean)),
+    }
+}
+
 pub fn eval_identifier(
     scope_stack: &mut Vec<Scope>,
     value_stack: &mut Vec<ResolvedValue>,
@@ -135,4 +140,8 @@ pub fn eval_identifier(
         .clone();
 
     value_stack.push(value);
+}
+
+pub fn eval_function(value_stack: &mut Vec<ResolvedValue>, exprs: Vec<TypedExpr>) {
+    value_stack.push(ResolvedValue::Function(exprs));
 }

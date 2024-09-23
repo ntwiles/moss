@@ -1,5 +1,7 @@
 use std::fmt::{Display, Formatter, Result};
 
+use crate::analyzer::typed_expr::TypedExpr;
+
 #[derive(Clone, Debug)]
 pub enum ResolvedValue {
     Int(i32),
@@ -7,6 +9,7 @@ pub enum ResolvedValue {
     String(String),
     Bool(bool),
     Void,
+    Function(Vec<TypedExpr>),
 }
 
 impl ResolvedValue {
@@ -47,6 +50,7 @@ impl Display for ResolvedValue {
             ResolvedValue::String(string) => write!(f, "{}", string),
             ResolvedValue::Bool(bool) => write!(f, "{}", bool),
             ResolvedValue::Void => write!(f, "Void"),
+            ResolvedValue::Function(_) => write!(f, "Function"), // TODO: Give a better display
         }
     }
 }

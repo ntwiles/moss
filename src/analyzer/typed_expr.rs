@@ -1,7 +1,7 @@
 use super::{ty::Type, TypedLiteral};
 
 // TODO: For some of these, the type is always clear and maybe we don't need to store it.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum TypedExpr {
     // Binary operations
     Eq(Box<TypedExpr>, Box<TypedExpr>, Type),
@@ -19,6 +19,7 @@ pub enum TypedExpr {
     // Primaries
     Literal(TypedLiteral, Type),
     Identifier(String, Type),
+    Function(Vec<TypedExpr>, Type),
 }
 
 impl TypedExpr {
@@ -35,6 +36,7 @@ impl TypedExpr {
             TypedExpr::Negate(_, ty) => *ty,
             TypedExpr::Assign(_, _, ty) => *ty,
             TypedExpr::Identifier(_, ty) => *ty,
+            TypedExpr::Function(_, ty) => *ty,
         }
     }
 }

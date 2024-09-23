@@ -5,4 +5,5 @@ pub enum Type {
     String,
     Bool,
     Void,
+    Function,
 }

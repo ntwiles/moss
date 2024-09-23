@@ -4,13 +4,16 @@ grammar;
 
 match {
     // delimiters
-    "{", "}", "(", ")", "[", "]", ";", ":", ".", ",",
+    "{", "}", "(", ")", "[", "]", ";", ":", ".", ",", "|",
 
     // declaration
     "let",
 
     // operators
     "=", "==", ">", "<", "+", "-", "*", "/",
+
+    // syntax constructs
+    "=>",
 
     // literals
     "true", "false",
@@ -44,7 +47,6 @@ Expr: Expr = {
 Assignment: Expr = {
     "let" <i:Identifier> "=" <v:Expr> => Expr::Assignment(i, Box::new(v)),
 };
-
 
 Equality: Expr = {
     <l:Equality> "==" <r:Relational> => Expr::Eq(Box::new(l), Box::new(r)),
@@ -83,6 +85,7 @@ PostfixExpression: Expr = {
 Primary: Expr = {
     Literal => Expr::Literal(<>),
     Identifier => Expr::Identifier(<>),
+    Function,
 };
 
 Literal: ast::Literal = {
@@ -91,6 +94,14 @@ Literal: ast::Literal = {
     Str => ast::Literal::String(<>),
     Bool => ast::Literal::Bool(<>),
 }
+
+Identifier: String = {
+    r"[a-zA-Z_][a-zA-Z_0-9]*" => <>.to_string(),
+};
+
+Function: Expr = {
+    "|" "|" "=>" "{" <body:ExprList> "}" => Expr::Function(body),
+};
 
 Bool: bool = {
     "true" => true,
@@ -109,6 +120,3 @@ Str: String = {
     r#""[^"]*""# => <>[1..<>.len()-1].to_string(),  // Remove the first and last characters (the quotes)
 };
 
-Identifier: String = {
-    r"[a-zA-Z_][a-zA-Z_0-9]*" => <>.to_string(),
-};
