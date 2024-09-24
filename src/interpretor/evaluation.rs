@@ -1,14 +1,12 @@
-use std::collections::HashMap;
-
 use crate::analyzer::{typed_expr::TypedExpr, TypedLiteral, TypedStmt};
 
 use super::{
-    apply_binary_op, apply_unary_op, control_op::ControlOp, push_binary_op, push_func_call,
-    push_unary_op, resolved_value::ResolvedValue, Scope,
+    apply_binary_op, apply_unary_op, context::Context, control_op::ControlOp, push_binary_op,
+    push_func_call, push_unary_op, resolved_value::ResolvedValue,
 };
 
-pub fn eval_line(control_stack: &mut Vec<ControlOp>, value_stack: &mut Vec<ResolvedValue>) {
-    let value = value_stack.last().unwrap().clone();
+pub fn eval_line(ctx: &mut Context) {
+    let value = ctx.value_stack.last().unwrap().clone();
 
     if let ResolvedValue::Void = value {
         return;
@@ -19,52 +17,47 @@ pub fn eval_line(control_stack: &mut Vec<ControlOp>, value_stack: &mut Vec<Resol
 
     // TODO: This is a helpful pattern, we'll want to extract it into a function.
 
-    let mut i = control_stack.len();
+    let mut i = ctx.control_stack.len();
     while i > 0 {
         i -= 1;
-        if let ControlOp::ApplyFuncCall = control_stack[i] {
+        if let ControlOp::ApplyFuncCall = ctx.control_stack[i] {
             break;
         }
     }
 
-    control_stack.truncate(i + 1);
+    ctx.control_stack.truncate(i + 1);
 }
 
-pub fn eval_expr(
-    scope_stack: &mut Vec<Scope>,
-    control_stack: &mut Vec<ControlOp>,
-    value_stack: &mut Vec<ResolvedValue>,
-    expr: TypedExpr,
-) {
+pub fn eval_expr(ctx: &mut Context, expr: TypedExpr) {
     match expr {
         // Binary operations
-        TypedExpr::Eq(l, r, _ty) => push_binary_op(control_stack, ControlOp::ApplyEq, l, r),
-        TypedExpr::Gt(l, r, _ty) => push_binary_op(control_stack, ControlOp::ApplyGt, l, r),
-        TypedExpr::Lt(l, r, _ty) => push_binary_op(control_stack, ControlOp::ApplyLt, l, r),
-        TypedExpr::Add(l, r, _ty) => push_binary_op(control_stack, ControlOp::ApplyAdd, l, r),
-        TypedExpr::Sub(l, r, _ty) => push_binary_op(control_stack, ControlOp::ApplySub, l, r),
-        TypedExpr::Mult(l, r, _ty) => push_binary_op(control_stack, ControlOp::ApplyMult, l, r),
-        TypedExpr::Div(l, r, _ty) => push_binary_op(control_stack, ControlOp::ApplyDiv, l, r),
+        TypedExpr::Eq(l, r, _ty) => push_binary_op(ctx, ControlOp::ApplyEq, l, r),
+        TypedExpr::Gt(l, r, _ty) => push_binary_op(ctx, ControlOp::ApplyGt, l, r),
+        TypedExpr::Lt(l, r, _ty) => push_binary_op(ctx, ControlOp::ApplyLt, l, r),
+        TypedExpr::Add(l, r, _ty) => push_binary_op(ctx, ControlOp::ApplyAdd, l, r),
+        TypedExpr::Sub(l, r, _ty) => push_binary_op(ctx, ControlOp::ApplySub, l, r),
+        TypedExpr::Mult(l, r, _ty) => push_binary_op(ctx, ControlOp::ApplyMult, l, r),
+        TypedExpr::Div(l, r, _ty) => push_binary_op(ctx, ControlOp::ApplyDiv, l, r),
 
         // Unary operations
-        TypedExpr::Negate(l, _ty) => push_unary_op(control_stack, ControlOp::ApplyNegate, *l),
-        TypedExpr::Assign(i, v, _ty) => push_unary_op(control_stack, ControlOp::ApplyAssign(i), *v),
+        TypedExpr::Negate(l, _ty) => push_unary_op(ctx, ControlOp::ApplyNegate, *l),
+        TypedExpr::Assign(i, v, _ty) => push_unary_op(ctx, ControlOp::ApplyAssign(i), *v),
 
         // Postfix operations
-        TypedExpr::FuncCall(lines, _ty) => push_func_call(control_stack, lines),
+        TypedExpr::FuncCall(lines, _ty) => push_func_call(ctx, lines),
 
         // Primaries
-        TypedExpr::Literal(literal, _ty) => eval_literal(value_stack, literal),
-        TypedExpr::Identifier(ident, _ty) => eval_identifier(scope_stack, value_stack, ident),
-        TypedExpr::FuncDeclare(lines, _ty) => eval_func_declare(value_stack, lines),
+        TypedExpr::Literal(literal, _ty) => eval_literal(ctx, literal),
+        TypedExpr::Identifier(ident, _ty) => eval_identifier(ctx, ident),
+        TypedExpr::FuncDeclare(lines, _ty) => eval_func_declare(ctx, lines),
     }
 }
 
 // TODO: Let's call these apply instead of eval
 // Binary operations
 
-pub fn eval_add(value_stack: &mut Vec<ResolvedValue>) {
-    apply_binary_op(value_stack, |l, r| match (l, r) {
+pub fn eval_add(ctx: &mut Context) {
+    apply_binary_op(ctx, |l, r| match (l, r) {
         (ResolvedValue::Int(l), ResolvedValue::Int(r)) => ResolvedValue::Int(l + r),
         (ResolvedValue::Float(l), ResolvedValue::Float(r)) => ResolvedValue::Float(l + r),
         (ResolvedValue::String(l), ResolvedValue::String(r)) => ResolvedValue::String(l + &r),
@@ -72,32 +65,32 @@ pub fn eval_add(value_stack: &mut Vec<ResolvedValue>) {
     });
 }
 
-pub fn eval_sub(value_stack: &mut Vec<ResolvedValue>) {
-    apply_binary_op(value_stack, |l, r| match (l, r) {
+pub fn eval_sub(ctx: &mut Context) {
+    apply_binary_op(ctx, |l, r| match (l, r) {
         (ResolvedValue::Int(l), ResolvedValue::Int(r)) => ResolvedValue::Int(l - r),
         (ResolvedValue::Float(l), ResolvedValue::Float(r)) => ResolvedValue::Float(l - r),
         _ => unreachable!(),
     });
 }
 
-pub fn eval_mult(value_stack: &mut Vec<ResolvedValue>) {
-    apply_binary_op(value_stack, |l, r| match (l, r) {
+pub fn eval_mult(ctx: &mut Context) {
+    apply_binary_op(ctx, |l, r| match (l, r) {
         (ResolvedValue::Int(l), ResolvedValue::Int(r)) => ResolvedValue::Int(l * r),
         (ResolvedValue::Float(l), ResolvedValue::Float(r)) => ResolvedValue::Float(l * r),
         _ => unreachable!(),
     });
 }
 
-pub fn eval_div(value_stack: &mut Vec<ResolvedValue>) {
-    apply_binary_op(value_stack, |l, r| match (l, r) {
+pub fn eval_div(ctx: &mut Context) {
+    apply_binary_op(ctx, |l, r| match (l, r) {
         (ResolvedValue::Int(l), ResolvedValue::Int(r)) => ResolvedValue::Int(l / r),
         (ResolvedValue::Float(l), ResolvedValue::Float(r)) => ResolvedValue::Float(l / r),
         _ => unreachable!(),
     });
 }
 
-pub fn eval_eq(value_stack: &mut Vec<ResolvedValue>) {
-    apply_binary_op(value_stack, |l, r| match (l, r) {
+pub fn eval_eq(ctx: &mut Context) {
+    apply_binary_op(ctx, |l, r| match (l, r) {
         (ResolvedValue::Int(l), ResolvedValue::Int(r)) => ResolvedValue::Bool(l == r),
         (ResolvedValue::Float(l), ResolvedValue::Float(r)) => ResolvedValue::Bool(l == r),
         (ResolvedValue::String(l), ResolvedValue::String(r)) => ResolvedValue::Bool(l == r),
@@ -106,16 +99,16 @@ pub fn eval_eq(value_stack: &mut Vec<ResolvedValue>) {
     });
 }
 
-pub fn eval_gt(value_stack: &mut Vec<ResolvedValue>) {
-    apply_binary_op(value_stack, |l, r| match (l, r) {
+pub fn eval_gt(ctx: &mut Context) {
+    apply_binary_op(ctx, |l, r| match (l, r) {
         (ResolvedValue::Int(l), ResolvedValue::Int(r)) => ResolvedValue::Bool(l > r),
         (ResolvedValue::Float(l), ResolvedValue::Float(r)) => ResolvedValue::Bool(l > r),
         _ => unreachable!(),
     });
 }
 
-pub fn eval_lt(value_stack: &mut Vec<ResolvedValue>) {
-    apply_binary_op(value_stack, |l, r| match (l, r) {
+pub fn eval_lt(ctx: &mut Context) {
+    apply_binary_op(ctx, |l, r| match (l, r) {
         (ResolvedValue::Int(l), ResolvedValue::Int(r)) => ResolvedValue::Bool(l < r),
         (ResolvedValue::Float(l), ResolvedValue::Float(r)) => ResolvedValue::Bool(l < r),
         _ => unreachable!(),
@@ -123,21 +116,17 @@ pub fn eval_lt(value_stack: &mut Vec<ResolvedValue>) {
 }
 
 // Unary operations
-pub fn eval_negate(scope_stack: &mut Vec<Scope>, value_stack: &mut Vec<ResolvedValue>) {
-    apply_unary_op(scope_stack, value_stack, |_scope_stack, v| match v {
+pub fn eval_negate(ctx: &mut Context) {
+    apply_unary_op(ctx, |_scope_stack, v| match v {
         ResolvedValue::Int(int) => ResolvedValue::Int(-int),
         ResolvedValue::Float(float) => ResolvedValue::Float(-float),
         _ => unreachable!(),
     });
 }
 
-pub fn eval_assign(
-    value_stack: &mut Vec<ResolvedValue>,
-    scope_stack: &mut Vec<HashMap<String, ResolvedValue>>,
-    ident: String,
-) {
-    apply_unary_op(scope_stack, value_stack, |scope_stack, v| {
-        scope_stack
+pub fn eval_assign(ctx: &mut Context, ident: String) {
+    apply_unary_op(ctx, |ctx, v| {
+        ctx.scope_stack
             .last_mut()
             .unwrap()
             .insert(ident.clone(), v.clone());
@@ -146,35 +135,32 @@ pub fn eval_assign(
 }
 
 // Postfix operations
-pub fn eval_func_call(_value_stack: &mut Vec<ResolvedValue>) {
+pub fn eval_func_call(_ctx: &mut Context) {
     // no-op for now; the function call is already resolved and the result is on the stack
 }
 
 // Primaries
-pub fn eval_literal(value_stack: &mut Vec<ResolvedValue>, literal: TypedLiteral) {
+pub fn eval_literal(ctx: &mut Context, literal: TypedLiteral) {
     match literal {
-        TypedLiteral::Int(int) => value_stack.push(ResolvedValue::Int(int)),
-        TypedLiteral::Float(float) => value_stack.push(ResolvedValue::Float(float)),
-        TypedLiteral::String(string) => value_stack.push(ResolvedValue::String(string)),
-        TypedLiteral::Bool(boolean) => value_stack.push(ResolvedValue::Bool(boolean)),
+        TypedLiteral::Int(int) => ctx.value_stack.push(ResolvedValue::Int(int)),
+        TypedLiteral::Float(float) => ctx.value_stack.push(ResolvedValue::Float(float)),
+        TypedLiteral::String(string) => ctx.value_stack.push(ResolvedValue::String(string)),
+        TypedLiteral::Bool(boolean) => ctx.value_stack.push(ResolvedValue::Bool(boolean)),
     }
 }
 
-pub fn eval_identifier(
-    scope_stack: &mut Vec<Scope>,
-    value_stack: &mut Vec<ResolvedValue>,
-    ident: String,
-) {
-    let value = scope_stack
+pub fn eval_identifier(ctx: &mut Context, ident: String) {
+    let value = ctx
+        .scope_stack
         .iter()
         .rev()
         .find_map(|scope| scope.get(&ident))
         .unwrap()
         .clone();
 
-    value_stack.push(value);
+    ctx.value_stack.push(value);
 }
 
-pub fn eval_func_declare(value_stack: &mut Vec<ResolvedValue>, lines: Vec<TypedStmt>) {
-    value_stack.push(ResolvedValue::Function(lines));
+pub fn eval_func_declare(ctx: &mut Context, lines: Vec<TypedStmt>) {
+    ctx.value_stack.push(ResolvedValue::Function(lines));
 }

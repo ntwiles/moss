@@ -1,3 +1,4 @@
+mod context;
 mod control_op;
 mod evaluation;
 pub mod resolved_value;
@@ -5,6 +6,7 @@ pub mod resolved_value;
 use std::collections::HashMap;
 
 use crate::analyzer::{typed_expr::TypedExpr, TypedStmt};
+use context::Context;
 use control_op::ControlOp;
 use evaluation::{
     eval_add, eval_assign, eval_div, eval_eq, eval_expr, eval_func_call, eval_gt, eval_line,
@@ -15,82 +17,78 @@ use resolved_value::ResolvedValue;
 pub type Scope = HashMap<String, ResolvedValue>;
 
 pub fn interpret_lines(stmts: Vec<TypedStmt>) -> ResolvedValue {
-    let mut control_stack = Vec::new();
-    let mut value_stack = Vec::new();
-    let mut scope_stack = Vec::<Scope>::new();
+    let mut ctx = context::Context {
+        control_stack: Vec::new(),
+        value_stack: Vec::new(),
+        scope_stack: Vec::new(),
+    };
 
-    scope_stack.push(HashMap::new());
+    ctx.scope_stack.push(HashMap::new());
 
     for stmt in stmts.into_iter().rev() {
-        control_stack.push(ControlOp::EvalStmt(stmt));
+        ctx.control_stack.push(ControlOp::EvalStmt(stmt));
     }
 
-    while let Some(current_op) = control_stack.pop() {
+    while let Some(current_op) = ctx.control_stack.pop() {
         match current_op {
-            ControlOp::EvalStmt(stmt) => push_stmt(&mut control_stack, stmt),
-            ControlOp::EvalExpr(e) => {
-                eval_expr(&mut scope_stack, &mut control_stack, &mut value_stack, e)
-            }
-            ControlOp::ApplyStmt => eval_line(&mut control_stack, &mut value_stack),
-            ControlOp::ApplyAdd => eval_add(&mut value_stack),
-            ControlOp::ApplySub => eval_sub(&mut value_stack),
-            ControlOp::ApplyMult => eval_mult(&mut value_stack),
-            ControlOp::ApplyDiv => eval_div(&mut value_stack),
-            ControlOp::ApplyEq => eval_eq(&mut value_stack),
-            ControlOp::ApplyGt => eval_gt(&mut value_stack),
-            ControlOp::ApplyLt => eval_lt(&mut value_stack),
-            ControlOp::ApplyNegate => eval_negate(&mut scope_stack, &mut value_stack),
-            ControlOp::ApplyAssign(ident) => eval_assign(&mut value_stack, &mut scope_stack, ident),
-            ControlOp::ApplyFuncCall => eval_func_call(&mut value_stack),
+            ControlOp::EvalStmt(stmt) => push_stmt(&mut ctx, stmt),
+            ControlOp::EvalExpr(e) => eval_expr(&mut ctx, e),
+            ControlOp::ApplyStmt => eval_line(&mut ctx),
+            ControlOp::ApplyAdd => eval_add(&mut ctx),
+            ControlOp::ApplySub => eval_sub(&mut ctx),
+            ControlOp::ApplyMult => eval_mult(&mut ctx),
+            ControlOp::ApplyDiv => eval_div(&mut ctx),
+            ControlOp::ApplyEq => eval_eq(&mut ctx),
+            ControlOp::ApplyGt => eval_gt(&mut ctx),
+            ControlOp::ApplyLt => eval_lt(&mut ctx),
+            ControlOp::ApplyNegate => eval_negate(&mut ctx),
+            ControlOp::ApplyAssign(ident) => eval_assign(&mut ctx, ident),
+            ControlOp::ApplyFuncCall => eval_func_call(&mut ctx),
         }
     }
 
-    value_stack.pop().unwrap()
+    ctx.value_stack.pop().unwrap()
 }
 
-fn push_stmt(control_stack: &mut Vec<ControlOp>, stmt: TypedStmt) {
-    control_stack.push(ControlOp::ApplyStmt);
-    control_stack.push(ControlOp::EvalExpr(stmt.expr));
+fn push_stmt(ctx: &mut Context, stmt: TypedStmt) {
+    ctx.control_stack.push(ControlOp::ApplyStmt);
+    ctx.control_stack.push(ControlOp::EvalExpr(stmt.expr));
 }
 
-fn push_unary_op(control_stack: &mut Vec<ControlOp>, op: ControlOp, expr: TypedExpr) {
-    control_stack.push(op);
-    control_stack.push(ControlOp::EvalExpr(expr));
+fn push_unary_op(ctx: &mut Context, op: ControlOp, expr: TypedExpr) {
+    ctx.control_stack.push(op);
+    ctx.control_stack.push(ControlOp::EvalExpr(expr));
 }
 
-fn push_binary_op(
-    control_stack: &mut Vec<ControlOp>,
-    op: ControlOp,
-    left: Box<TypedExpr>,
-    right: Box<TypedExpr>,
-) {
-    control_stack.push(op);
-    control_stack.push(ControlOp::EvalExpr(*right));
-    control_stack.push(ControlOp::EvalExpr(*left));
+fn push_binary_op(ctx: &mut Context, op: ControlOp, left: Box<TypedExpr>, right: Box<TypedExpr>) {
+    ctx.control_stack.push(op);
+    ctx.control_stack.push(ControlOp::EvalExpr(*right));
+    ctx.control_stack.push(ControlOp::EvalExpr(*left));
 }
 
-fn push_func_call(control_stack: &mut Vec<ControlOp>, stmts: Vec<TypedStmt>) {
-    control_stack.push(ControlOp::ApplyFuncCall);
+fn push_func_call(ctx: &mut Context, stmts: Vec<TypedStmt>) {
+    ctx.control_stack.push(ControlOp::ApplyFuncCall);
 
     for stmt in stmts.into_iter().rev() {
-        control_stack.push(ControlOp::EvalStmt(stmt));
+        ctx.control_stack.push(ControlOp::EvalStmt(stmt));
     }
 }
 
-fn apply_binary_op<F>(value_stack: &mut Vec<ResolvedValue>, op: F)
+fn apply_binary_op<F>(ctx: &mut Context, op: F)
 where
     F: Fn(ResolvedValue, ResolvedValue) -> ResolvedValue,
 {
-    let right = value_stack.pop().unwrap();
-    let left = value_stack.pop().unwrap();
+    let right = ctx.value_stack.pop().unwrap();
+    let left = ctx.value_stack.pop().unwrap();
 
-    value_stack.push(op(left, right));
+    ctx.value_stack.push(op(left, right));
 }
 
-fn apply_unary_op<F>(scope_stack: &mut Vec<Scope>, value_stack: &mut Vec<ResolvedValue>, op: F)
+fn apply_unary_op<F>(ctx: &mut Context, op: F)
 where
-    F: Fn(&mut Vec<Scope>, ResolvedValue) -> ResolvedValue,
+    F: Fn(&mut Context, ResolvedValue) -> ResolvedValue,
 {
-    let value = value_stack.pop().unwrap();
-    value_stack.push(op(scope_stack, value));
+    let value = ctx.value_stack.pop().unwrap();
+    let result = op(ctx, value);
+    ctx.value_stack.push(result);
 }
