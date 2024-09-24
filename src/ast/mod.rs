@@ -19,7 +19,7 @@ pub enum Expr {
     // Primaries
     Literal(Literal),
     Identifier(String),
-    FuncDeclare(Vec<Stmt>),
+    FuncDeclare(FuncDeclare),
 }
 
 #[derive(Clone, Debug)]
@@ -33,4 +33,10 @@ pub enum Literal {
 #[derive(Debug)]
 pub struct Stmt {
     pub expr: Expr,
+}
+
+#[derive(Debug)]
+pub struct FuncDeclare {
+    pub stmts: Vec<Stmt>,
+    pub is_closure: bool,
 }

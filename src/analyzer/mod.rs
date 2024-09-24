@@ -3,7 +3,7 @@ pub mod typed_expr;
 
 use std::collections::HashMap;
 
-use crate::ast::Stmt;
+use crate::ast::{FuncDeclare, Stmt};
 
 use super::ast::{Expr, Literal};
 use super::errors::type_error::TypeError;
@@ -63,7 +63,7 @@ fn analyze_expr(scope_stack: &mut Vec<Scope>, expr: Expr) -> Result<TypedExpr, T
 
         Expr::Negate(inner) => analyze_negate(scope_stack, *inner),
         Expr::Assignment(ident, expr) => analyze_assign(scope_stack, ident, *expr),
-        Expr::FuncDeclare(stmts) => analyze_func_declare(scope_stack, stmts),
+        Expr::FuncDeclare(func) => analyze_func_declare(scope_stack, func),
         Expr::FuncCall(callee) => analyze_func_call(scope_stack, *callee),
     }
 }
@@ -378,9 +378,9 @@ fn analyze_identifier(scope_stack: &mut Vec<Scope>, ident: String) -> Result<Typ
 
 fn analyze_func_declare(
     scope_stack: &mut Vec<Scope>,
-    stmts: Vec<Stmt>,
+    func: FuncDeclare,
 ) -> Result<TypedExpr, TypeError> {
-    let analyzed = analyze_stmts(scope_stack, stmts)?;
+    let analyzed = analyze_stmts(scope_stack, func.stmts)?;
 
     Ok(TypedExpr::FuncDeclare(analyzed, Type::Function))
 }

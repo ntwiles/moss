@@ -1,4 +1,4 @@
-use crate::ast::{self, Expr, Stmt };
+use crate::ast::{self, Expr, Stmt, FuncDeclare};
 
 grammar;
 
@@ -86,7 +86,7 @@ PostfixExpression: Expr = {
 Primary: Expr = {
     Literal => Expr::Literal(<>),
     Identifier => Expr::Identifier(<>),
-    Function,
+    FuncDeclare,
 };
 
 Literal: ast::Literal = {
@@ -100,8 +100,9 @@ Identifier: String = {
     r"[a-zA-Z_][a-zA-Z_0-9]*" => <>.to_string(),
 };
 
-Function: Expr = {
-    "|" "|" "=>" "{" <body:StmtList> "}" => Expr::FuncDeclare(body),
+FuncDeclare: Expr = {
+    "(" ")" "=>" "{" <stmts:StmtList> "}" => Expr::FuncDeclare(FuncDeclare{ stmts, is_closure: false }),
+    "|" "|" "=>" "{" <stmts:StmtList> "}" => Expr::FuncDeclare(FuncDeclare{ stmts, is_closure: true }),
 };
 
 Bool: bool = {
