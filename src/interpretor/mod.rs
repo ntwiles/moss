@@ -37,7 +37,7 @@ pub fn interpret_exprs(exprs: Vec<TypedExpr>) -> ResolvedValue {
             ControlOp::ApplyEq => eval_eq(&mut value_stack),
             ControlOp::ApplyGt => eval_gt(&mut value_stack),
             ControlOp::ApplyLt => eval_lt(&mut value_stack),
-            ControlOp::ApplyNegate => eval_negate(&mut value_stack),
+            ControlOp::ApplyNegate => eval_negate(&mut scope_stack, &mut value_stack),
             ControlOp::ApplyAssign(ident) => eval_assign(&mut value_stack, &mut scope_stack, ident),
             ControlOp::ApplyFuncCall => eval_func_call(&mut value_stack),
         }
@@ -78,4 +78,12 @@ where
     let left = value_stack.pop().unwrap();
 
     value_stack.push(op(left, right));
+}
+
+fn apply_unary_op<F>(scope_stack: &mut Vec<Scope>, value_stack: &mut Vec<ResolvedValue>, op: F)
+where
+    F: Fn(&mut Vec<Scope>, ResolvedValue) -> ResolvedValue,
+{
+    let value = value_stack.pop().unwrap();
+    value_stack.push(op(scope_stack, value));
 }

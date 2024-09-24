@@ -3,8 +3,8 @@ use std::collections::HashMap;
 use crate::analyzer::{typed_expr::TypedExpr, TypedLiteral};
 
 use super::{
-    apply_binary_op, control_op::ControlOp, push_binary_op, push_func_call, push_unary_op,
-    resolved_value::ResolvedValue, Scope,
+    apply_binary_op, apply_unary_op, control_op::ControlOp, push_binary_op, push_func_call,
+    push_unary_op, resolved_value::ResolvedValue, Scope,
 };
 
 pub fn eval_expr(
@@ -100,10 +100,8 @@ pub fn eval_lt(value_stack: &mut Vec<ResolvedValue>) {
 
 // Unary operations
 // TODO: Create apply_unary_op
-pub fn eval_negate(value_stack: &mut Vec<ResolvedValue>) {
-    let inner = value_stack.pop().unwrap();
-
-    value_stack.push(match inner {
+pub fn eval_negate(scope_stack: &mut Vec<Scope>, value_stack: &mut Vec<ResolvedValue>) {
+    apply_unary_op(scope_stack, value_stack, |_scope_stack, v| match v {
         ResolvedValue::Int(int) => ResolvedValue::Int(-int),
         ResolvedValue::Float(float) => ResolvedValue::Float(-float),
         _ => unreachable!(),
@@ -115,10 +113,13 @@ pub fn eval_assign(
     scope_stack: &mut Vec<HashMap<String, ResolvedValue>>,
     ident: String,
 ) {
-    let value = value_stack.pop().unwrap();
-    scope_stack.last_mut().unwrap().insert(ident, value);
-
-    value_stack.push(ResolvedValue::Void);
+    apply_unary_op(scope_stack, value_stack, |scope_stack, v| {
+        scope_stack
+            .last_mut()
+            .unwrap()
+            .insert(ident.clone(), v.clone());
+        ResolvedValue::Void
+    });
 }
 
 // Postfix operations
