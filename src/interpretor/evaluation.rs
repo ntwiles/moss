@@ -5,7 +5,7 @@ use super::{
     push_func_call, push_unary_op, resolved_value::ResolvedValue,
 };
 
-pub fn eval_line(ctx: &mut Context) {
+pub fn apply_stmt(ctx: &mut Context) {
     let value = ctx.value_stack.last().unwrap().clone();
 
     if let ResolvedValue::Void = value {
@@ -18,6 +18,7 @@ pub fn eval_line(ctx: &mut Context) {
     // TODO: This is a helpful pattern, we'll want to extract it into a function.
 
     let mut i = ctx.control_stack.len();
+
     while i > 0 {
         i -= 1;
         if let ControlOp::ApplyFuncCall = ctx.control_stack[i] {
@@ -53,10 +54,9 @@ pub fn eval_expr(ctx: &mut Context, expr: TypedExpr) {
     }
 }
 
-// TODO: Let's call these apply instead of eval
 // Binary operations
 
-pub fn eval_add(ctx: &mut Context) {
+pub fn apply_add(ctx: &mut Context) {
     apply_binary_op(ctx, |l, r| match (l, r) {
         (ResolvedValue::Int(l), ResolvedValue::Int(r)) => ResolvedValue::Int(l + r),
         (ResolvedValue::Float(l), ResolvedValue::Float(r)) => ResolvedValue::Float(l + r),
@@ -65,7 +65,7 @@ pub fn eval_add(ctx: &mut Context) {
     });
 }
 
-pub fn eval_sub(ctx: &mut Context) {
+pub fn apply_sub(ctx: &mut Context) {
     apply_binary_op(ctx, |l, r| match (l, r) {
         (ResolvedValue::Int(l), ResolvedValue::Int(r)) => ResolvedValue::Int(l - r),
         (ResolvedValue::Float(l), ResolvedValue::Float(r)) => ResolvedValue::Float(l - r),
@@ -73,7 +73,7 @@ pub fn eval_sub(ctx: &mut Context) {
     });
 }
 
-pub fn eval_mult(ctx: &mut Context) {
+pub fn apply_mult(ctx: &mut Context) {
     apply_binary_op(ctx, |l, r| match (l, r) {
         (ResolvedValue::Int(l), ResolvedValue::Int(r)) => ResolvedValue::Int(l * r),
         (ResolvedValue::Float(l), ResolvedValue::Float(r)) => ResolvedValue::Float(l * r),
@@ -81,7 +81,7 @@ pub fn eval_mult(ctx: &mut Context) {
     });
 }
 
-pub fn eval_div(ctx: &mut Context) {
+pub fn apply_div(ctx: &mut Context) {
     apply_binary_op(ctx, |l, r| match (l, r) {
         (ResolvedValue::Int(l), ResolvedValue::Int(r)) => ResolvedValue::Int(l / r),
         (ResolvedValue::Float(l), ResolvedValue::Float(r)) => ResolvedValue::Float(l / r),
@@ -89,7 +89,7 @@ pub fn eval_div(ctx: &mut Context) {
     });
 }
 
-pub fn eval_eq(ctx: &mut Context) {
+pub fn apply_eq(ctx: &mut Context) {
     apply_binary_op(ctx, |l, r| match (l, r) {
         (ResolvedValue::Int(l), ResolvedValue::Int(r)) => ResolvedValue::Bool(l == r),
         (ResolvedValue::Float(l), ResolvedValue::Float(r)) => ResolvedValue::Bool(l == r),
@@ -99,7 +99,7 @@ pub fn eval_eq(ctx: &mut Context) {
     });
 }
 
-pub fn eval_gt(ctx: &mut Context) {
+pub fn apply_gt(ctx: &mut Context) {
     apply_binary_op(ctx, |l, r| match (l, r) {
         (ResolvedValue::Int(l), ResolvedValue::Int(r)) => ResolvedValue::Bool(l > r),
         (ResolvedValue::Float(l), ResolvedValue::Float(r)) => ResolvedValue::Bool(l > r),
@@ -107,7 +107,7 @@ pub fn eval_gt(ctx: &mut Context) {
     });
 }
 
-pub fn eval_lt(ctx: &mut Context) {
+pub fn apply_lt(ctx: &mut Context) {
     apply_binary_op(ctx, |l, r| match (l, r) {
         (ResolvedValue::Int(l), ResolvedValue::Int(r)) => ResolvedValue::Bool(l < r),
         (ResolvedValue::Float(l), ResolvedValue::Float(r)) => ResolvedValue::Bool(l < r),
@@ -116,7 +116,7 @@ pub fn eval_lt(ctx: &mut Context) {
 }
 
 // Unary operations
-pub fn eval_negate(ctx: &mut Context) {
+pub fn apply_negate(ctx: &mut Context) {
     apply_unary_op(ctx, |_scope_stack, v| match v {
         ResolvedValue::Int(int) => ResolvedValue::Int(-int),
         ResolvedValue::Float(float) => ResolvedValue::Float(-float),
@@ -124,7 +124,7 @@ pub fn eval_negate(ctx: &mut Context) {
     });
 }
 
-pub fn eval_assign(ctx: &mut Context, ident: String) {
+pub fn apply_assign(ctx: &mut Context, ident: String) {
     apply_unary_op(ctx, |ctx, v| {
         ctx.scope_stack
             .last_mut()
@@ -135,7 +135,7 @@ pub fn eval_assign(ctx: &mut Context, ident: String) {
 }
 
 // Postfix operations
-pub fn eval_func_call(_ctx: &mut Context) {
+pub fn apply_func_call(_ctx: &mut Context) {
     // no-op for now; the function call is already resolved and the result is on the stack
 }
 

@@ -9,8 +9,8 @@ use crate::analyzer::{typed_expr::TypedExpr, TypedStmt};
 use context::Context;
 use control_op::ControlOp;
 use evaluation::{
-    eval_add, eval_assign, eval_div, eval_eq, eval_expr, eval_func_call, eval_gt, eval_line,
-    eval_lt, eval_mult, eval_negate, eval_sub,
+    apply_add, apply_assign, apply_div, apply_eq, apply_func_call, apply_gt, apply_lt, apply_mult,
+    apply_negate, apply_stmt, apply_sub, eval_expr,
 };
 use resolved_value::ResolvedValue;
 
@@ -33,17 +33,17 @@ pub fn interpret_lines(stmts: Vec<TypedStmt>) -> ResolvedValue {
         match current_op {
             ControlOp::EvalStmt(stmt) => push_stmt(&mut ctx, stmt),
             ControlOp::EvalExpr(e) => eval_expr(&mut ctx, e),
-            ControlOp::ApplyStmt => eval_line(&mut ctx),
-            ControlOp::ApplyAdd => eval_add(&mut ctx),
-            ControlOp::ApplySub => eval_sub(&mut ctx),
-            ControlOp::ApplyMult => eval_mult(&mut ctx),
-            ControlOp::ApplyDiv => eval_div(&mut ctx),
-            ControlOp::ApplyEq => eval_eq(&mut ctx),
-            ControlOp::ApplyGt => eval_gt(&mut ctx),
-            ControlOp::ApplyLt => eval_lt(&mut ctx),
-            ControlOp::ApplyNegate => eval_negate(&mut ctx),
-            ControlOp::ApplyAssign(ident) => eval_assign(&mut ctx, ident),
-            ControlOp::ApplyFuncCall => eval_func_call(&mut ctx),
+            ControlOp::ApplyStmt => apply_stmt(&mut ctx),
+            ControlOp::ApplyAdd => apply_add(&mut ctx),
+            ControlOp::ApplySub => apply_sub(&mut ctx),
+            ControlOp::ApplyMult => apply_mult(&mut ctx),
+            ControlOp::ApplyDiv => apply_div(&mut ctx),
+            ControlOp::ApplyEq => apply_eq(&mut ctx),
+            ControlOp::ApplyGt => apply_gt(&mut ctx),
+            ControlOp::ApplyLt => apply_lt(&mut ctx),
+            ControlOp::ApplyNegate => apply_negate(&mut ctx),
+            ControlOp::ApplyAssign(ident) => apply_assign(&mut ctx, ident),
+            ControlOp::ApplyFuncCall => apply_func_call(&mut ctx),
         }
     }
 
