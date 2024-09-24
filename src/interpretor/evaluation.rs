@@ -99,7 +99,6 @@ pub fn eval_lt(value_stack: &mut Vec<ResolvedValue>) {
 }
 
 // Unary operations
-// TODO: Create apply_unary_op
 pub fn eval_negate(scope_stack: &mut Vec<Scope>, value_stack: &mut Vec<ResolvedValue>) {
     apply_unary_op(scope_stack, value_stack, |_scope_stack, v| match v {
         ResolvedValue::Int(int) => ResolvedValue::Int(-int),
