@@ -30,6 +30,7 @@ pub enum Literal {
     Bool(bool),
 }
 
+// TODO: Rename to Stmt
 #[derive(Debug)]
 pub struct Line {
     pub expr: Expr,

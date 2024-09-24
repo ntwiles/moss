@@ -7,8 +7,8 @@ use std::collections::HashMap;
 use crate::analyzer::{typed_expr::TypedExpr, TypedLine};
 use control_op::ControlOp;
 use evaluation::{
-    eval_add, eval_assign, eval_div, eval_eq, eval_expr, eval_func_call, eval_gt, eval_lt,
-    eval_mult, eval_negate, eval_sub,
+    eval_add, eval_assign, eval_div, eval_eq, eval_expr, eval_func_call, eval_gt, eval_line,
+    eval_lt, eval_mult, eval_negate, eval_sub,
 };
 use resolved_value::ResolvedValue;
 
@@ -22,14 +22,16 @@ pub fn interpret_lines(lines: Vec<TypedLine>) -> ResolvedValue {
     scope_stack.push(HashMap::new());
 
     for line in lines.into_iter().rev() {
-        control_stack.push(ControlOp::EvalExpr(line.expr));
+        control_stack.push(ControlOp::EvalLine(line));
     }
 
     while let Some(current_op) = control_stack.pop() {
         match current_op {
+            ControlOp::EvalLine(l) => push_line(&mut control_stack, l),
             ControlOp::EvalExpr(e) => {
                 eval_expr(&mut scope_stack, &mut control_stack, &mut value_stack, e)
             }
+            ControlOp::ApplyLine => eval_line(&mut control_stack, &mut value_stack),
             ControlOp::ApplyAdd => eval_add(&mut value_stack),
             ControlOp::ApplySub => eval_sub(&mut value_stack),
             ControlOp::ApplyMult => eval_mult(&mut value_stack),
@@ -44,6 +46,11 @@ pub fn interpret_lines(lines: Vec<TypedLine>) -> ResolvedValue {
     }
 
     value_stack.pop().unwrap()
+}
+
+fn push_line(control_stack: &mut Vec<ControlOp>, line: TypedLine) {
+    control_stack.push(ControlOp::ApplyLine);
+    control_stack.push(ControlOp::EvalExpr(line.expr));
 }
 
 fn push_unary_op(control_stack: &mut Vec<ControlOp>, op: ControlOp, expr: TypedExpr) {
@@ -66,7 +73,7 @@ fn push_func_call(control_stack: &mut Vec<ControlOp>, lines: Vec<TypedLine>) {
     control_stack.push(ControlOp::ApplyFuncCall);
 
     for line in lines.into_iter().rev() {
-        control_stack.push(ControlOp::EvalExpr(line.expr));
+        control_stack.push(ControlOp::EvalLine(line));
     }
 }
 

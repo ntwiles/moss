@@ -1,7 +1,9 @@
-use crate::analyzer::typed_expr::TypedExpr;
+use crate::analyzer::{typed_expr::TypedExpr, TypedLine};
 
 #[derive(Clone, Debug)]
 pub enum ControlOp {
+    EvalLine(TypedLine),
+    ApplyLine,
     EvalExpr(TypedExpr),
 
     // Binary operations

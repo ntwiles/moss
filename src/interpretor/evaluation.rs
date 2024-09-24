@@ -7,6 +7,29 @@ use super::{
     push_unary_op, resolved_value::ResolvedValue, Scope,
 };
 
+pub fn eval_line(control_stack: &mut Vec<ControlOp>, value_stack: &mut Vec<ResolvedValue>) {
+    let value = value_stack.last().unwrap().clone();
+
+    if let ResolvedValue::Void = value {
+        return;
+    }
+
+    // We have our first non-void value, so we can return early. Remove everything from the control
+    // stack after the last ApplyFuncCall.
+
+    // TODO: This is a helpful pattern, we'll want to extract it into a function.
+
+    let mut i = control_stack.len();
+    while i > 0 {
+        i -= 1;
+        if let ControlOp::ApplyFuncCall = control_stack[i] {
+            break;
+        }
+    }
+
+    control_stack.truncate(i + 1);
+}
+
 pub fn eval_expr(
     scope_stack: &mut Vec<Scope>,
     control_stack: &mut Vec<ControlOp>,
@@ -37,6 +60,7 @@ pub fn eval_expr(
     }
 }
 
+// TODO: Let's call these apply instead of eval
 // Binary operations
 
 pub fn eval_add(value_stack: &mut Vec<ResolvedValue>) {
