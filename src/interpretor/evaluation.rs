@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::analyzer::{typed_expr::TypedExpr, TypedLiteral};
+use crate::analyzer::{typed_expr::TypedExpr, TypedLine, TypedLiteral};
 
 use super::{
     apply_binary_op, apply_unary_op, control_op::ControlOp, push_binary_op, push_func_call,
@@ -28,7 +28,7 @@ pub fn eval_expr(
         TypedExpr::Assign(i, v, _ty) => push_unary_op(control_stack, ControlOp::ApplyAssign(i), *v),
 
         // Postfix operations
-        TypedExpr::FuncCall(b, _ty) => push_func_call(control_stack, b),
+        TypedExpr::FuncCall(lines, _ty) => push_func_call(control_stack, lines),
 
         // Primaries
         TypedExpr::Literal(literal, _ty) => eval_literal(value_stack, literal),
@@ -151,6 +151,6 @@ pub fn eval_identifier(
     value_stack.push(value);
 }
 
-pub fn eval_func_declare(value_stack: &mut Vec<ResolvedValue>, lines: Vec<TypedExpr>) {
+pub fn eval_func_declare(value_stack: &mut Vec<ResolvedValue>, lines: Vec<TypedLine>) {
     value_stack.push(ResolvedValue::Function(lines));
 }

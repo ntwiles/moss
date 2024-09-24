@@ -1,6 +1,6 @@
 use std::fmt::{Display, Formatter, Result};
 
-use crate::analyzer::typed_expr::TypedExpr;
+use crate::analyzer::TypedLine;
 
 #[derive(Clone, Debug)]
 pub enum ResolvedValue {
@@ -9,7 +9,7 @@ pub enum ResolvedValue {
     String(String),
     Bool(bool),
     Void,
-    Function(Vec<TypedExpr>),
+    Function(Vec<TypedLine>),
 }
 
 impl ResolvedValue {

@@ -4,7 +4,7 @@ pub mod resolved_value;
 
 use std::collections::HashMap;
 
-use crate::analyzer::typed_expr::TypedExpr;
+use crate::analyzer::{typed_expr::TypedExpr, TypedLine};
 use control_op::ControlOp;
 use evaluation::{
     eval_add, eval_assign, eval_div, eval_eq, eval_expr, eval_func_call, eval_gt, eval_lt,
@@ -14,7 +14,7 @@ use resolved_value::ResolvedValue;
 
 pub type Scope = HashMap<String, ResolvedValue>;
 
-pub fn interpret_lines(lines: Vec<TypedExpr>) -> ResolvedValue {
+pub fn interpret_lines(lines: Vec<TypedLine>) -> ResolvedValue {
     let mut control_stack = Vec::new();
     let mut value_stack = Vec::new();
     let mut scope_stack = Vec::<Scope>::new();
@@ -22,7 +22,7 @@ pub fn interpret_lines(lines: Vec<TypedExpr>) -> ResolvedValue {
     scope_stack.push(HashMap::new());
 
     for line in lines.into_iter().rev() {
-        control_stack.push(ControlOp::EvalExpr(line));
+        control_stack.push(ControlOp::EvalExpr(line.expr));
     }
 
     while let Some(current_op) = control_stack.pop() {
@@ -62,11 +62,11 @@ fn push_binary_op(
     control_stack.push(ControlOp::EvalExpr(*left));
 }
 
-fn push_func_call(control_stack: &mut Vec<ControlOp>, lines: Vec<TypedExpr>) {
+fn push_func_call(control_stack: &mut Vec<ControlOp>, lines: Vec<TypedLine>) {
     control_stack.push(ControlOp::ApplyFuncCall);
 
     for line in lines.into_iter().rev() {
-        control_stack.push(ControlOp::EvalExpr(line));
+        control_stack.push(ControlOp::EvalExpr(line.expr));
     }
 }
 

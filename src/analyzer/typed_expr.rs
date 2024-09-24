@@ -1,4 +1,4 @@
-use super::{ty::Type, TypedLiteral};
+use super::{ty::Type, TypedLine, TypedLiteral};
 
 // TODO: For some of these, the type is always clear and maybe we don't need to store it.
 #[derive(Clone, Debug)]
@@ -17,12 +17,12 @@ pub enum TypedExpr {
     Assign(String, Box<TypedExpr>, Type),
 
     // Postfix operations
-    FuncCall(Vec<TypedExpr>, Type),
+    FuncCall(Vec<TypedLine>, Type),
 
     // Primaries
     Literal(TypedLiteral, Type),
     Identifier(String, Type),
-    FuncDeclare(Vec<TypedExpr>, Type),
+    FuncDeclare(Vec<TypedLine>, Type),
 }
 
 impl TypedExpr {

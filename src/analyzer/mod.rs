@@ -18,9 +18,14 @@ pub enum TypedLiteral {
     Bool(bool),
 }
 
+#[derive(Clone, Debug)]
+pub struct TypedLine {
+    pub expr: TypedExpr,
+}
+
 type Scope = HashMap<String, TypedExpr>;
 
-pub fn analyze_program(lines: Vec<Line>) -> Result<Vec<TypedExpr>, TypeError> {
+pub fn analyze_program(lines: Vec<Line>) -> Result<Vec<TypedLine>, TypeError> {
     let mut scope_stack = Vec::<Scope>::new();
     scope_stack.push(HashMap::new());
 
@@ -30,14 +35,18 @@ pub fn analyze_program(lines: Vec<Line>) -> Result<Vec<TypedExpr>, TypeError> {
 fn analyze_lines(
     scope_stack: &mut Vec<Scope>,
     lines: Vec<Line>,
-) -> Result<Vec<TypedExpr>, TypeError> {
+) -> Result<Vec<TypedLine>, TypeError> {
     lines
         .into_iter()
-        .map(|line| analyze_expr(scope_stack, line.expr))
+        .map(|line| analyze_line(scope_stack, line))
         .collect()
 }
 
-// Binary operations
+fn analyze_line(scope_stack: &mut Vec<Scope>, line: Line) -> Result<TypedLine, TypeError> {
+    let expr = analyze_expr(scope_stack, line.expr)?;
+
+    Ok(TypedLine { expr })
+}
 
 fn analyze_expr(scope_stack: &mut Vec<Scope>, expr: Expr) -> Result<TypedExpr, TypeError> {
     match expr {
@@ -58,6 +67,8 @@ fn analyze_expr(scope_stack: &mut Vec<Scope>, expr: Expr) -> Result<TypedExpr, T
         Expr::FuncCall(callee) => analyze_func_call(scope_stack, *callee),
     }
 }
+
+// Binary operations
 
 fn analyze_eq(
     scope_stack: &mut Vec<Scope>,
