@@ -14,24 +14,24 @@ use resolved_value::ResolvedValue;
 
 pub type Scope = HashMap<String, ResolvedValue>;
 
-pub fn interpret_lines(lines: Vec<TypedStmt>) -> ResolvedValue {
+pub fn interpret_lines(stmts: Vec<TypedStmt>) -> ResolvedValue {
     let mut control_stack = Vec::new();
     let mut value_stack = Vec::new();
     let mut scope_stack = Vec::<Scope>::new();
 
     scope_stack.push(HashMap::new());
 
-    for line in lines.into_iter().rev() {
-        control_stack.push(ControlOp::EvalLine(line));
+    for stmt in stmts.into_iter().rev() {
+        control_stack.push(ControlOp::EvalStmt(stmt));
     }
 
     while let Some(current_op) = control_stack.pop() {
         match current_op {
-            ControlOp::EvalLine(l) => push_line(&mut control_stack, l),
+            ControlOp::EvalStmt(stmt) => push_stmt(&mut control_stack, stmt),
             ControlOp::EvalExpr(e) => {
                 eval_expr(&mut scope_stack, &mut control_stack, &mut value_stack, e)
             }
-            ControlOp::ApplyLine => eval_line(&mut control_stack, &mut value_stack),
+            ControlOp::ApplyStmt => eval_line(&mut control_stack, &mut value_stack),
             ControlOp::ApplyAdd => eval_add(&mut value_stack),
             ControlOp::ApplySub => eval_sub(&mut value_stack),
             ControlOp::ApplyMult => eval_mult(&mut value_stack),
@@ -48,9 +48,9 @@ pub fn interpret_lines(lines: Vec<TypedStmt>) -> ResolvedValue {
     value_stack.pop().unwrap()
 }
 
-fn push_line(control_stack: &mut Vec<ControlOp>, line: TypedStmt) {
-    control_stack.push(ControlOp::ApplyLine);
-    control_stack.push(ControlOp::EvalExpr(line.expr));
+fn push_stmt(control_stack: &mut Vec<ControlOp>, stmt: TypedStmt) {
+    control_stack.push(ControlOp::ApplyStmt);
+    control_stack.push(ControlOp::EvalExpr(stmt.expr));
 }
 
 fn push_unary_op(control_stack: &mut Vec<ControlOp>, op: ControlOp, expr: TypedExpr) {
@@ -69,11 +69,11 @@ fn push_binary_op(
     control_stack.push(ControlOp::EvalExpr(*left));
 }
 
-fn push_func_call(control_stack: &mut Vec<ControlOp>, lines: Vec<TypedStmt>) {
+fn push_func_call(control_stack: &mut Vec<ControlOp>, stmts: Vec<TypedStmt>) {
     control_stack.push(ControlOp::ApplyFuncCall);
 
-    for line in lines.into_iter().rev() {
-        control_stack.push(ControlOp::EvalLine(line));
+    for stmt in stmts.into_iter().rev() {
+        control_stack.push(ControlOp::EvalStmt(stmt));
     }
 }
 
