@@ -19,7 +19,7 @@ pub enum Expr {
     // Primaries
     Literal(Literal),
     Identifier(String),
-    FuncDeclare(Vec<Line>),
+    FuncDeclare(Vec<Stmt>),
 }
 
 #[derive(Clone, Debug)]
@@ -30,8 +30,7 @@ pub enum Literal {
     Bool(bool),
 }
 
-// TODO: Rename to Stmt
 #[derive(Debug)]
-pub struct Line {
+pub struct Stmt {
     pub expr: Expr,
 }

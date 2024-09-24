@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::analyzer::{typed_expr::TypedExpr, TypedLine, TypedLiteral};
+use crate::analyzer::{typed_expr::TypedExpr, TypedLiteral, TypedStmt};
 
 use super::{
     apply_binary_op, apply_unary_op, control_op::ControlOp, push_binary_op, push_func_call,
@@ -175,6 +175,6 @@ pub fn eval_identifier(
     value_stack.push(value);
 }
 
-pub fn eval_func_declare(value_stack: &mut Vec<ResolvedValue>, lines: Vec<TypedLine>) {
+pub fn eval_func_declare(value_stack: &mut Vec<ResolvedValue>, lines: Vec<TypedStmt>) {
     value_stack.push(ResolvedValue::Function(lines));
 }

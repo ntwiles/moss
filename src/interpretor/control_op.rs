@@ -1,8 +1,8 @@
-use crate::analyzer::{typed_expr::TypedExpr, TypedLine};
+use crate::analyzer::{typed_expr::TypedExpr, TypedStmt};
 
 #[derive(Clone, Debug)]
 pub enum ControlOp {
-    EvalLine(TypedLine),
+    EvalLine(TypedStmt),
     ApplyLine,
     EvalExpr(TypedExpr),
 

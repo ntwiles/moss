@@ -3,7 +3,7 @@ pub mod typed_expr;
 
 use std::collections::HashMap;
 
-use crate::ast::Line;
+use crate::ast::Stmt;
 
 use super::ast::{Expr, Literal};
 use super::errors::type_error::TypeError;
@@ -19,33 +19,33 @@ pub enum TypedLiteral {
 }
 
 #[derive(Clone, Debug)]
-pub struct TypedLine {
+pub struct TypedStmt {
     pub expr: TypedExpr,
 }
 
 type Scope = HashMap<String, TypedExpr>;
 
-pub fn analyze_program(lines: Vec<Line>) -> Result<Vec<TypedLine>, TypeError> {
+pub fn analyze_program(stmts: Vec<Stmt>) -> Result<Vec<TypedStmt>, TypeError> {
     let mut scope_stack = Vec::<Scope>::new();
     scope_stack.push(HashMap::new());
 
-    analyze_lines(&mut scope_stack, lines)
+    analyze_stmts(&mut scope_stack, stmts)
 }
 
-fn analyze_lines(
+fn analyze_stmts(
     scope_stack: &mut Vec<Scope>,
-    lines: Vec<Line>,
-) -> Result<Vec<TypedLine>, TypeError> {
-    lines
+    stmts: Vec<Stmt>,
+) -> Result<Vec<TypedStmt>, TypeError> {
+    stmts
         .into_iter()
-        .map(|line| analyze_line(scope_stack, line))
+        .map(|stmt| analyze_stmt(scope_stack, stmt))
         .collect()
 }
 
-fn analyze_line(scope_stack: &mut Vec<Scope>, line: Line) -> Result<TypedLine, TypeError> {
-    let expr = analyze_expr(scope_stack, line.expr)?;
+fn analyze_stmt(scope_stack: &mut Vec<Scope>, stmt: Stmt) -> Result<TypedStmt, TypeError> {
+    let expr = analyze_expr(scope_stack, stmt.expr)?;
 
-    Ok(TypedLine { expr })
+    Ok(TypedStmt { expr })
 }
 
 fn analyze_expr(scope_stack: &mut Vec<Scope>, expr: Expr) -> Result<TypedExpr, TypeError> {
@@ -63,7 +63,7 @@ fn analyze_expr(scope_stack: &mut Vec<Scope>, expr: Expr) -> Result<TypedExpr, T
 
         Expr::Negate(inner) => analyze_negate(scope_stack, *inner),
         Expr::Assignment(ident, expr) => analyze_assign(scope_stack, ident, *expr),
-        Expr::FuncDeclare(lines) => analyze_func_declare(scope_stack, lines),
+        Expr::FuncDeclare(stmts) => analyze_func_declare(scope_stack, stmts),
         Expr::FuncCall(callee) => analyze_func_call(scope_stack, *callee),
     }
 }
@@ -378,9 +378,9 @@ fn analyze_identifier(scope_stack: &mut Vec<Scope>, ident: String) -> Result<Typ
 
 fn analyze_func_declare(
     scope_stack: &mut Vec<Scope>,
-    lines: Vec<Line>,
+    stmts: Vec<Stmt>,
 ) -> Result<TypedExpr, TypeError> {
-    let analyzed = analyze_lines(scope_stack, lines)?;
+    let analyzed = analyze_stmts(scope_stack, stmts)?;
 
     Ok(TypedExpr::FuncDeclare(analyzed, Type::Function))
 }
