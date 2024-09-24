@@ -63,12 +63,11 @@ fn push_binary_op(
 }
 
 fn push_func_call(control_stack: &mut Vec<ControlOp>, exprs: Vec<TypedExpr>) {
-    println!("Pushing func call");
+    control_stack.push(ControlOp::ApplyFuncCall);
+
     for expr in exprs.into_iter().rev() {
         control_stack.push(ControlOp::EvalExpr(expr));
     }
-
-    control_stack.push(ControlOp::ApplyFuncCall);
 }
 
 fn apply_binary_op<F>(value_stack: &mut Vec<ResolvedValue>, op: F)

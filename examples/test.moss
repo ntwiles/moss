@@ -1,6 +1,5 @@
 let test = || => {
-    let foo = "hello"; 
-    foo + " world";
+    1 + 2;
 };
 
 test();

@@ -1,5 +1,6 @@
 use crate::analyzer::typed_expr::TypedExpr;
 
+#[derive(Clone, Debug)]
 pub enum ControlOp {
     EvalExpr(TypedExpr),
 

@@ -122,10 +122,8 @@ pub fn eval_assign(
 }
 
 // Postfix operations
-pub fn eval_func_call(value_stack: &mut Vec<ResolvedValue>) {
-    let return_value = value_stack.pop().unwrap();
-
-    println!("Return value: {:?}", return_value);
+pub fn eval_func_call(_value_stack: &mut Vec<ResolvedValue>) {
+    // no-op for now; the function call is already resolved and the result is on the stack
 }
 
 // Primaries
