@@ -1,4 +1,4 @@
-use crate::ast::{self, Expr};
+use crate::ast::{self, Expr, Line };
 
 grammar;
 
@@ -26,17 +26,17 @@ match {
 
 }
 
-pub Program: Vec<Expr> = {
-    <exprs:ExprList> => exprs
+pub Program: Vec<Line> = {
+    <exprs:LineList> => exprs
 };
 
-ExprList: Vec<Expr> = {
-    <first:Expr> ";" <rest:ExprList> => {
-        let mut exprs = vec![first];
-        exprs.extend(rest);
-        exprs
+LineList: Vec<Line> = {
+    <first:Expr> ";" <rest:LineList> => {
+        let mut lines = vec![Line { expr: first }];
+        lines.extend(rest);
+        lines
     },
-    <expr:Expr> ";" => vec![expr],
+    <expr:Expr> ";" => vec![Line { expr }],
 };
 
 Expr: Expr = {
@@ -101,7 +101,7 @@ Identifier: String = {
 };
 
 Function: Expr = {
-    "|" "|" "=>" "{" <body:ExprList> "}" => Expr::FuncDeclare(body),
+    "|" "|" "=>" "{" <body:LineList> "}" => Expr::FuncDeclare(body),
 };
 
 Bool: bool = {

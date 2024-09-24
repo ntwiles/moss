@@ -3,6 +3,8 @@ pub mod typed_expr;
 
 use std::collections::HashMap;
 
+use crate::ast::Line;
+
 use super::ast::{Expr, Literal};
 use super::errors::type_error::TypeError;
 use ty::Type;
@@ -18,7 +20,7 @@ pub enum TypedLiteral {
 
 type Scope = HashMap<String, TypedExpr>;
 
-pub fn analyze_program(lines: Vec<Expr>) -> Result<Vec<TypedExpr>, TypeError> {
+pub fn analyze_program(lines: Vec<Line>) -> Result<Vec<TypedExpr>, TypeError> {
     let mut scope_stack = Vec::<Scope>::new();
     scope_stack.push(HashMap::new());
 
@@ -27,11 +29,11 @@ pub fn analyze_program(lines: Vec<Expr>) -> Result<Vec<TypedExpr>, TypeError> {
 
 fn analyze_lines(
     scope_stack: &mut Vec<Scope>,
-    lines: Vec<Expr>,
+    lines: Vec<Line>,
 ) -> Result<Vec<TypedExpr>, TypeError> {
     lines
         .into_iter()
-        .map(|expr| analyze_expr(scope_stack, expr))
+        .map(|line| analyze_expr(scope_stack, line.expr))
         .collect()
 }
 
@@ -365,7 +367,7 @@ fn analyze_identifier(scope_stack: &mut Vec<Scope>, ident: String) -> Result<Typ
 
 fn analyze_func_declare(
     scope_stack: &mut Vec<Scope>,
-    lines: Vec<Expr>,
+    lines: Vec<Line>,
 ) -> Result<TypedExpr, TypeError> {
     let analyzed = analyze_lines(scope_stack, lines)?;
 

@@ -19,7 +19,7 @@ pub enum Expr {
     // Primaries
     Literal(Literal),
     Identifier(String),
-    FuncDeclare(Vec<Expr>),
+    FuncDeclare(Vec<Line>),
 }
 
 #[derive(Clone, Debug)]
@@ -28,4 +28,9 @@ pub enum Literal {
     Float(f64),
     String(String),
     Bool(bool),
+}
+
+#[derive(Debug)]
+pub struct Line {
+    pub expr: Expr,
 }
