@@ -18,18 +18,18 @@ pub enum TypedLiteral {
 
 type Scope = HashMap<String, TypedExpr>;
 
-pub fn analyze_program(exprs: Vec<Expr>) -> Result<Vec<TypedExpr>, TypeError> {
+pub fn analyze_program(lines: Vec<Expr>) -> Result<Vec<TypedExpr>, TypeError> {
     let mut scope_stack = Vec::<Scope>::new();
     scope_stack.push(HashMap::new());
 
-    analyze_exprs(&mut scope_stack, exprs)
+    analyze_lines(&mut scope_stack, lines)
 }
 
-fn analyze_exprs(
+fn analyze_lines(
     scope_stack: &mut Vec<Scope>,
-    exprs: Vec<Expr>,
+    lines: Vec<Expr>,
 ) -> Result<Vec<TypedExpr>, TypeError> {
-    exprs
+    lines
         .into_iter()
         .map(|expr| analyze_expr(scope_stack, expr))
         .collect()
@@ -52,7 +52,7 @@ fn analyze_expr(scope_stack: &mut Vec<Scope>, expr: Expr) -> Result<TypedExpr, T
 
         Expr::Negate(inner) => analyze_negate(scope_stack, *inner),
         Expr::Assignment(ident, expr) => analyze_assign(scope_stack, ident, *expr),
-        Expr::FuncDeclare(exprs) => analyze_func_declare(scope_stack, exprs),
+        Expr::FuncDeclare(lines) => analyze_func_declare(scope_stack, lines),
         Expr::FuncCall(callee) => analyze_func_call(scope_stack, *callee),
     }
 }
@@ -330,8 +330,8 @@ fn analyze_func_call(scope_stack: &mut Vec<Scope>, callee: Expr) -> Result<Typed
         callee
     };
 
-    if let TypedExpr::FuncDeclare(exprs, _) = callee {
-        Ok(TypedExpr::FuncCall(exprs, Type::Void))
+    if let TypedExpr::FuncDeclare(lines, _) = callee {
+        Ok(TypedExpr::FuncCall(lines, Type::Void))
     } else {
         Err(TypeError {
             message: format!("Cannot call non-function: {:?}", callee.ty()),
@@ -351,7 +351,7 @@ fn analyze_literal(literal: Literal) -> Result<TypedExpr, TypeError> {
 }
 
 fn analyze_identifier(scope_stack: &mut Vec<Scope>, ident: String) -> Result<TypedExpr, TypeError> {
-    let exprs = scope_stack
+    let expr = scope_stack
         .iter()
         .rev()
         .find_map(|scope| scope.get(&ident))
@@ -360,14 +360,14 @@ fn analyze_identifier(scope_stack: &mut Vec<Scope>, ident: String) -> Result<Typ
             message: format!("Identifier {} not found", ident),
         })?;
 
-    Ok(TypedExpr::Identifier(ident, exprs.ty()))
+    Ok(TypedExpr::Identifier(ident, expr.ty()))
 }
 
 fn analyze_func_declare(
     scope_stack: &mut Vec<Scope>,
-    exprs: Vec<Expr>,
+    lines: Vec<Expr>,
 ) -> Result<TypedExpr, TypeError> {
-    let analyzed = analyze_exprs(scope_stack, exprs)?;
+    let analyzed = analyze_lines(scope_stack, lines)?;
 
     Ok(TypedExpr::FuncDeclare(analyzed, Type::Function))
 }

@@ -14,15 +14,15 @@ use resolved_value::ResolvedValue;
 
 pub type Scope = HashMap<String, ResolvedValue>;
 
-pub fn interpret_exprs(exprs: Vec<TypedExpr>) -> ResolvedValue {
+pub fn interpret_lines(lines: Vec<TypedExpr>) -> ResolvedValue {
     let mut control_stack = Vec::new();
     let mut value_stack = Vec::new();
     let mut scope_stack = Vec::<Scope>::new();
 
     scope_stack.push(HashMap::new());
 
-    for expr in exprs.into_iter().rev() {
-        control_stack.push(ControlOp::EvalExpr(expr));
+    for line in lines.into_iter().rev() {
+        control_stack.push(ControlOp::EvalExpr(line));
     }
 
     while let Some(current_op) = control_stack.pop() {
@@ -62,11 +62,11 @@ fn push_binary_op(
     control_stack.push(ControlOp::EvalExpr(*left));
 }
 
-fn push_func_call(control_stack: &mut Vec<ControlOp>, exprs: Vec<TypedExpr>) {
+fn push_func_call(control_stack: &mut Vec<ControlOp>, lines: Vec<TypedExpr>) {
     control_stack.push(ControlOp::ApplyFuncCall);
 
-    for expr in exprs.into_iter().rev() {
-        control_stack.push(ControlOp::EvalExpr(expr));
+    for line in lines.into_iter().rev() {
+        control_stack.push(ControlOp::EvalExpr(line));
     }
 }
 

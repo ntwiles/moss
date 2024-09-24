@@ -33,7 +33,7 @@ pub fn eval_expr(
         // Primaries
         TypedExpr::Literal(literal, _ty) => eval_literal(value_stack, literal),
         TypedExpr::Identifier(ident, _ty) => eval_identifier(scope_stack, value_stack, ident),
-        TypedExpr::FuncDeclare(exprs, _ty) => eval_func_declare(value_stack, exprs),
+        TypedExpr::FuncDeclare(lines, _ty) => eval_func_declare(value_stack, lines),
     }
 }
 
@@ -151,6 +151,6 @@ pub fn eval_identifier(
     value_stack.push(value);
 }
 
-pub fn eval_func_declare(value_stack: &mut Vec<ResolvedValue>, exprs: Vec<TypedExpr>) {
-    value_stack.push(ResolvedValue::Function(exprs));
+pub fn eval_func_declare(value_stack: &mut Vec<ResolvedValue>, lines: Vec<TypedExpr>) {
+    value_stack.push(ResolvedValue::Function(lines));
 }

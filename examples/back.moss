@@ -1,6 +1,0 @@
-let test = || => {
-    let foo = "hello"; 
-    foo + " world";
-};
-
-test();
