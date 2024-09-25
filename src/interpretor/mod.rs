@@ -2,7 +2,6 @@ mod context;
 mod control_op;
 mod evaluation;
 pub mod resolved_value;
-mod scope_stack;
 
 use context::Context;
 use control_op::ControlOp;
@@ -11,11 +10,11 @@ use evaluation::{
     apply_mult, apply_negate, apply_non_closure_func_call, apply_stmt, apply_sub, eval_expr,
 };
 use resolved_value::ResolvedValue;
-use scope_stack::ScopeStack;
 
 use crate::{
     analyzer::typed_ast::{typed_expr::TypedExpr, TypedFunc, TypedStmt},
     errors::runtime_error::RuntimeError,
+    scope_stack::ScopeStack,
 };
 
 pub fn interpret_lines(stmts: Vec<TypedStmt>) -> Result<ResolvedValue, RuntimeError> {

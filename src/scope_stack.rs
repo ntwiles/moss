@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use super::resolved_value::ResolvedValue;
+use crate::interpretor::resolved_value::ResolvedValue;
 
 pub type Scope = HashMap<String, ResolvedValue>;
 
@@ -36,13 +36,14 @@ impl ScopeStack {
         }
     }
 
-    pub fn lookup(&self, name: &str) -> Option<&ResolvedValue> {
+    pub fn lookup(&self, name: &str) -> &ResolvedValue {
         for scope in self.current.iter().rev() {
             if let Some(value) = scope.get(name) {
-                return Some(value);
+                return value;
             }
         }
-        None
+
+        unreachable!()
     }
 
     pub fn insert(&mut self, name: String, value: ResolvedValue) {

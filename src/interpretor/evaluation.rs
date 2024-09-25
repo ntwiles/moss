@@ -154,13 +154,7 @@ pub fn eval_literal(ctx: &mut Context, literal: TypedLiteral) {
 
 pub fn eval_identifier(ctx: &mut Context, ident: String) {
     let value = ctx.scope_stack.lookup(&ident);
-
-    if let Some(value) = value {
-        ctx.value_stack.push(value.clone());
-        return;
-    } else {
-        panic!("Identifier not found: {}", ident);
-    }
+    ctx.value_stack.push(value.clone());
 }
 
 pub fn eval_func_declare(ctx: &mut Context, func: TypedFunc) {
