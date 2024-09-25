@@ -25,14 +25,11 @@ impl ScopeStack {
         self.current.pop();
     }
 
-    // Create a new isolated scope stack for non-closures
     pub fn create_new_stack(&mut self) {
-        // Store the current stack in `previous` before creating a new one
         self.previous = Some(std::mem::take(&mut self.current));
         self.current = vec![Scope::new()]; // New isolated scope stack
     }
 
-    // Restore the previous scope stack after a non-closure function call
     pub fn restore_previous_stack(&mut self) {
         if let Some(prev) = self.previous.take() {
             self.current = prev;
