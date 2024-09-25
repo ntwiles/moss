@@ -16,7 +16,6 @@ fn search_parent_scope() {
     assert_eq!(result.unwrap_int(), 7);
 }
 
-// TODO: Handle this once these cause runtime errors.
 #[test]
 fn search_parent_scope_non_closure_type_error() {
     let code = r#"
