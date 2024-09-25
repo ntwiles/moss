@@ -17,31 +17,28 @@ fn search_parent_scope() {
 }
 
 // TODO: Handle this once these cause runtime errors.
-// #[test]
-// fn search_parent_scope_non_closure_type_error() {
-//     let code = r#"
-//         let foo = 2 + 5;
-//         let bar = () => { foo; };
-//         bar();
-//     "#;
+#[test]
+fn search_parent_scope_non_closure_type_error() {
+    let code = r#"
+        let foo = 2 + 5;
+        let bar = () => { foo; };
+        bar();
+    "#;
 
-//     let parsed = ProgramParser::new().parse(code).unwrap();
+    let parsed = ProgramParser::new().parse(code).unwrap();
 
-//     analyzer::analyze_program(parsed).expect_err(
-//         "TODO: This should be a TypeError as the () => {} syntax should not create a closure.",
-//     );
-// }
+    analyzer::analyze_program(parsed).expect_err("() => {} syntax should not create a closure.");
+}
 
-// #[test]
-// fn search_child_scope_error_type_error() {
-//     let code = r#"
-//         let foo = () => { let bar = 2 + 5; };
-//         foo();
-//         bar;
-//     "#;
+#[test]
+fn search_child_scope_error_type_error() {
+    let code = r#"
+        let foo = () => { let bar = 2 + 5; };
+        foo();
+        bar;
+    "#;
 
-//     let parsed = ProgramParser::new().parse(code).unwrap();
+    let parsed = ProgramParser::new().parse(code).unwrap();
 
-//     analyzer::analyze_program(parsed)
-//         .expect_err("TODO: This should be a TypeError as bar is not in scope.");
-// }
+    analyzer::analyze_program(parsed).expect_err("bar is not in scope.");
+}

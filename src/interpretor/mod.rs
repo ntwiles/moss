@@ -31,7 +31,7 @@ pub fn interpret_lines(stmts: Vec<TypedStmt>) -> Result<ResolvedValue, RuntimeEr
     while let Some(current_op) = ctx.control_stack.pop() {
         match current_op {
             ControlOp::EvalStmt(stmt) => push_stmt(&mut ctx, stmt),
-            ControlOp::EvalExpr(e) => eval_expr(&mut ctx, e),
+            ControlOp::EvalExpr(e) => eval_expr(&mut ctx, e)?,
             ControlOp::ApplyStmt => apply_stmt(&mut ctx),
             ControlOp::ApplyAdd => apply_add(&mut ctx),
             ControlOp::ApplySub => apply_sub(&mut ctx),

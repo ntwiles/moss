@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use crate::errors::Error;
+
 type Scope<T> = HashMap<String, T>;
 
 pub struct ScopeStack<T> {
@@ -34,14 +36,14 @@ impl<T> ScopeStack<T> {
         }
     }
 
-    pub fn lookup(&self, name: &str) -> &T {
+    pub fn lookup<E: Error>(&self, name: &str) -> Result<&T, E> {
         for scope in self.current.iter().rev() {
             if let Some(value) = scope.get(name) {
-                return value;
+                return Ok(value);
             }
         }
 
-        unreachable!()
+        Err(E::new(format!("Variable '{}' not found", name)))
     }
 
     pub fn insert(&mut self, name: String, value: T) {

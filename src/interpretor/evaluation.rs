@@ -1,4 +1,7 @@
-use crate::analyzer::typed_ast::{typed_expr::TypedExpr, TypedFunc, TypedLiteral};
+use crate::{
+    analyzer::typed_ast::{typed_expr::TypedExpr, TypedFunc, TypedLiteral},
+    errors::runtime_error::RuntimeError,
+};
 
 use super::{
     apply_binary_op, apply_unary_op, context::Context, control_op::ControlOp, push_binary_op,
@@ -31,7 +34,7 @@ pub fn apply_stmt(ctx: &mut Context) {
     ctx.control_stack.truncate(i + 1);
 }
 
-pub fn eval_expr(ctx: &mut Context, expr: TypedExpr) {
+pub fn eval_expr(ctx: &mut Context, expr: TypedExpr) -> Result<(), RuntimeError> {
     match expr {
         // Binary operations
         TypedExpr::Eq(l, r, _ty) => push_binary_op(ctx, ControlOp::ApplyEq, l, r),
@@ -51,9 +54,11 @@ pub fn eval_expr(ctx: &mut Context, expr: TypedExpr) {
 
         // Primaries
         TypedExpr::Literal(literal, _ty) => eval_literal(ctx, literal),
-        TypedExpr::Identifier(ident, _ty) => eval_identifier(ctx, ident),
+        TypedExpr::Identifier(ident, _ty) => eval_identifier(ctx, ident)?,
         TypedExpr::FuncDeclare(func, _ty) => eval_func_declare(ctx, func),
-    }
+    };
+
+    Ok(())
 }
 
 // Binary operations
@@ -152,9 +157,11 @@ pub fn eval_literal(ctx: &mut Context, literal: TypedLiteral) {
     }
 }
 
-pub fn eval_identifier(ctx: &mut Context, ident: String) {
-    let value = ctx.scope_stack.lookup(&ident);
+pub fn eval_identifier(ctx: &mut Context, ident: String) -> Result<(), RuntimeError> {
+    let value = ctx.scope_stack.lookup(&ident)?;
     ctx.value_stack.push(value.clone());
+
+    Ok(())
 }
 
 pub fn eval_func_declare(ctx: &mut Context, func: TypedFunc) {

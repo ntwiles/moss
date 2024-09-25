@@ -1,9 +1,8 @@
 pub mod ty;
 pub mod typed_ast;
 
-use std::collections::HashMap;
-
 use crate::ast::{FuncDeclare, Stmt};
+use crate::scope_stack::ScopeStack;
 
 use super::ast::{Expr, Literal};
 use super::errors::type_error::TypeError;
@@ -11,17 +10,14 @@ use ty::Type;
 use typed_ast::typed_expr::TypedExpr;
 use typed_ast::{TypedFunc, TypedLiteral, TypedStmt};
 
-type Scope = HashMap<String, TypedExpr>;
-
 pub fn analyze_program(stmts: Vec<Stmt>) -> Result<Vec<TypedStmt>, TypeError> {
-    let mut scope_stack = Vec::<Scope>::new();
-    scope_stack.push(HashMap::new());
+    let mut scope_stack = ScopeStack::<TypedExpr>::new();
 
     analyze_stmts(&mut scope_stack, stmts)
 }
 
 fn analyze_stmts(
-    scope_stack: &mut Vec<Scope>,
+    scope_stack: &mut ScopeStack<TypedExpr>,
     stmts: Vec<Stmt>,
 ) -> Result<Vec<TypedStmt>, TypeError> {
     stmts
@@ -30,13 +26,19 @@ fn analyze_stmts(
         .collect()
 }
 
-fn analyze_stmt(scope_stack: &mut Vec<Scope>, stmt: Stmt) -> Result<TypedStmt, TypeError> {
+fn analyze_stmt(
+    scope_stack: &mut ScopeStack<TypedExpr>,
+    stmt: Stmt,
+) -> Result<TypedStmt, TypeError> {
     let expr = analyze_expr(scope_stack, stmt.expr)?;
 
     Ok(TypedStmt { expr })
 }
 
-fn analyze_expr(scope_stack: &mut Vec<Scope>, expr: Expr) -> Result<TypedExpr, TypeError> {
+fn analyze_expr(
+    scope_stack: &mut ScopeStack<TypedExpr>,
+    expr: Expr,
+) -> Result<TypedExpr, TypeError> {
     match expr {
         Expr::Literal(literal) => analyze_literal(literal),
         Expr::Identifier(ident) => analyze_identifier(scope_stack, ident),
@@ -59,7 +61,7 @@ fn analyze_expr(scope_stack: &mut Vec<Scope>, expr: Expr) -> Result<TypedExpr, T
 // Binary operations
 
 fn analyze_eq(
-    scope_stack: &mut Vec<Scope>,
+    scope_stack: &mut ScopeStack<TypedExpr>,
     left: Expr,
     right: Expr,
 ) -> Result<TypedExpr, TypeError> {
@@ -80,7 +82,7 @@ fn analyze_eq(
 }
 
 fn analyze_gt(
-    scope_stack: &mut Vec<Scope>,
+    scope_stack: &mut ScopeStack<TypedExpr>,
     left: Expr,
     right: Expr,
 ) -> Result<TypedExpr, TypeError> {
@@ -112,7 +114,7 @@ fn analyze_gt(
 }
 
 fn analyze_lt(
-    scope_stack: &mut Vec<Scope>,
+    scope_stack: &mut ScopeStack<TypedExpr>,
     left: Expr,
     right: Expr,
 ) -> Result<TypedExpr, TypeError> {
@@ -144,7 +146,7 @@ fn analyze_lt(
 }
 
 fn analyze_add(
-    scope_stack: &mut Vec<Scope>,
+    scope_stack: &mut ScopeStack<TypedExpr>,
     left: Expr,
     right: Expr,
 ) -> Result<TypedExpr, TypeError> {
@@ -176,7 +178,7 @@ fn analyze_add(
 }
 
 fn analyze_sub(
-    scope_stack: &mut Vec<Scope>,
+    scope_stack: &mut ScopeStack<TypedExpr>,
     left: Expr,
     right: Expr,
 ) -> Result<TypedExpr, TypeError> {
@@ -208,7 +210,7 @@ fn analyze_sub(
 }
 
 fn analyze_mult(
-    scope_stack: &mut Vec<Scope>,
+    scope_stack: &mut ScopeStack<TypedExpr>,
     left: Expr,
     right: Expr,
 ) -> Result<TypedExpr, TypeError> {
@@ -240,7 +242,7 @@ fn analyze_mult(
 }
 
 fn analyze_div(
-    scope_stack: &mut Vec<Scope>,
+    scope_stack: &mut ScopeStack<TypedExpr>,
     left: Expr,
     right: Expr,
 ) -> Result<TypedExpr, TypeError> {
@@ -279,7 +281,10 @@ fn analyze_div(
 
 // Unary operations
 
-fn analyze_negate(scope_stack: &mut Vec<Scope>, inner: Expr) -> Result<TypedExpr, TypeError> {
+fn analyze_negate(
+    scope_stack: &mut ScopeStack<TypedExpr>,
+    inner: Expr,
+) -> Result<TypedExpr, TypeError> {
     let inner = analyze_expr(scope_stack, inner)?;
 
     if inner.ty() != Type::Int && inner.ty() != Type::Float {
@@ -293,7 +298,7 @@ fn analyze_negate(scope_stack: &mut Vec<Scope>, inner: Expr) -> Result<TypedExpr
 }
 
 fn analyze_assign(
-    scope_stack: &mut Vec<Scope>,
+    scope_stack: &mut ScopeStack<TypedExpr>,
     ident: String,
     value: Expr,
 ) -> Result<TypedExpr, TypeError> {
@@ -305,34 +310,27 @@ fn analyze_assign(
         });
     }
 
-    scope_stack
-        .last_mut()
-        .unwrap()
-        .insert(ident.clone(), inner.clone());
+    scope_stack.insert(ident.clone(), inner.clone());
 
     Ok(TypedExpr::Assign(ident, Box::new(inner), Type::Void))
 }
 
 // Postfix operations
 
-fn analyze_func_call(scope_stack: &mut Vec<Scope>, callee: Expr) -> Result<TypedExpr, TypeError> {
+fn analyze_func_call(
+    scope_stack: &mut ScopeStack<TypedExpr>,
+    callee: Expr,
+) -> Result<TypedExpr, TypeError> {
     let callee = analyze_expr(scope_stack, callee)?;
 
     let callee = if let TypedExpr::Identifier(ident, _) = callee {
-        scope_stack
-            .iter()
-            .rev()
-            .find_map(|scope| scope.get(&ident))
-            .cloned()
-            .ok_or(TypeError {
-                message: format!("Identifier {} not found", ident),
-            })?
+        scope_stack.lookup(&ident)?.clone()
     } else {
         callee
     };
 
-    if let TypedExpr::FuncDeclare(lines, _) = callee {
-        Ok(TypedExpr::FuncCall(lines, Type::Void))
+    if let TypedExpr::FuncDeclare(func, _) = callee {
+        Ok(TypedExpr::FuncCall(func, Type::Void))
     } else {
         Err(TypeError {
             message: format!("Cannot call non-function: {:?}", callee.ty()),
@@ -351,24 +349,32 @@ fn analyze_literal(literal: Literal) -> Result<TypedExpr, TypeError> {
     })
 }
 
-fn analyze_identifier(scope_stack: &mut Vec<Scope>, ident: String) -> Result<TypedExpr, TypeError> {
-    let expr = scope_stack
-        .iter()
-        .rev()
-        .find_map(|scope| scope.get(&ident))
-        .cloned()
-        .ok_or(TypeError {
-            message: format!("Identifier {} not found", ident),
-        })?;
+fn analyze_identifier(
+    scope_stack: &mut ScopeStack<TypedExpr>,
+    ident: String,
+) -> Result<TypedExpr, TypeError> {
+    let expr = scope_stack.lookup(&ident)?;
 
     Ok(TypedExpr::Identifier(ident, expr.ty()))
 }
 
 fn analyze_func_declare(
-    scope_stack: &mut Vec<Scope>,
+    scope_stack: &mut ScopeStack<TypedExpr>,
     func: FuncDeclare,
 ) -> Result<TypedExpr, TypeError> {
+    if func.is_closure {
+        scope_stack.push_scope();
+    } else {
+        scope_stack.create_new_stack();
+    }
+
     let stmts = analyze_stmts(scope_stack, func.stmts)?;
+
+    if func.is_closure {
+        scope_stack.pop_scope();
+    } else {
+        scope_stack.restore_previous_stack();
+    }
 
     let func = TypedFunc {
         stmts,
