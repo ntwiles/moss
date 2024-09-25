@@ -1,15 +1,13 @@
 use std::collections::HashMap;
 
-use crate::interpretor::resolved_value::ResolvedValue;
+type Scope<T> = HashMap<String, T>;
 
-pub type Scope = HashMap<String, ResolvedValue>;
-
-pub struct ScopeStack {
-    current: Vec<Scope>,
-    previous: Option<Vec<Scope>>,
+pub struct ScopeStack<T> {
+    current: Vec<Scope<T>>,
+    previous: Option<Vec<Scope<T>>>,
 }
 
-impl ScopeStack {
+impl<T> ScopeStack<T> {
     pub fn new() -> Self {
         Self {
             current: vec![Scope::new()],
@@ -36,7 +34,7 @@ impl ScopeStack {
         }
     }
 
-    pub fn lookup(&self, name: &str) -> &ResolvedValue {
+    pub fn lookup(&self, name: &str) -> &T {
         for scope in self.current.iter().rev() {
             if let Some(value) = scope.get(name) {
                 return value;
@@ -46,7 +44,7 @@ impl ScopeStack {
         unreachable!()
     }
 
-    pub fn insert(&mut self, name: String, value: ResolvedValue) {
+    pub fn insert(&mut self, name: String, value: T) {
         self.current.last_mut().unwrap().insert(name, value);
     }
 }
