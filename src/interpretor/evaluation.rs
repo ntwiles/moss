@@ -18,8 +18,6 @@ pub fn apply_stmt(ctx: &mut Context) {
     // We have our first non-void value, so we can return early. Remove everything from the control
     // stack after the last ApplyFuncCall.
 
-    // TODO: This is a helpful pattern, we'll want to extract it into a function.
-
     let mut i = ctx.control_stack.len();
 
     while i > 0 {
