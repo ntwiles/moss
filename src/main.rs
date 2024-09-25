@@ -2,7 +2,7 @@ pub mod analyzer;
 mod ast;
 mod errors;
 pub mod interpretor;
-mod scope_stack;
+pub mod shared;
 lalrpop_mod!(pub grammar);
 
 use grammar::ProgramParser;

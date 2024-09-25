@@ -1,4 +1,4 @@
-use crate::scope_stack::ScopeStack;
+use crate::shared::scope_stack::ScopeStack;
 
 use super::{control_op::ControlOp, resolved_value::ResolvedValue};
 

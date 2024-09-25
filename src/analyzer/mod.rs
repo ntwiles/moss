@@ -2,7 +2,7 @@ pub mod ty;
 pub mod typed_ast;
 
 use crate::ast::{FuncDeclare, Stmt};
-use crate::scope_stack::ScopeStack;
+use crate::shared::scope_stack::ScopeStack;
 
 use super::ast::{Expr, Literal};
 use super::errors::type_error::TypeError;

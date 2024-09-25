@@ -1,12 +1,7 @@
 let a = 3;
 
-let non_closure_add = () => {
+let add = () => {
     1 + a;
 };
 
-let closure_add = || => {
-    1 + a;
-};
-
-non_closure_add(); // type error
-closure_add();     // 4
+add();

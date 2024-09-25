@@ -14,7 +14,7 @@ use resolved_value::ResolvedValue;
 use crate::{
     analyzer::typed_ast::{typed_expr::TypedExpr, TypedFunc, TypedStmt},
     errors::runtime_error::RuntimeError,
-    scope_stack::ScopeStack,
+    shared::scope_stack::ScopeStack,
 };
 
 pub fn interpret_lines(stmts: Vec<TypedStmt>) -> Result<ResolvedValue, RuntimeError> {
