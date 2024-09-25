@@ -1,4 +1,4 @@
-use crate::analyzer::{typed_expr::TypedExpr, TypedLiteral, TypedStmt};
+use crate::analyzer::typed_ast::{typed_expr::TypedExpr, TypedFunc, TypedLiteral};
 
 use super::{
     apply_binary_op, apply_unary_op, context::Context, control_op::ControlOp, push_binary_op,
@@ -21,8 +21,10 @@ pub fn apply_stmt(ctx: &mut Context) {
 
     while i > 0 {
         i -= 1;
-        if let ControlOp::ApplyFuncCall = ctx.control_stack[i] {
-            break;
+
+        match ctx.control_stack[i] {
+            ControlOp::ApplyClosureFuncCall | ControlOp::ApplyNonClosureFuncCall => break,
+            _ => (),
         }
     }
 
@@ -45,12 +47,12 @@ pub fn eval_expr(ctx: &mut Context, expr: TypedExpr) {
         TypedExpr::Assign(i, v, _ty) => push_unary_op(ctx, ControlOp::ApplyAssign(i), *v),
 
         // Postfix operations
-        TypedExpr::FuncCall(lines, _ty) => push_func_call(ctx, lines),
+        TypedExpr::FuncCall(func, _ty) => push_func_call(ctx, func),
 
         // Primaries
         TypedExpr::Literal(literal, _ty) => eval_literal(ctx, literal),
         TypedExpr::Identifier(ident, _ty) => eval_identifier(ctx, ident),
-        TypedExpr::FuncDeclare(lines, _ty) => eval_func_declare(ctx, lines),
+        TypedExpr::FuncDeclare(func, _ty) => eval_func_declare(ctx, func),
     }
 }
 
@@ -126,17 +128,18 @@ pub fn apply_negate(ctx: &mut Context) {
 
 pub fn apply_assign(ctx: &mut Context, ident: String) {
     apply_unary_op(ctx, |ctx, v| {
-        ctx.scope_stack
-            .last_mut()
-            .unwrap()
-            .insert(ident.clone(), v.clone());
+        ctx.scope_stack.insert(ident.clone(), v.clone());
         ResolvedValue::Void
     });
 }
 
 // Postfix operations
-pub fn apply_func_call(_ctx: &mut Context) {
-    // no-op for now; the function call is already resolved and the result is on the stack
+pub fn apply_closure_func_call(ctx: &mut Context) {
+    ctx.scope_stack.pop_scope();
+}
+
+pub fn apply_non_closure_func_call(ctx: &mut Context) {
+    ctx.scope_stack.restore_previous_stack();
 }
 
 // Primaries
@@ -150,17 +153,16 @@ pub fn eval_literal(ctx: &mut Context, literal: TypedLiteral) {
 }
 
 pub fn eval_identifier(ctx: &mut Context, ident: String) {
-    let value = ctx
-        .scope_stack
-        .iter()
-        .rev()
-        .find_map(|scope| scope.get(&ident))
-        .unwrap()
-        .clone();
+    let value = ctx.scope_stack.lookup(&ident);
 
-    ctx.value_stack.push(value);
+    if let Some(value) = value {
+        ctx.value_stack.push(value.clone());
+        return;
+    } else {
+        panic!("Identifier not found: {}", ident);
+    }
 }
 
-pub fn eval_func_declare(ctx: &mut Context, lines: Vec<TypedStmt>) {
-    ctx.value_stack.push(ResolvedValue::Function(lines));
+pub fn eval_func_declare(ctx: &mut Context, func: TypedFunc) {
+    ctx.value_stack.push(ResolvedValue::Function(func));
 }

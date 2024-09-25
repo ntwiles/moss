@@ -38,5 +38,10 @@ fn main() {
 
     let run_result = interpretor::interpret_lines(analyzed.unwrap());
 
-    println!("{}", run_result);
+    if let Err(error) = run_result {
+        println!("Runtime Error: {}", error.message);
+        return;
+    }
+
+    println!("{}", run_result.unwrap());
 }

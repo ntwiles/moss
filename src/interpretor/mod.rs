@@ -2,28 +2,28 @@ mod context;
 mod control_op;
 mod evaluation;
 pub mod resolved_value;
+mod scope_stack;
 
-use std::collections::HashMap;
-
-use crate::analyzer::{typed_expr::TypedExpr, TypedStmt};
 use context::Context;
 use control_op::ControlOp;
 use evaluation::{
-    apply_add, apply_assign, apply_div, apply_eq, apply_func_call, apply_gt, apply_lt, apply_mult,
-    apply_negate, apply_stmt, apply_sub, eval_expr,
+    apply_add, apply_assign, apply_closure_func_call, apply_div, apply_eq, apply_gt, apply_lt,
+    apply_mult, apply_negate, apply_non_closure_func_call, apply_stmt, apply_sub, eval_expr,
 };
 use resolved_value::ResolvedValue;
+use scope_stack::ScopeStack;
 
-pub type Scope = HashMap<String, ResolvedValue>;
+use crate::{
+    analyzer::typed_ast::{typed_expr::TypedExpr, TypedFunc, TypedStmt},
+    errors::runtime_error::RuntimeError,
+};
 
-pub fn interpret_lines(stmts: Vec<TypedStmt>) -> ResolvedValue {
+pub fn interpret_lines(stmts: Vec<TypedStmt>) -> Result<ResolvedValue, RuntimeError> {
     let mut ctx = context::Context {
         control_stack: Vec::new(),
         value_stack: Vec::new(),
-        scope_stack: Vec::new(),
+        scope_stack: ScopeStack::new(),
     };
-
-    ctx.scope_stack.push(HashMap::new());
 
     for stmt in stmts.into_iter().rev() {
         ctx.control_stack.push(ControlOp::EvalStmt(stmt));
@@ -43,11 +43,12 @@ pub fn interpret_lines(stmts: Vec<TypedStmt>) -> ResolvedValue {
             ControlOp::ApplyLt => apply_lt(&mut ctx),
             ControlOp::ApplyNegate => apply_negate(&mut ctx),
             ControlOp::ApplyAssign(ident) => apply_assign(&mut ctx, ident),
-            ControlOp::ApplyFuncCall => apply_func_call(&mut ctx),
+            ControlOp::ApplyClosureFuncCall => apply_closure_func_call(&mut ctx),
+            ControlOp::ApplyNonClosureFuncCall => apply_non_closure_func_call(&mut ctx),
         }
     }
 
-    ctx.value_stack.pop().unwrap()
+    Ok(ctx.value_stack.pop().unwrap())
 }
 
 fn push_stmt(ctx: &mut Context, stmt: TypedStmt) {
@@ -66,10 +67,16 @@ fn push_binary_op(ctx: &mut Context, op: ControlOp, left: Box<TypedExpr>, right:
     ctx.control_stack.push(ControlOp::EvalExpr(*left));
 }
 
-fn push_func_call(ctx: &mut Context, stmts: Vec<TypedStmt>) {
-    ctx.control_stack.push(ControlOp::ApplyFuncCall);
+fn push_func_call(ctx: &mut Context, func: TypedFunc) {
+    if func.is_closure {
+        ctx.control_stack.push(ControlOp::ApplyClosureFuncCall);
+        ctx.scope_stack.push_scope()
+    } else {
+        ctx.control_stack.push(ControlOp::ApplyNonClosureFuncCall);
+        ctx.scope_stack.create_new_stack()
+    }
 
-    for stmt in stmts.into_iter().rev() {
+    for stmt in func.stmts.into_iter().rev() {
         ctx.control_stack.push(ControlOp::EvalStmt(stmt));
     }
 }

@@ -1,4 +1,4 @@
-use crate::analyzer::{typed_expr::TypedExpr, TypedStmt};
+use crate::analyzer::typed_ast::{typed_expr::TypedExpr, TypedStmt};
 
 #[derive(Clone, Debug)]
 pub enum ControlOp {
@@ -16,7 +16,8 @@ pub enum ControlOp {
     ApplyLt,
 
     // Postfix operations
-    ApplyFuncCall,
+    ApplyClosureFuncCall,
+    ApplyNonClosureFuncCall,
 
     // Unary operations
     ApplyNegate,

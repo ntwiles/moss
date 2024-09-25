@@ -1,5 +1,5 @@
 pub mod ty;
-pub mod typed_expr;
+pub mod typed_ast;
 
 use std::collections::HashMap;
 
@@ -8,20 +8,8 @@ use crate::ast::{FuncDeclare, Stmt};
 use super::ast::{Expr, Literal};
 use super::errors::type_error::TypeError;
 use ty::Type;
-use typed_expr::TypedExpr;
-
-#[derive(Clone, Debug)]
-pub enum TypedLiteral {
-    Int(i32),
-    Float(f64),
-    String(String),
-    Bool(bool),
-}
-
-#[derive(Clone, Debug)]
-pub struct TypedStmt {
-    pub expr: TypedExpr,
-}
+use typed_ast::typed_expr::TypedExpr;
+use typed_ast::{TypedFunc, TypedLiteral, TypedStmt};
 
 type Scope = HashMap<String, TypedExpr>;
 
@@ -380,7 +368,12 @@ fn analyze_func_declare(
     scope_stack: &mut Vec<Scope>,
     func: FuncDeclare,
 ) -> Result<TypedExpr, TypeError> {
-    let analyzed = analyze_stmts(scope_stack, func.stmts)?;
+    let stmts = analyze_stmts(scope_stack, func.stmts)?;
 
-    Ok(TypedExpr::FuncDeclare(analyzed, Type::Function))
+    let func = TypedFunc {
+        stmts,
+        is_closure: func.is_closure,
+    };
+
+    Ok(TypedExpr::FuncDeclare(func, Type::Function))
 }

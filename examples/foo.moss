@@ -1,0 +1,3 @@
+let foo = () => { let bar = 2 + 5; };
+foo();
+bar;
