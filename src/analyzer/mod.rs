@@ -377,7 +377,12 @@ fn analyze_func_declare(
         scope_stack.create_new_stack();
     }
 
-    // Inject binding for the function itself to allow for recursion
+    for param in &func.params {
+        scope_stack.insert(
+            param.clone(),
+            TypedExpr::Literal(TypedLiteral::Int(0), Type::Int), // Placeholder pending type annotation.
+        );
+    }
 
     let stmts = analyze_stmts(scope_stack, func.stmts)?;
 

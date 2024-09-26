@@ -75,13 +75,13 @@ fn push_func_call(ctx: &mut Context, call: TypedFuncCall) {
         ctx.scope_stack.create_new_stack()
     }
 
+    for stmt in call.func.stmts.into_iter().rev() {
+        ctx.control_stack.push(ControlOp::EvalStmt(stmt));
+    }
+
     for (param, arg) in call.func.params.into_iter().zip(call.args.into_iter()) {
         ctx.control_stack.push(ControlOp::ApplyAssign(param));
         ctx.control_stack.push(ControlOp::EvalExpr(arg));
-    }
-
-    for stmt in call.func.stmts.into_iter().rev() {
-        ctx.control_stack.push(ControlOp::EvalStmt(stmt));
     }
 }
 
