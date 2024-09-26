@@ -1,11 +1,7 @@
 
 
-let bar = () => {
-    foo();
+let factorial = (x) => {
+    x;
 };
 
-let foo = () => { 
-    bar();
-};
-
-foo();
+factorial(1);

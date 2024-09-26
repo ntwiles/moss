@@ -101,8 +101,19 @@ Identifier: String = {
 };
 
 FuncDeclare: Expr = {
-    "(" ")" "=>" "{" <stmts:StmtList> "}" => Expr::FuncDeclare(FuncDeclare{ stmts, is_closure: false }),
-    "|" "|" "=>" "{" <stmts:StmtList> "}" => Expr::FuncDeclare(FuncDeclare{ stmts, is_closure: true }),
+    "(" <params:ParameterList> ")" "=>" "{" <stmts:StmtList> "}" => Expr::FuncDeclare(FuncDeclare{ params, stmts, is_closure: false }),
+    "|" <params:ParameterList> "|" "=>" "{" <stmts:StmtList> "}" => Expr::FuncDeclare(FuncDeclare{ params, stmts, is_closure: true }),
+};
+
+ParameterList: Vec<String> = {
+    <p:Parameter> "," <pp:ParameterList> => vec![p].into_iter().chain(pp.into_iter()).collect(),
+    <p:Parameter> => vec![p],
+    => vec![],
+};
+
+// Stubbed to support type annotations.
+Parameter: String = {
+    Identifier,
 };
 
 Bool: bool = {
