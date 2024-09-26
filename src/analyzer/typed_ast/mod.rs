@@ -16,6 +16,12 @@ pub struct TypedStmt {
 }
 
 #[derive(Clone, Debug)]
+pub struct TypedFuncCall {
+    pub func: Box<TypedFunc>,
+    pub args: Vec<TypedExpr>,
+}
+
+#[derive(Clone, Debug)]
 pub struct TypedFunc {
     pub params: Vec<String>,
     pub stmts: Vec<TypedStmt>,

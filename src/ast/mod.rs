@@ -14,7 +14,7 @@ pub enum Expr {
     Assignment(String, Box<Expr>),
 
     // Postfix operations
-    FuncCall(Box<Expr>),
+    FuncCall(FuncCall),
 
     // Primaries
     Literal(Literal),
@@ -33,6 +33,12 @@ pub enum Literal {
 #[derive(Debug)]
 pub struct Stmt {
     pub expr: Expr,
+}
+
+#[derive(Debug)]
+pub struct FuncCall {
+    pub func: Box<Expr>,
+    pub args: Vec<Expr>,
 }
 
 #[derive(Debug)]

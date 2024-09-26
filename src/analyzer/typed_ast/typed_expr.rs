@@ -1,6 +1,6 @@
 use crate::analyzer::ty::Type;
 
-use super::{TypedFunc, TypedLiteral};
+use super::{TypedFunc, TypedFuncCall, TypedLiteral};
 
 // TODO: For some of these, the type is always clear and maybe we don't need to store it.
 #[derive(Clone, Debug)]
@@ -19,7 +19,7 @@ pub enum TypedExpr {
     Assign(String, Box<TypedExpr>, Type),
 
     // Postfix operations
-    FuncCall(TypedFunc, Type),
+    FuncCall(TypedFuncCall, Type),
 
     // Primaries
     Literal(TypedLiteral, Type),

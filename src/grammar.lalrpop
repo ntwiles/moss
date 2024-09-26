@@ -1,4 +1,4 @@
-use crate::ast::{self, Expr, Stmt, FuncDeclare};
+use crate::ast::{self, Expr, Stmt, FuncCall, FuncDeclare};
 
 grammar;
 
@@ -77,7 +77,7 @@ Unary: Expr = {
 };
 
 PostfixExpression: Expr = {
-    <primary:Primary> "(" <args:ExprList> ")" => Expr::FuncCall(Box::new(primary)),
+    <primary:Primary> "(" <args:ExprList> ")" => Expr::FuncCall(FuncCall { func: Box::new(primary), args }),
     Primary,
 };
 

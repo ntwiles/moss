@@ -12,7 +12,7 @@ use evaluation::{
 use resolved_value::ResolvedValue;
 
 use crate::{
-    analyzer::typed_ast::{typed_expr::TypedExpr, TypedFunc, TypedStmt},
+    analyzer::typed_ast::{typed_expr::TypedExpr, TypedFunc, TypedFuncCall, TypedStmt},
     errors::runtime_error::RuntimeError,
     shared::scope_stack::ScopeStack,
 };
@@ -66,8 +66,8 @@ fn push_binary_op(ctx: &mut Context, op: ControlOp, left: Box<TypedExpr>, right:
     ctx.control_stack.push(ControlOp::EvalExpr(*left));
 }
 
-fn push_func_call(ctx: &mut Context, func: TypedFunc) {
-    if func.is_closure {
+fn push_func_call(ctx: &mut Context, call: TypedFuncCall) {
+    if call.func.is_closure {
         ctx.control_stack.push(ControlOp::ApplyClosureFuncCall);
         ctx.scope_stack.push_scope()
     } else {
@@ -75,7 +75,7 @@ fn push_func_call(ctx: &mut Context, func: TypedFunc) {
         ctx.scope_stack.create_new_stack()
     }
 
-    for stmt in func.stmts.into_iter().rev() {
+    for stmt in call.func.stmts.into_iter().rev() {
         ctx.control_stack.push(ControlOp::EvalStmt(stmt));
     }
 }

@@ -1,14 +1,14 @@
 pub mod ty;
 pub mod typed_ast;
 
-use crate::ast::{FuncDeclare, Stmt};
+use crate::ast::{FuncCall, FuncDeclare, Stmt};
 use crate::shared::scope_stack::ScopeStack;
 
 use super::ast::{Expr, Literal};
 use super::errors::type_error::TypeError;
 use ty::Type;
 use typed_ast::typed_expr::TypedExpr;
-use typed_ast::{TypedFunc, TypedLiteral, TypedStmt};
+use typed_ast::{TypedFunc, TypedFuncCall, TypedLiteral, TypedStmt};
 
 pub fn analyze_program(stmts: Vec<Stmt>) -> Result<Vec<TypedStmt>, TypeError> {
     let mut scope_stack = ScopeStack::<TypedExpr>::new();
@@ -54,7 +54,7 @@ fn analyze_expr(
         Expr::Negate(inner) => analyze_negate(scope_stack, *inner),
         Expr::Assignment(ident, expr) => analyze_assign(scope_stack, ident, *expr),
         Expr::FuncDeclare(func) => analyze_func_declare(scope_stack, func),
-        Expr::FuncCall(callee) => analyze_func_call(scope_stack, *callee),
+        Expr::FuncCall(call) => analyze_func_call(scope_stack, call),
     }
 }
 
@@ -319,9 +319,9 @@ fn analyze_assign(
 
 fn analyze_func_call(
     scope_stack: &mut ScopeStack<TypedExpr>,
-    callee: Expr,
+    call: FuncCall,
 ) -> Result<TypedExpr, TypeError> {
-    let callee = analyze_expr(scope_stack, callee)?;
+    let callee = analyze_expr(scope_stack, *call.func)?;
 
     let callee = if let TypedExpr::Identifier(ident, _) = callee {
         scope_stack.lookup(&ident)?.clone()
@@ -330,7 +330,16 @@ fn analyze_func_call(
     };
 
     if let TypedExpr::FuncDeclare(func, _) = callee {
-        Ok(TypedExpr::FuncCall(func, Type::Void))
+        let call = TypedFuncCall {
+            func: Box::new(func),
+            args: call
+                .args
+                .into_iter()
+                .map(|arg| analyze_expr(scope_stack, arg))
+                .collect::<Result<Vec<_>, _>>()?,
+        };
+
+        Ok(TypedExpr::FuncCall(call, Type::Void))
     } else {
         Err(TypeError {
             message: format!("Cannot call non-function: {:?}", callee.ty()),
