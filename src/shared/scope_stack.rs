@@ -43,7 +43,7 @@ impl<T> ScopeStack<T> {
             }
         }
 
-        Err(E::new(format!("Variable '{}' not found", name)))
+        Err(E::new(format!("Binding '{}' not found", name)))
     }
 
     pub fn insert(&mut self, name: String, value: T) {
