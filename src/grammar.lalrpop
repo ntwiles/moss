@@ -76,11 +76,12 @@ Unary: Expr = {
     PostfixExpression,
 };
 
-// Stubbed out for now
 PostfixExpression: Expr = {
-    <primary:Primary> "(" ")" => Expr::FuncCall(Box::new(primary)),
+    <primary:Primary> "(" <args:ExprList> ")" => Expr::FuncCall(Box::new(primary)),
     Primary,
 };
+
+ExprList: Vec<Expr> = Comma<Expr>;
 
 // Stubbed out for now
 Primary: Expr = {
@@ -105,11 +106,7 @@ FuncDeclare: Expr = {
     "|" <params:ParameterList> "|" "=>" "{" <stmts:StmtList> "}" => Expr::FuncDeclare(FuncDeclare{ params, stmts, is_closure: true }),
 };
 
-ParameterList: Vec<String> = {
-    <p:Parameter> "," <pp:ParameterList> => vec![p].into_iter().chain(pp.into_iter()).collect(),
-    <p:Parameter> => vec![p],
-    => vec![],
-};
+ParameterList: Vec<String> = Comma<Parameter>;
 
 // Stubbed to support type annotations.
 Parameter: String = {
@@ -133,3 +130,14 @@ Str: String = {
     r#""[^"]*""# => <>[1..<>.len()-1].to_string(),  // Remove the first and last characters (the quotes)
 };
 
+// Utility
+
+Comma<T>: Vec<T> = {
+    <item:T> "," <rest:Comma<T>> => {
+        let mut list = vec![item];
+        list.extend(rest);
+        list
+    },
+    <item:T> => vec![item],
+    => vec![],
+};
