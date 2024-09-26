@@ -12,7 +12,7 @@ use evaluation::{
 use resolved_value::ResolvedValue;
 
 use crate::{
-    analyzer::typed_ast::{typed_expr::TypedExpr, TypedFunc, TypedFuncCall, TypedStmt},
+    analyzer::typed_ast::{typed_expr::TypedExpr, TypedFuncCall, TypedStmt},
     errors::runtime_error::RuntimeError,
     shared::scope_stack::ScopeStack,
 };
@@ -73,6 +73,11 @@ fn push_func_call(ctx: &mut Context, call: TypedFuncCall) {
     } else {
         ctx.control_stack.push(ControlOp::ApplyNonClosureFuncCall);
         ctx.scope_stack.create_new_stack()
+    }
+
+    for (param, arg) in call.func.params.into_iter().zip(call.args.into_iter()) {
+        ctx.control_stack.push(ControlOp::ApplyAssign(param));
+        ctx.control_stack.push(ControlOp::EvalExpr(arg));
     }
 
     for stmt in call.func.stmts.into_iter().rev() {
