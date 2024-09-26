@@ -1,3 +1,4 @@
+mod scope_entry;
 pub mod ty;
 pub mod typed_ast;
 
@@ -6,18 +7,19 @@ use crate::shared::scope_stack::ScopeStack;
 
 use super::ast::{Expr, Literal};
 use super::errors::type_error::TypeError;
+use scope_entry::ScopeEntry;
 use ty::Type;
 use typed_ast::typed_expr::TypedExpr;
 use typed_ast::{TypedFunc, TypedFuncCall, TypedLiteral, TypedStmt};
 
 pub fn analyze_program(stmts: Vec<Stmt>) -> Result<Vec<TypedStmt>, TypeError> {
-    let mut scope_stack = ScopeStack::<TypedExpr>::new();
+    let mut scope_stack = ScopeStack::<ScopeEntry>::new();
 
     analyze_stmts(&mut scope_stack, stmts)
 }
 
 fn analyze_stmts(
-    scope_stack: &mut ScopeStack<TypedExpr>,
+    scope_stack: &mut ScopeStack<ScopeEntry>,
     stmts: Vec<Stmt>,
 ) -> Result<Vec<TypedStmt>, TypeError> {
     stmts
@@ -27,7 +29,7 @@ fn analyze_stmts(
 }
 
 fn analyze_stmt(
-    scope_stack: &mut ScopeStack<TypedExpr>,
+    scope_stack: &mut ScopeStack<ScopeEntry>,
     stmt: Stmt,
 ) -> Result<TypedStmt, TypeError> {
     let expr = analyze_expr(scope_stack, stmt.expr)?;
@@ -36,7 +38,7 @@ fn analyze_stmt(
 }
 
 fn analyze_expr(
-    scope_stack: &mut ScopeStack<TypedExpr>,
+    scope_stack: &mut ScopeStack<ScopeEntry>,
     expr: Expr,
 ) -> Result<TypedExpr, TypeError> {
     match expr {
@@ -61,7 +63,7 @@ fn analyze_expr(
 // Binary operations
 
 fn analyze_eq(
-    scope_stack: &mut ScopeStack<TypedExpr>,
+    scope_stack: &mut ScopeStack<ScopeEntry>,
     left: Expr,
     right: Expr,
 ) -> Result<TypedExpr, TypeError> {
@@ -82,7 +84,7 @@ fn analyze_eq(
 }
 
 fn analyze_gt(
-    scope_stack: &mut ScopeStack<TypedExpr>,
+    scope_stack: &mut ScopeStack<ScopeEntry>,
     left: Expr,
     right: Expr,
 ) -> Result<TypedExpr, TypeError> {
@@ -114,7 +116,7 @@ fn analyze_gt(
 }
 
 fn analyze_lt(
-    scope_stack: &mut ScopeStack<TypedExpr>,
+    scope_stack: &mut ScopeStack<ScopeEntry>,
     left: Expr,
     right: Expr,
 ) -> Result<TypedExpr, TypeError> {
@@ -146,7 +148,7 @@ fn analyze_lt(
 }
 
 fn analyze_add(
-    scope_stack: &mut ScopeStack<TypedExpr>,
+    scope_stack: &mut ScopeStack<ScopeEntry>,
     left: Expr,
     right: Expr,
 ) -> Result<TypedExpr, TypeError> {
@@ -178,7 +180,7 @@ fn analyze_add(
 }
 
 fn analyze_sub(
-    scope_stack: &mut ScopeStack<TypedExpr>,
+    scope_stack: &mut ScopeStack<ScopeEntry>,
     left: Expr,
     right: Expr,
 ) -> Result<TypedExpr, TypeError> {
@@ -210,7 +212,7 @@ fn analyze_sub(
 }
 
 fn analyze_mult(
-    scope_stack: &mut ScopeStack<TypedExpr>,
+    scope_stack: &mut ScopeStack<ScopeEntry>,
     left: Expr,
     right: Expr,
 ) -> Result<TypedExpr, TypeError> {
@@ -242,7 +244,7 @@ fn analyze_mult(
 }
 
 fn analyze_div(
-    scope_stack: &mut ScopeStack<TypedExpr>,
+    scope_stack: &mut ScopeStack<ScopeEntry>,
     left: Expr,
     right: Expr,
 ) -> Result<TypedExpr, TypeError> {
@@ -282,7 +284,7 @@ fn analyze_div(
 // Unary operations
 
 fn analyze_negate(
-    scope_stack: &mut ScopeStack<TypedExpr>,
+    scope_stack: &mut ScopeStack<ScopeEntry>,
     inner: Expr,
 ) -> Result<TypedExpr, TypeError> {
     let inner = analyze_expr(scope_stack, inner)?;
@@ -298,7 +300,7 @@ fn analyze_negate(
 }
 
 fn analyze_assign(
-    scope_stack: &mut ScopeStack<TypedExpr>,
+    scope_stack: &mut ScopeStack<ScopeEntry>,
     ident: String,
     value: Expr,
 ) -> Result<TypedExpr, TypeError> {
@@ -310,7 +312,8 @@ fn analyze_assign(
         });
     }
 
-    scope_stack.insert(ident.clone(), inner.clone());
+    let entry = ScopeEntry::TypedExpr(inner.clone());
+    scope_stack.insert(ident.clone(), entry);
 
     Ok(TypedExpr::Assign(ident, Box::new(inner), Type::Void))
 }
@@ -318,13 +321,13 @@ fn analyze_assign(
 // Postfix operations
 
 fn analyze_func_call(
-    scope_stack: &mut ScopeStack<TypedExpr>,
+    scope_stack: &mut ScopeStack<ScopeEntry>,
     call: FuncCall,
 ) -> Result<TypedExpr, TypeError> {
     let callee = analyze_expr(scope_stack, *call.func)?;
 
     let callee = if let TypedExpr::Identifier(ident, _) = callee {
-        scope_stack.lookup(&ident)?.clone()
+        scope_stack.lookup(&ident)?.as_expr().clone()
     } else {
         callee
     };
@@ -359,7 +362,7 @@ fn analyze_literal(literal: Literal) -> Result<TypedExpr, TypeError> {
 }
 
 fn analyze_identifier(
-    scope_stack: &mut ScopeStack<TypedExpr>,
+    scope_stack: &mut ScopeStack<ScopeEntry>,
     ident: String,
 ) -> Result<TypedExpr, TypeError> {
     let expr = scope_stack.lookup(&ident)?;
@@ -368,7 +371,7 @@ fn analyze_identifier(
 }
 
 fn analyze_func_declare(
-    scope_stack: &mut ScopeStack<TypedExpr>,
+    scope_stack: &mut ScopeStack<ScopeEntry>,
     func: FuncDeclare,
 ) -> Result<TypedExpr, TypeError> {
     if func.is_closure {
@@ -378,10 +381,9 @@ fn analyze_func_declare(
     }
 
     for param in &func.params {
-        scope_stack.insert(
-            param.clone(),
-            TypedExpr::Literal(TypedLiteral::Int(0), Type::Int), // Placeholder pending type annotation.
-        );
+        let ident = param.0.clone();
+        let ty = Type::from_str(&param.1)?;
+        scope_stack.insert(ident, ScopeEntry::Type(ty));
     }
 
     let stmts = analyze_stmts(scope_stack, func.stmts)?;
@@ -392,8 +394,14 @@ fn analyze_func_declare(
         scope_stack.restore_previous_stack();
     }
 
+    let params = func
+        .params
+        .iter()
+        .map(|(ident, ty)| (ident.clone(), Type::from_str(ty).unwrap()))
+        .collect();
+
     let func = TypedFunc {
-        params: func.params,
+        params,
         stmts,
         is_closure: func.is_closure,
     };

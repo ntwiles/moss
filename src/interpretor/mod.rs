@@ -80,6 +80,8 @@ fn push_func_call(ctx: &mut Context, call: TypedFuncCall) {
     }
 
     for (param, arg) in call.func.params.into_iter().zip(call.args.into_iter()) {
+        // TODO: We're ignoring the param type here, do something about that later.
+        let (param, _ty) = param;
         ctx.control_stack.push(ControlOp::ApplyAssign(param));
         ctx.control_stack.push(ControlOp::EvalExpr(arg));
     }

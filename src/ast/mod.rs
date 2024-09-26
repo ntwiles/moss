@@ -43,7 +43,7 @@ pub struct FuncCall {
 
 #[derive(Debug)]
 pub struct FuncDeclare {
-    pub params: Vec<String>,
+    pub params: Vec<(String, String)>,
     pub stmts: Vec<Stmt>,
     pub is_closure: bool,
 }

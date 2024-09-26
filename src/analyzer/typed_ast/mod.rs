@@ -2,6 +2,8 @@ pub mod typed_expr;
 
 use typed_expr::TypedExpr;
 
+use super::ty::Type;
+
 #[derive(Clone, Debug)]
 pub enum TypedLiteral {
     Int(i32),
@@ -23,7 +25,7 @@ pub struct TypedFuncCall {
 
 #[derive(Clone, Debug)]
 pub struct TypedFunc {
-    pub params: Vec<String>,
+    pub params: Vec<(String, Type)>,
     pub stmts: Vec<TypedStmt>,
     pub is_closure: bool,
 }
