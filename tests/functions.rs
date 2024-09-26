@@ -73,3 +73,27 @@ fn closure_two_params() {
 
     assert_eq!(result.unwrap_int(), 7);
 }
+
+#[test]
+fn call_one_arg() {
+    let parsed = ProgramParser::new()
+        .parse("let foo = (x) => { x; }; foo(7);")
+        .unwrap();
+
+    let analyzed = analyzer::analyze_program(parsed).unwrap();
+    let result = interpretor::interpret_lines(analyzed).unwrap();
+
+    assert_eq!(result.unwrap_int(), 7);
+}
+
+#[test]
+fn call_two_args() {
+    let parsed = ProgramParser::new()
+        .parse("let add = (x, y) => { x + y; }; add(7, 8);")
+        .unwrap();
+
+    let analyzed = analyzer::analyze_program(parsed).unwrap();
+    let result = interpretor::interpret_lines(analyzed).unwrap();
+
+    assert_eq!(result.unwrap_int(), 15);
+}
