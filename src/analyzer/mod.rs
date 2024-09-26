@@ -368,6 +368,8 @@ fn analyze_func_declare(
         scope_stack.create_new_stack();
     }
 
+    // Inject binding for the function itself to allow for recursion
+
     let stmts = analyze_stmts(scope_stack, func.stmts)?;
 
     if func.is_closure {
@@ -377,6 +379,7 @@ fn analyze_func_declare(
     }
 
     let func = TypedFunc {
+        params: func.params,
         stmts,
         is_closure: func.is_closure,
     };

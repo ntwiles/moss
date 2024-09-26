@@ -97,3 +97,5 @@ fn call_two_args() {
 
     assert_eq!(result.unwrap_int(), 15);
 }
+
+// TODO: Errors when args don't match params.

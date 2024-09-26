@@ -17,6 +17,7 @@ pub struct TypedStmt {
 
 #[derive(Clone, Debug)]
 pub struct TypedFunc {
+    pub params: Vec<String>,
     pub stmts: Vec<TypedStmt>,
     pub is_closure: bool,
 }
