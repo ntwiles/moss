@@ -16,6 +16,9 @@ pub enum Expr {
     // Postfix operations
     FuncCall(FuncCall),
 
+    // Control flow
+    IfElse(Box<Expr>, Vec<Stmt>, Vec<Stmt>),
+
     // Primaries
     Literal(Literal),
     Identifier(String),

@@ -1,6 +1,6 @@
 use crate::analyzer::ty::Type;
 
-use super::{TypedFunc, TypedFuncCall, TypedLiteral};
+use super::{TypedFunc, TypedFuncCall, TypedLiteral, TypedStmt};
 
 // TODO: For some of these, the type is always clear and maybe we don't need to store it.
 #[derive(Clone, Debug)]
@@ -20,6 +20,9 @@ pub enum TypedExpr {
 
     // Postfix operations
     FuncCall(TypedFuncCall, Type),
+
+    // Control flow
+    IfElse(Box<TypedExpr>, Vec<TypedStmt>, Vec<TypedStmt>, Type),
 
     // Primaries
     Literal(TypedLiteral, Type),
@@ -43,6 +46,7 @@ impl TypedExpr {
             TypedExpr::Identifier(_, ty) => *ty,
             TypedExpr::FuncCall(_, ty) => *ty,
             TypedExpr::FuncDeclare(_, ty) => *ty,
+            TypedExpr::IfElse(_, _, _, ty) => *ty,
         }
     }
 

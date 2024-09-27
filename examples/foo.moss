@@ -1,9 +1,6 @@
-let binary_op = (a: Int, b: Int, op: Function) => { 
-    op(a, b);
+let fact = (rec: Function, x: Int) => {
+    if x == 1 { x; } 
+    else { rec(rec, x - 1) * x; };
 };
 
-let add = (a: Int, b: Int) => {
-    a + b;
-};
-
-binary_op(3, 5, add);
+fact(fact, 5);

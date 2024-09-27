@@ -57,6 +57,9 @@ fn analyze_expr(
         Expr::Assignment(ident, expr) => analyze_assign(scope_stack, ident, *expr),
         Expr::FuncDeclare(func) => analyze_func_declare(scope_stack, func),
         Expr::FuncCall(call) => analyze_func_call(scope_stack, call),
+        Expr::IfElse(expr, then_block, else_block) => {
+            analyze_if_else(scope_stack, *expr, then_block, else_block)
+        }
     }
 }
 
@@ -345,7 +348,8 @@ fn analyze_func_call(
         args,
     };
 
-    Ok(TypedExpr::FuncCall(func_call, Type::Void))
+    // TODO: We're hardcoding Type::Void here which is wrong.
+    Ok(TypedExpr::FuncCall(func_call, Type::Int))
 }
 
 // Primaries
@@ -406,4 +410,33 @@ fn analyze_func_declare(
     };
 
     Ok(TypedExpr::FuncDeclare(func, Type::Function))
+}
+
+fn analyze_if_else(
+    scope_stack: &mut ScopeStack<ScopeEntry>,
+    expr: Expr,
+    then_block: Vec<Stmt>,
+    else_block: Vec<Stmt>,
+) -> Result<TypedExpr, TypeError> {
+    let expr = analyze_expr(scope_stack, expr)?;
+
+    if expr.ty() != Type::Bool {
+        return Err(TypeError {
+            message: format!("Invalid type for if condition: {:?}", expr.ty()),
+        });
+    }
+
+    // TODO: We need to assert that the then and else blocks have the same type.
+    // Probably the best way to do that is wrap a Vec<Stmt> in a TypedExpr::Block.
+    // The type of the IfElse expression would be the type of the blocks. For now
+    // we're just hardcoding Int.
+    let then_block = analyze_stmts(scope_stack, then_block)?;
+    let else_block = analyze_stmts(scope_stack, else_block)?;
+
+    Ok(TypedExpr::IfElse(
+        Box::new(expr),
+        then_block,
+        else_block,
+        Type::Int,
+    ))
 }

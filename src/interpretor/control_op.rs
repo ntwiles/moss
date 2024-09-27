@@ -2,8 +2,8 @@ use crate::analyzer::typed_ast::{typed_expr::TypedExpr, TypedFunc, TypedStmt};
 
 #[derive(Clone, Debug)]
 pub enum ControlOp {
-    EvalStmt(TypedStmt),
-    ApplyStmt,
+    EvalStmt(TypedStmt, usize),
+    ApplyStmt(usize),
     EvalExpr(TypedExpr),
 
     // Binary operations
@@ -19,6 +19,9 @@ pub enum ControlOp {
     ApplyFuncCall(Vec<TypedExpr>),
     ApplyClosureFuncCall,
     ApplyNonClosureFuncCall,
+
+    // Control flow
+    ApplyIfElse(Vec<TypedStmt>, Vec<TypedStmt>),
 
     // Unary operations
     ApplyNegate,

@@ -1,7 +1,2 @@
-let a = 3;
-
-let add = () => {
-    1 + a;
-};
-
-add();
+let foo = if true { 7; } else { 8; };
+foo;
