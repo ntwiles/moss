@@ -7,7 +7,7 @@ fn assignment_basic() {
     let parsed = ProgramParser::new().parse("let foo = 2 + 5; foo;").unwrap();
 
     let analyzed = analyzer::analyze_program(parsed).unwrap();
-    let result = interpretor::interpret_lines(analyzed).unwrap();
+    let result = interpretor::interpret_program(analyzed).unwrap();
 
     assert_eq!(result.unwrap_int(), 7);
 }
@@ -19,7 +19,7 @@ fn assignment_operated_on() {
         .unwrap();
 
     let analyzed = analyzer::analyze_program(parsed).unwrap();
-    let result = interpretor::interpret_lines(analyzed).unwrap();
+    let result = interpretor::interpret_program(analyzed).unwrap();
 
     assert_eq!(result.unwrap_int(), 10);
 }
@@ -31,7 +31,7 @@ fn assignment_function() {
         .unwrap();
 
     let analyzed = analyzer::analyze_program(parsed).unwrap();
-    let result = interpretor::interpret_lines(analyzed).unwrap();
+    let result = interpretor::interpret_program(analyzed).unwrap();
 
     assert_eq!(result.unwrap_void(), ());
 }

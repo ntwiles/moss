@@ -5,7 +5,7 @@ use crate::{
 
 use super::{
     apply_binary_op, apply_unary_op, context::Context, control_op::ControlOp, push_binary_op,
-    push_func_call, push_if_else, push_unary_op, resolved_value::ResolvedValue,
+    push_block, push_func_call, push_if_else, push_unary_op, resolved_value::ResolvedValue,
 };
 
 pub fn apply_stmt(ctx: &mut Context, block_start_marker: usize) {
@@ -40,6 +40,7 @@ pub fn eval_expr(ctx: &mut Context, expr: TypedExpr) -> Result<(), RuntimeError>
 
         // Control flow
         TypedExpr::IfElse(cond, then, els, _ty) => push_if_else(ctx, *cond, then, els),
+        TypedExpr::Block(stmts, ty) => push_block(ctx, TypedExpr::Block(stmts, ty)),
 
         // Primaries
         TypedExpr::Literal(literal, _ty) => eval_literal(ctx, literal),
@@ -134,10 +135,8 @@ pub fn apply_func_call(ctx: &mut Context, args: Vec<TypedExpr>) {
         _ => unreachable!(),
     };
 
-    for stmt in func.stmts.clone().into_iter().rev() {
-        ctx.control_stack
-            .push(ControlOp::EvalStmt(stmt, ctx.control_stack.len()));
-    }
+    ctx.control_stack
+        .push(ControlOp::EvalBlock(*func.block.clone()));
 
     ctx.control_stack.push(ControlOp::PushScope(func.clone()));
 

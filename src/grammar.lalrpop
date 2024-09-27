@@ -26,8 +26,8 @@ match {
 
 }
 
-pub Program: Vec<Stmt> = {
-    <exprs:StmtList> => exprs
+pub Program: Expr = {
+    <exprs:StmtList> => Expr::Block(exprs)
 };
 
 StmtList: Vec<Stmt> = {
@@ -47,7 +47,9 @@ Expr: Expr = {
 
 // TODO: Support just if without else, and else elif chains.
 IfElse: Expr = {
-    "if" <cond:Expr> "{" <then_block:StmtList> "}" "else" "{" <else_block:StmtList> "}" => Expr::IfElse(Box::new(cond), then_block, else_block),
+    "if" <cond:Expr> "{" <then_block:StmtList> "}" "else" "{" <else_block:StmtList> "}" => {
+        Expr::IfElse(Box::new(cond), Box::new(Expr::Block(then_block)), Box::new(Expr::Block(else_block)))
+    }
     // "if" <cond:Expr> "{" <then_block:StmtList> "}" => {
     //     Expr::IfElse(Box::new(cond), then_block, None)
     // },
@@ -111,8 +113,8 @@ Identifier: String = {
 };
 
 FuncDeclare: Expr = {
-    "(" <params:ParameterList> ")" "=>" "{" <stmts:StmtList> "}" => Expr::FuncDeclare(FuncDeclare{ params, stmts, is_closure: false }),
-    "|" <params:ParameterList> "|" "=>" "{" <stmts:StmtList> "}" => Expr::FuncDeclare(FuncDeclare{ params, stmts, is_closure: true }),
+    "(" <params:ParameterList> ")" "=>" "{" <stmts:StmtList> "}" => Expr::FuncDeclare(FuncDeclare{ params, block: Box::new(Expr::Block(stmts)), is_closure: false }),
+    "|" <params:ParameterList> "|" "=>" "{" <stmts:StmtList> "}" => Expr::FuncDeclare(FuncDeclare{ params, block: Box::new(Expr::Block(stmts)), is_closure: true }),
 };
 
 ParameterList: Vec<(String, String)> = Comma<Parameter>;

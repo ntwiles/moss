@@ -17,7 +17,8 @@ pub enum Expr {
     FuncCall(FuncCall),
 
     // Control flow
-    IfElse(Box<Expr>, Vec<Stmt>, Vec<Stmt>),
+    IfElse(Box<Expr>, Box<Expr>, Box<Expr>),
+    Block(Vec<Stmt>),
 
     // Primaries
     Literal(Literal),
@@ -47,6 +48,6 @@ pub struct FuncCall {
 #[derive(Clone, Debug)]
 pub struct FuncDeclare {
     pub params: Vec<(String, String)>,
-    pub stmts: Vec<Stmt>,
+    pub block: Box<Expr>,
     pub is_closure: bool,
 }

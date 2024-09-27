@@ -35,6 +35,6 @@ pub struct TypedFuncDeclare {
 #[derive(Clone, Debug)]
 pub struct TypedFunc {
     pub params: Vec<(String, Type)>,
-    pub stmts: Vec<TypedStmt>,
+    pub block: Box<TypedExpr>,
     pub is_closure: bool,
 }

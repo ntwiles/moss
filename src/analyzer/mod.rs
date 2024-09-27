@@ -12,10 +12,10 @@ use ty::Type;
 use typed_ast::typed_expr::TypedExpr;
 use typed_ast::{TypedFunc, TypedFuncCall, TypedLiteral, TypedStmt};
 
-pub fn analyze_program(stmts: Vec<Stmt>) -> Result<Vec<TypedStmt>, TypeError> {
+pub fn analyze_program(stmts: Expr) -> Result<TypedExpr, TypeError> {
     let mut scope_stack = ScopeStack::<ScopeEntry>::new();
 
-    analyze_stmts(&mut scope_stack, stmts)
+    analyze_block(&mut scope_stack, stmts)
 }
 
 fn analyze_stmts(
@@ -42,6 +42,7 @@ fn analyze_expr(
     expr: Expr,
 ) -> Result<TypedExpr, TypeError> {
     match expr {
+        Expr::Block(stmts) => analyze_block(scope_stack, Expr::Block(stmts)),
         Expr::Literal(literal) => analyze_literal(literal),
         Expr::Identifier(ident) => analyze_identifier(scope_stack, ident),
 
@@ -57,9 +58,7 @@ fn analyze_expr(
         Expr::Assignment(ident, expr) => analyze_assign(scope_stack, ident, *expr),
         Expr::FuncDeclare(func) => analyze_func_declare(scope_stack, func),
         Expr::FuncCall(call) => analyze_func_call(scope_stack, call),
-        Expr::IfElse(expr, then_block, else_block) => {
-            analyze_if_else(scope_stack, *expr, then_block, else_block)
-        }
+        Expr::IfElse(expr, then, els) => analyze_if_else(scope_stack, *expr, *then, *els),
     }
 }
 
@@ -389,7 +388,7 @@ fn analyze_func_declare(
         scope_stack.insert(ident, ScopeEntry::Type(ty));
     }
 
-    let stmts = analyze_stmts(scope_stack, func.stmts)?;
+    let block = analyze_block(scope_stack, *func.block)?;
 
     if func.is_closure {
         scope_stack.pop_scope();
@@ -405,7 +404,7 @@ fn analyze_func_declare(
 
     let func = TypedFunc {
         params,
-        stmts,
+        block: Box::new(block),
         is_closure: func.is_closure,
     };
 
@@ -414,29 +413,60 @@ fn analyze_func_declare(
 
 fn analyze_if_else(
     scope_stack: &mut ScopeStack<ScopeEntry>,
-    expr: Expr,
-    then_block: Vec<Stmt>,
-    else_block: Vec<Stmt>,
+    cond: Expr,
+    then_block: Expr,
+    else_block: Expr,
 ) -> Result<TypedExpr, TypeError> {
-    let expr = analyze_expr(scope_stack, expr)?;
+    let cond = analyze_expr(scope_stack, cond)?;
 
-    if expr.ty() != Type::Bool {
+    if cond.ty() != Type::Bool {
         return Err(TypeError {
-            message: format!("Invalid type for if condition: {:?}", expr.ty()),
+            message: format!("Invalid type for if condition: {:?}", cond.ty()),
         });
     }
 
-    // TODO: We need to assert that the then and else blocks have the same type.
-    // Probably the best way to do that is wrap a Vec<Stmt> in a TypedExpr::Block.
-    // The type of the IfElse expression would be the type of the blocks. For now
-    // we're just hardcoding Int.
-    let then_block = analyze_stmts(scope_stack, then_block)?;
-    let else_block = analyze_stmts(scope_stack, else_block)?;
+    let then_block = analyze_block(scope_stack, then_block)?;
+    let else_block = analyze_block(scope_stack, else_block)?;
+
+    if (then_block.ty() != else_block.ty()) {
+        return Err(TypeError {
+            message: format!(
+                "Invalid types for if-else blocks: {:?} != {:?}",
+                then_block.ty(),
+                else_block.ty()
+            ),
+        });
+    }
+
+    let ty = then_block.ty();
 
     Ok(TypedExpr::IfElse(
-        Box::new(expr),
-        then_block,
-        else_block,
-        Type::Int,
+        Box::new(cond),
+        Box::new(then_block),
+        Box::new(else_block),
+        ty,
     ))
+}
+
+fn analyze_block(
+    scope_stack: &mut ScopeStack<ScopeEntry>,
+    block: Expr,
+) -> Result<TypedExpr, TypeError> {
+    scope_stack.push_scope();
+
+    let stmts = if let Expr::Block(stmts) = block {
+        analyze_stmts(scope_stack, stmts)?
+    } else {
+        unreachable!();
+    };
+
+    scope_stack.pop_scope();
+
+    let ty = stmts
+        .iter()
+        .find(|stmt| stmt.expr.ty() != Type::Void)
+        .map(|stmt| stmt.expr.ty())
+        .unwrap_or(Type::Void);
+
+    Ok(TypedExpr::Block(stmts, ty))
 }

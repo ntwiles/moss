@@ -11,7 +11,7 @@ fn search_parent_scope() {
     let parsed = ProgramParser::new().parse(code).unwrap();
 
     let analyzed = analyzer::analyze_program(parsed).unwrap();
-    let result = interpretor::interpret_lines(analyzed).unwrap();
+    let result = interpretor::interpret_program(analyzed).unwrap();
 
     assert_eq!(result.unwrap_int(), 7);
 }

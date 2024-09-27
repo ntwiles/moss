@@ -9,7 +9,7 @@ fn if_else_basic_true() {
         .unwrap();
 
     let analyzed = analyzer::analyze_program(parsed).unwrap();
-    let result = interpretor::interpret_lines(analyzed).unwrap();
+    let result = interpretor::interpret_program(analyzed).unwrap();
 
     assert_eq!(result.unwrap_int(), 7);
 }
@@ -21,7 +21,7 @@ fn if_else_basic_false() {
         .unwrap();
 
     let analyzed = analyzer::analyze_program(parsed).unwrap();
-    let result = interpretor::interpret_lines(analyzed).unwrap();
+    let result = interpretor::interpret_program(analyzed).unwrap();
 
     assert_eq!(result.unwrap_int(), 8);
 }
@@ -33,7 +33,7 @@ fn if_else_assign() {
         .unwrap();
 
     let analyzed = analyzer::analyze_program(parsed).unwrap();
-    let result = interpretor::interpret_lines(analyzed).unwrap();
+    let result = interpretor::interpret_program(analyzed).unwrap();
 
     assert_eq!(result.unwrap_int(), 7);
 }

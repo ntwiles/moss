@@ -9,7 +9,7 @@ fn non_closure_no_params() {
         .unwrap();
 
     let analyzed = analyzer::analyze_program(parsed).unwrap();
-    let result = interpretor::interpret_lines(analyzed).unwrap();
+    let result = interpretor::interpret_program(analyzed).unwrap();
 
     assert_eq!(result.unwrap_int(), 7);
 }
@@ -21,7 +21,7 @@ fn closure_no_params() {
         .unwrap();
 
     let analyzed = analyzer::analyze_program(parsed).unwrap();
-    let result = interpretor::interpret_lines(analyzed).unwrap();
+    let result = interpretor::interpret_program(analyzed).unwrap();
 
     assert_eq!(result.unwrap_int(), 7);
 }
@@ -33,7 +33,7 @@ fn non_closure_one_param() {
         .unwrap();
 
     let analyzed = analyzer::analyze_program(parsed).unwrap();
-    let result = interpretor::interpret_lines(analyzed).unwrap();
+    let result = interpretor::interpret_program(analyzed).unwrap();
 
     assert_eq!(result.unwrap_int(), 7);
 }
@@ -45,7 +45,7 @@ fn closure_one_param() {
         .unwrap();
 
     let analyzed = analyzer::analyze_program(parsed).unwrap();
-    let result = interpretor::interpret_lines(analyzed).unwrap();
+    let result = interpretor::interpret_program(analyzed).unwrap();
 
     assert_eq!(result.unwrap_int(), 7);
 }
@@ -57,7 +57,7 @@ fn non_closure_two_params() {
         .unwrap();
 
     let analyzed = analyzer::analyze_program(parsed).unwrap();
-    let result = interpretor::interpret_lines(analyzed).unwrap();
+    let result = interpretor::interpret_program(analyzed).unwrap();
 
     assert_eq!(result.unwrap_int(), 7);
 }
@@ -69,7 +69,7 @@ fn closure_two_params() {
         .unwrap();
 
     let analyzed = analyzer::analyze_program(parsed).unwrap();
-    let result = interpretor::interpret_lines(analyzed).unwrap();
+    let result = interpretor::interpret_program(analyzed).unwrap();
 
     assert_eq!(result.unwrap_int(), 7);
 }
@@ -81,7 +81,7 @@ fn call_one_arg() {
         .unwrap();
 
     let analyzed = analyzer::analyze_program(parsed).unwrap();
-    let result = interpretor::interpret_lines(analyzed).unwrap();
+    let result = interpretor::interpret_program(analyzed).unwrap();
 
     assert_eq!(result.unwrap_int(), 7);
 }
@@ -93,7 +93,7 @@ fn call_two_args() {
         .unwrap();
 
     let analyzed = analyzer::analyze_program(parsed).unwrap();
-    let result = interpretor::interpret_lines(analyzed).unwrap();
+    let result = interpretor::interpret_program(analyzed).unwrap();
 
     assert_eq!(result.unwrap_int(), 15);
 }

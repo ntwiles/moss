@@ -37,7 +37,7 @@ fn main() {
         return;
     }
 
-    let run_result = interpretor::interpret_lines(analyzed.unwrap());
+    let run_result = interpretor::interpret_program(analyzed.unwrap());
 
     if let Err(error) = run_result {
         println!("Runtime Error: {}", error.message);

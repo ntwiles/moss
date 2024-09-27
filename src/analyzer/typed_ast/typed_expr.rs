@@ -22,7 +22,8 @@ pub enum TypedExpr {
     FuncCall(TypedFuncCall, Type),
 
     // Control flow
-    IfElse(Box<TypedExpr>, Vec<TypedStmt>, Vec<TypedStmt>, Type),
+    IfElse(Box<TypedExpr>, Box<TypedExpr>, Box<TypedExpr>, Type),
+    Block(Vec<TypedStmt>, Type),
 
     // Primaries
     Literal(TypedLiteral, Type),
@@ -47,6 +48,7 @@ impl TypedExpr {
             TypedExpr::FuncCall(_, ty) => *ty,
             TypedExpr::FuncDeclare(_, ty) => *ty,
             TypedExpr::IfElse(_, _, _, ty) => *ty,
+            TypedExpr::Block(_, ty) => *ty,
         }
     }
 

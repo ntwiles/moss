@@ -18,11 +18,16 @@ use crate::{
     shared::scope_stack::ScopeStack,
 };
 
-pub fn interpret_lines(stmts: Vec<TypedStmt>) -> Result<ResolvedValue, RuntimeError> {
+pub fn interpret_program(block: TypedExpr) -> Result<ResolvedValue, RuntimeError> {
     let mut ctx = context::Context {
         control_stack: Vec::new(),
         value_stack: Vec::new(),
         scope_stack: ScopeStack::new(),
+    };
+
+    let stmts = match block {
+        TypedExpr::Block(stmts, _ty) => stmts,
+        _ => unreachable!(),
     };
 
     for stmt in stmts.into_iter().rev() {
@@ -32,6 +37,7 @@ pub fn interpret_lines(stmts: Vec<TypedStmt>) -> Result<ResolvedValue, RuntimeEr
 
     while let Some(current_op) = ctx.control_stack.pop() {
         match current_op {
+            ControlOp::EvalBlock(block) => push_block(&mut ctx, block),
             ControlOp::EvalStmt(stmt, block_marker) => push_stmt(&mut ctx, stmt, block_marker),
             ControlOp::EvalExpr(e) => eval_expr(&mut ctx, e)?,
             ControlOp::ApplyStmt(block_marker) => apply_stmt(&mut ctx, block_marker),
@@ -76,15 +82,21 @@ fn push_func_call(ctx: &mut Context, call: TypedFuncCall) {
     ctx.control_stack.push(ControlOp::EvalExpr(*call.func_expr));
 }
 
-fn push_if_else(
-    ctx: &mut Context,
-    cond: TypedExpr,
-    then_block: Vec<TypedStmt>,
-    else_block: Vec<TypedStmt>,
-) {
-    ctx.control_stack
-        .push(ControlOp::ApplyIfElse(then_block, else_block));
+fn push_if_else(ctx: &mut Context, cond: TypedExpr, then: Box<TypedExpr>, els: Box<TypedExpr>) {
+    ctx.control_stack.push(ControlOp::ApplyIfElse(*then, *els));
     ctx.control_stack.push(ControlOp::EvalExpr(cond));
+}
+
+fn push_block(ctx: &mut Context, block: TypedExpr) {
+    let stmts = match block {
+        TypedExpr::Block(stmts, _ty) => stmts,
+        _ => unreachable!(),
+    };
+
+    for stmt in stmts.into_iter().rev() {
+        ctx.control_stack
+            .push(ControlOp::EvalStmt(stmt, ctx.control_stack.len()));
+    }
 }
 
 fn apply_binary_op<F>(ctx: &mut Context, op: F)
@@ -116,7 +128,7 @@ fn apply_push_scope(ctx: &mut Context, func: TypedFunc) {
     }
 }
 
-fn apply_if_else(ctx: &mut Context, then_block: Vec<TypedStmt>, else_block: Vec<TypedStmt>) {
+fn apply_if_else(ctx: &mut Context, then_block: TypedExpr, else_block: TypedExpr) {
     let cond = ctx.value_stack.pop().unwrap();
 
     let cond_bool = match cond {
@@ -126,7 +138,12 @@ fn apply_if_else(ctx: &mut Context, then_block: Vec<TypedStmt>, else_block: Vec<
 
     let block = if cond_bool { then_block } else { else_block };
 
-    for stmt in block.into_iter().rev() {
+    let stmts = match block {
+        TypedExpr::Block(stmts, _ty) => stmts,
+        _ => unreachable!(),
+    };
+
+    for stmt in stmts.into_iter().rev() {
         ctx.control_stack
             .push(ControlOp::EvalStmt(stmt, ctx.control_stack.len()));
     }
