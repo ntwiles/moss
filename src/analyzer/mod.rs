@@ -428,7 +428,7 @@ fn analyze_if_else(
     let then_block = analyze_block(scope_stack, then_block)?;
     let else_block = analyze_block(scope_stack, else_block)?;
 
-    if (then_block.ty() != else_block.ty()) {
+    if then_block.ty() != else_block.ty() {
         return Err(TypeError {
             message: format!(
                 "Invalid types for if-else blocks: {:?} != {:?}",
