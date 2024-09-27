@@ -143,17 +143,11 @@ pub fn apply_func_call(ctx: &mut Context, args: Vec<TypedExpr>) {
         _ => unreachable!(),
     };
 
-    if func.is_closure {
-        ctx.control_stack.push(ControlOp::ApplyClosureFuncCall);
-        ctx.scope_stack.push_scope()
-    } else {
-        ctx.control_stack.push(ControlOp::ApplyNonClosureFuncCall);
-        ctx.scope_stack.create_new_stack()
-    }
-
-    for stmt in func.stmts.into_iter().rev() {
+    for stmt in func.stmts.clone().into_iter().rev() {
         ctx.control_stack.push(ControlOp::EvalStmt(stmt));
     }
+
+    ctx.control_stack.push(ControlOp::PushScope(func.clone()));
 
     for (param, arg) in func.params.into_iter().zip(args.into_iter()) {
         let (param, _ty) = param;

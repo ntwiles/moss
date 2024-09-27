@@ -1,4 +1,4 @@
-use crate::analyzer::typed_ast::{typed_expr::TypedExpr, TypedStmt};
+use crate::analyzer::typed_ast::{typed_expr::TypedExpr, TypedFunc, TypedStmt};
 
 #[derive(Clone, Debug)]
 pub enum ControlOp {
@@ -23,4 +23,7 @@ pub enum ControlOp {
     // Unary operations
     ApplyNegate,
     ApplyAssign(String),
+
+    // Scope
+    PushScope(TypedFunc),
 }

@@ -13,7 +13,7 @@ use evaluation::{
 use resolved_value::ResolvedValue;
 
 use crate::{
-    analyzer::typed_ast::{typed_expr::TypedExpr, TypedFuncCall, TypedStmt},
+    analyzer::typed_ast::{typed_expr::TypedExpr, TypedFunc, TypedFuncCall, TypedStmt},
     errors::runtime_error::RuntimeError,
     shared::scope_stack::ScopeStack,
 };
@@ -46,6 +46,7 @@ pub fn interpret_lines(stmts: Vec<TypedStmt>) -> Result<ResolvedValue, RuntimeEr
             ControlOp::ApplyFuncCall(args) => apply_func_call(&mut ctx, args),
             ControlOp::ApplyClosureFuncCall => apply_closure_func_call(&mut ctx),
             ControlOp::ApplyNonClosureFuncCall => apply_non_closure_func_call(&mut ctx),
+            ControlOp::PushScope(func) => apply_push_scope(&mut ctx, func),
         }
     }
 
@@ -91,4 +92,14 @@ where
     let value = ctx.value_stack.pop().unwrap();
     let result = op(ctx, value);
     ctx.value_stack.push(result);
+}
+
+fn apply_push_scope(ctx: &mut Context, func: TypedFunc) {
+    if func.is_closure {
+        ctx.control_stack.push(ControlOp::ApplyClosureFuncCall);
+        ctx.scope_stack.push_scope()
+    } else {
+        ctx.control_stack.push(ControlOp::ApplyNonClosureFuncCall);
+        ctx.scope_stack.create_new_stack()
+    }
 }

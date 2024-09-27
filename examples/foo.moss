@@ -6,4 +6,4 @@ let add = (a: Int, b: Int) => {
     a + b;
 };
 
-binary_op(a, b, add);
+binary_op(3, 5, add);
