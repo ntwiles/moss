@@ -1,4 +1,4 @@
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum Expr {
     // Binary operations
     Eq(Box<Expr>, Box<Expr>),
@@ -30,18 +30,18 @@ pub enum Literal {
     Bool(bool),
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Stmt {
     pub expr: Expr,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct FuncCall {
     pub func: Box<Expr>,
     pub args: Vec<Expr>,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct FuncDeclare {
     pub params: Vec<(String, String)>,
     pub stmts: Vec<Stmt>,

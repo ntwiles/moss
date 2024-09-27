@@ -99,3 +99,21 @@ fn call_two_args() {
 }
 
 // TODO: Errors when args don't match params.
+
+#[test]
+fn call_wrong_arg() {
+    let parsed = ProgramParser::new()
+        .parse("let foo = (x: Int) => { x; }; foo(false);")
+        .unwrap();
+
+    analyzer::analyze_program(parsed).expect_err("foo expects 1 argument, got 2.");
+}
+
+#[test]
+fn call_too_few_args() {
+    let parsed = ProgramParser::new()
+        .parse("let foo = (x: Int, y: Int) => { x + y; }; foo(7);")
+        .unwrap();
+
+    analyzer::analyze_program(parsed).expect_err("foo expects 2 arguments, got 1.");
+}

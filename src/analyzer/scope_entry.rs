@@ -1,5 +1,6 @@
 use super::{ty::Type, typed_ast::typed_expr::TypedExpr};
 
+#[derive(Clone, Debug)]
 pub enum ScopeEntry {
     TypedExpr(TypedExpr),
     Type(Type),
@@ -10,13 +11,6 @@ impl ScopeEntry {
         match self {
             ScopeEntry::TypedExpr(expr) => expr.ty(),
             ScopeEntry::Type(ty) => *ty,
-        }
-    }
-
-    pub fn as_expr(&self) -> &TypedExpr {
-        match self {
-            ScopeEntry::TypedExpr(expr) => expr,
-            _ => panic!("Expected TypedExpr"),
         }
     }
 }

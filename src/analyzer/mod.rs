@@ -326,28 +326,26 @@ fn analyze_func_call(
 ) -> Result<TypedExpr, TypeError> {
     let callee = analyze_expr(scope_stack, *call.func)?;
 
-    let callee = if let TypedExpr::Identifier(ident, _) = callee {
-        scope_stack.lookup(&ident)?.as_expr().clone()
-    } else {
-        callee
+    if callee.ty() != Type::Function {
+        return Err(TypeError {
+            message: format!("Cannot call non-function: {:?}", callee.ty()),
+        });
+    }
+
+    let args = call
+        .args
+        .into_iter()
+        .map(|arg| analyze_expr(scope_stack, arg))
+        .collect::<Result<Vec<_>, _>>()?;
+
+    // TODO: Type check args
+
+    let func_call = TypedFuncCall {
+        func_expr: Box::new(callee),
+        args,
     };
 
-    if let TypedExpr::FuncDeclare(func, _) = callee {
-        let call = TypedFuncCall {
-            func: Box::new(func),
-            args: call
-                .args
-                .into_iter()
-                .map(|arg| analyze_expr(scope_stack, arg))
-                .collect::<Result<Vec<_>, _>>()?,
-        };
-
-        Ok(TypedExpr::FuncCall(call, Type::Void))
-    } else {
-        Err(TypeError {
-            message: format!("Cannot call non-function: {:?}", callee.ty()),
-        })
-    }
+    Ok(TypedExpr::FuncCall(func_call, Type::Void))
 }
 
 // Primaries
@@ -361,6 +359,7 @@ fn analyze_literal(literal: Literal) -> Result<TypedExpr, TypeError> {
     })
 }
 
+// TODO: Should this resolve the identifier from the scope and error of it's just a Type?
 fn analyze_identifier(
     scope_stack: &mut ScopeStack<ScopeEntry>,
     ident: String,

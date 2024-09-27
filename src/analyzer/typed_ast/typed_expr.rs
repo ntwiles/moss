@@ -45,4 +45,11 @@ impl TypedExpr {
             TypedExpr::FuncDeclare(_, ty) => *ty,
         }
     }
+
+    pub fn is_func_declare(&self) -> bool {
+        match self {
+            TypedExpr::FuncDeclare(_, _) => true,
+            _ => false,
+        }
+    }
 }

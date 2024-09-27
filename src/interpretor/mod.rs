@@ -6,8 +6,9 @@ pub mod resolved_value;
 use context::Context;
 use control_op::ControlOp;
 use evaluation::{
-    apply_add, apply_assign, apply_closure_func_call, apply_div, apply_eq, apply_gt, apply_lt,
-    apply_mult, apply_negate, apply_non_closure_func_call, apply_stmt, apply_sub, eval_expr,
+    apply_add, apply_assign, apply_closure_func_call, apply_div, apply_eq, apply_func_call,
+    apply_gt, apply_lt, apply_mult, apply_negate, apply_non_closure_func_call, apply_stmt,
+    apply_sub, eval_expr,
 };
 use resolved_value::ResolvedValue;
 
@@ -42,6 +43,7 @@ pub fn interpret_lines(stmts: Vec<TypedStmt>) -> Result<ResolvedValue, RuntimeEr
             ControlOp::ApplyLt => apply_lt(&mut ctx),
             ControlOp::ApplyNegate => apply_negate(&mut ctx),
             ControlOp::ApplyAssign(ident) => apply_assign(&mut ctx, ident),
+            ControlOp::ApplyFuncCall(args) => apply_func_call(&mut ctx, args),
             ControlOp::ApplyClosureFuncCall => apply_closure_func_call(&mut ctx),
             ControlOp::ApplyNonClosureFuncCall => apply_non_closure_func_call(&mut ctx),
         }
@@ -67,24 +69,9 @@ fn push_binary_op(ctx: &mut Context, op: ControlOp, left: Box<TypedExpr>, right:
 }
 
 fn push_func_call(ctx: &mut Context, call: TypedFuncCall) {
-    if call.func.is_closure {
-        ctx.control_stack.push(ControlOp::ApplyClosureFuncCall);
-        ctx.scope_stack.push_scope()
-    } else {
-        ctx.control_stack.push(ControlOp::ApplyNonClosureFuncCall);
-        ctx.scope_stack.create_new_stack()
-    }
+    ctx.control_stack.push(ControlOp::ApplyFuncCall(call.args));
 
-    for stmt in call.func.stmts.into_iter().rev() {
-        ctx.control_stack.push(ControlOp::EvalStmt(stmt));
-    }
-
-    for (param, arg) in call.func.params.into_iter().zip(call.args.into_iter()) {
-        // TODO: We're ignoring the param type here, do something about that later.
-        let (param, _ty) = param;
-        ctx.control_stack.push(ControlOp::ApplyAssign(param));
-        ctx.control_stack.push(ControlOp::EvalExpr(arg));
-    }
+    ctx.control_stack.push(ControlOp::EvalExpr(*call.func_expr));
 }
 
 fn apply_binary_op<F>(ctx: &mut Context, op: F)

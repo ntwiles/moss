@@ -1,7 +1,9 @@
-
-
-let factorial = (x) => {
-    x(x);
+let binary_op = (a: Int, b: Int, op: Function) => { 
+    op(a, b);
 };
 
-factorial(factorial);
+let add = (a: Int, b: Int) => {
+    a + b;
+};
+
+binary_op(a, b, add);

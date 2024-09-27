@@ -137,6 +137,31 @@ pub fn apply_assign(ctx: &mut Context, ident: String) {
 }
 
 // Postfix operations
+pub fn apply_func_call(ctx: &mut Context, args: Vec<TypedExpr>) {
+    let func = match ctx.value_stack.pop().unwrap() {
+        ResolvedValue::Function(func) => func,
+        _ => unreachable!(),
+    };
+
+    if func.is_closure {
+        ctx.control_stack.push(ControlOp::ApplyClosureFuncCall);
+        ctx.scope_stack.push_scope()
+    } else {
+        ctx.control_stack.push(ControlOp::ApplyNonClosureFuncCall);
+        ctx.scope_stack.create_new_stack()
+    }
+
+    for stmt in func.stmts.into_iter().rev() {
+        ctx.control_stack.push(ControlOp::EvalStmt(stmt));
+    }
+
+    for (param, arg) in func.params.into_iter().zip(args.into_iter()) {
+        let (param, _ty) = param;
+        ctx.control_stack.push(ControlOp::ApplyAssign(param));
+        ctx.control_stack.push(ControlOp::EvalExpr(arg));
+    }
+}
+
 pub fn apply_closure_func_call(ctx: &mut Context) {
     ctx.scope_stack.pop_scope();
 }
