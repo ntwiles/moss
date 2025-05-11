@@ -34,21 +34,21 @@ pub enum TypedExpr {
 impl TypedExpr {
     pub fn ty(&self) -> Type {
         match self {
-            TypedExpr::Eq(_, _, ty) => *ty,
-            TypedExpr::Gt(_, _, ty) => *ty,
-            TypedExpr::Lt(_, _, ty) => *ty,
-            TypedExpr::Add(_, _, ty) => *ty,
-            TypedExpr::Sub(_, _, ty) => *ty,
-            TypedExpr::Mult(_, _, ty) => *ty,
-            TypedExpr::Div(_, _, ty) => *ty,
-            TypedExpr::Literal(_, ty) => *ty,
-            TypedExpr::Negate(_, ty) => *ty,
-            TypedExpr::Assign(_, _, ty) => *ty,
-            TypedExpr::Identifier(_, ty) => *ty,
-            TypedExpr::FuncCall(_, ty) => *ty,
-            TypedExpr::FuncDeclare(_, ty) => *ty,
-            TypedExpr::IfElse(_, _, _, ty) => *ty,
-            TypedExpr::Block(_, ty) => *ty,
+            TypedExpr::Eq(_, _, ty) => ty.clone(),
+            TypedExpr::Gt(_, _, ty) => ty.clone(),
+            TypedExpr::Lt(_, _, ty) => ty.clone(),
+            TypedExpr::Add(_, _, ty) => ty.clone(),
+            TypedExpr::Sub(_, _, ty) => ty.clone(),
+            TypedExpr::Mult(_, _, ty) => ty.clone(),
+            TypedExpr::Div(_, _, ty) => ty.clone(),
+            TypedExpr::Literal(_, ty) => ty.clone(),
+            TypedExpr::Negate(_, ty) => ty.clone(),
+            TypedExpr::Assign(_, _, ty) => ty.clone(),
+            TypedExpr::Identifier(_, ty) => ty.clone(),
+            TypedExpr::FuncCall(_, ty) => ty.clone(),
+            TypedExpr::FuncDeclare(_, ty) => ty.clone(),
+            TypedExpr::IfElse(_, _, _, ty) => ty.clone(),
+            TypedExpr::Block(_, ty) => ty.clone(),
         }
     }
 

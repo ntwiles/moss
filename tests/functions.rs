@@ -29,7 +29,7 @@ fn closure_no_params() {
 #[test]
 fn non_closure_one_param() {
     let parsed = ProgramParser::new()
-        .parse("let foo = (x: Int) => { 7; }; foo();")
+        .parse("let foo = (x: Int) => { 7; }; foo(0);")
         .unwrap();
 
     let analyzed = analyzer::analyze_program(parsed).unwrap();
@@ -41,7 +41,7 @@ fn non_closure_one_param() {
 #[test]
 fn closure_one_param() {
     let parsed = ProgramParser::new()
-        .parse("let foo = |x: Int| => { 7; }; foo();")
+        .parse("let foo = |x: Int| => { 7; }; foo(0);")
         .unwrap();
 
     let analyzed = analyzer::analyze_program(parsed).unwrap();
@@ -53,7 +53,7 @@ fn closure_one_param() {
 #[test]
 fn non_closure_two_params() {
     let parsed = ProgramParser::new()
-        .parse("let foo = (x: Int, y: Int) => { 7; }; foo();")
+        .parse("let foo = (x: Int, y: Int) => { 7; }; foo(0, 0);")
         .unwrap();
 
     let analyzed = analyzer::analyze_program(parsed).unwrap();
@@ -65,7 +65,7 @@ fn non_closure_two_params() {
 #[test]
 fn closure_two_params() {
     let parsed = ProgramParser::new()
-        .parse("let foo = |x: Int, y: Int| => { 7; }; foo();")
+        .parse("let foo = |x: Int, y: Int| => { 7; }; foo(0, 0);")
         .unwrap();
 
     let analyzed = analyzer::analyze_program(parsed).unwrap();

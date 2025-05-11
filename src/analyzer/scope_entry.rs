@@ -10,7 +10,7 @@ impl ScopeEntry {
     pub fn ty(&self) -> Type {
         match self {
             ScopeEntry::TypedExpr(expr) => expr.ty(),
-            ScopeEntry::Type(ty) => *ty,
+            ScopeEntry::Type(ty) => ty.clone(),
         }
     }
 }

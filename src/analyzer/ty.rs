@@ -1,13 +1,13 @@
 use crate::errors::{type_error::TypeError, Error};
 
-#[derive(Copy, Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Type {
     Int,
     Float,
     String,
     Bool,
     Void,
-    Function,
+    Function(Vec<(String, Type)>),
 }
 
 impl Type {
@@ -18,7 +18,7 @@ impl Type {
             "String" => Ok(Type::String),
             "Bool" => Ok(Type::Bool),
             "Void" => Ok(Type::Void),
-            "Function" => Ok(Type::Function),
+            "Function" => Ok(Type::Function(vec![])), // TODO: Whatever from_str is used for, it probably needs to support the full function type.
             _ => Err(TypeError::new(format!("Unknown type: {}", s))),
         }
     }

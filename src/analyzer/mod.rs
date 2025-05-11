@@ -328,26 +328,33 @@ fn analyze_func_call(
 ) -> Result<TypedExpr, TypeError> {
     let callee = analyze_expr(scope_stack, *call.func)?;
 
-    if callee.ty() != Type::Function {
-        return Err(TypeError {
-            message: format!("Cannot call non-function: {:?}", callee.ty()),
-        });
-    }
-
     let args = call
         .args
         .into_iter()
         .map(|arg| analyze_expr(scope_stack, arg))
         .collect::<Result<Vec<_>, _>>()?;
 
-    // TODO: Type check args
+    if let Type::Function(param_types) = callee.ty() {
+        if param_types.len() != args.len() {
+            return Err(TypeError {
+                // TODO: Better printing for types here, right now it's just debug printing a tuple.
+                message: format!("Called function with wrong number of args.\n\tExpected: {:?}\n\tReceived: {:?}", param_types, args)
+            });
+        }
+
+        // TODO: Check that arg types are correct.
+    } else {
+        return Err(TypeError {
+            message: format!("Cannot call non-function: {:?}", callee.ty()),
+        });
+    }
 
     let func_call = TypedFuncCall {
         func_expr: Box::new(callee),
         args,
     };
 
-    // TODO: We're hardcoding Type::Void here which is wrong.
+    // TODO: We're hardcoding Type::Int here which is wrong.
     Ok(TypedExpr::FuncCall(func_call, Type::Int))
 }
 
@@ -396,19 +403,19 @@ fn analyze_func_declare(
         scope_stack.restore_previous_stack();
     }
 
-    let params = func
+    let params: Vec<(String, Type)> = func
         .params
         .iter()
         .map(|(ident, ty)| (ident.clone(), Type::from_str(ty).unwrap()))
         .collect();
 
     let func = TypedFunc {
-        params,
+        params: params.clone(),
         block: Box::new(block),
         is_closure: func.is_closure,
     };
 
-    Ok(TypedExpr::FuncDeclare(func, Type::Function))
+    Ok(TypedExpr::FuncDeclare(func, Type::Function(params)))
 }
 
 fn analyze_if_else(
