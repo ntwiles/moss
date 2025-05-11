@@ -106,14 +106,23 @@ fn call_two_args() {
 //         .parse("let foo = (x: Int) => { x; }; foo(false);")
 //         .unwrap();
 
-//     analyzer::analyze_program(parsed).expect_err("foo expects 1 argument, got 2.");
+//     analyzer::analyze_program(parsed).expect_err("foo expects int argument, got bool.");
 // }
 
-// #[test]
-// fn call_too_few_args() {
-//     let parsed = ProgramParser::new()
-//         .parse("let foo = (x: Int, y: Int) => { x + y; }; foo(7);")
-//         .unwrap();
+#[test]
+fn call_too_few_args() {
+    let parsed = ProgramParser::new()
+        .parse("let foo = (x: Int, y: Int) => { x + y; }; foo(7);")
+        .unwrap();
 
-//     analyzer::analyze_program(parsed).expect_err("foo expects 2 arguments, got 1.");
-// }
+    analyzer::analyze_program(parsed).expect_err("foo expects 2 arguments, got 1.");
+}
+
+#[test]
+fn call_too_many_args() {
+    let parsed = ProgramParser::new()
+        .parse("let foo = (x: Int) => { x; }; foo(7, 5);")
+        .unwrap();
+
+    analyzer::analyze_program(parsed).expect_err("foo expects 1 arguments, got 2.");
+}
