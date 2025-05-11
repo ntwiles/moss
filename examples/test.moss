@@ -1,2 +1,9 @@
-let foo = if true { 7; } else { 8; };
-foo;
+let add = (a: Int, b: Int) => {
+    a + b;
+};
+
+let sub = (a: Int, b: Int) => {
+    a - b;
+};
+
+sub(add(3, 2), 5);

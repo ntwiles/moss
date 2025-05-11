@@ -143,6 +143,7 @@ pub fn apply_func_call(ctx: &mut Context, args: Vec<TypedExpr>) {
     for (param, arg) in func.params.into_iter().zip(args.into_iter()) {
         let (param, _ty) = param;
         ctx.control_stack.push(ControlOp::ApplyAssign(param));
+        println!("ApplyFuncCall Arg: {arg:?}");
         ctx.control_stack.push(ControlOp::EvalExpr(arg));
     }
 }

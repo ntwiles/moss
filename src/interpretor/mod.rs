@@ -88,6 +88,7 @@ fn push_if_else(ctx: &mut Context, cond: TypedExpr, then: Box<TypedExpr>, els: B
 }
 
 fn push_block(ctx: &mut Context, block: TypedExpr) {
+    println!("Scope: {:#?}", ctx.scope_stack);
     let stmts = match block {
         TypedExpr::Block(stmts, _ty) => stmts,
         _ => unreachable!(),

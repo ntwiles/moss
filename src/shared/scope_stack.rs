@@ -1,8 +1,9 @@
-use std::collections::HashMap;
+use core::fmt;
+use core::fmt::Debug;
+use std::fmt::Formatter;
 
+use super::scope::Scope;
 use crate::errors::Error;
-
-type Scope<T> = HashMap<String, T>;
 
 pub struct ScopeStack<T> {
     current: Vec<Scope<T>>,
@@ -48,5 +49,32 @@ impl<T> ScopeStack<T> {
 
     pub fn insert(&mut self, name: String, value: T) {
         self.current.last_mut().unwrap().insert(name, value);
+    }
+}
+
+impl<T: Debug> Debug for ScopeStack<T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        writeln!(f, "ScopeStack {{")?;
+
+        writeln!(f, "  current: [")?;
+        for (i, scope) in self.current.iter().enumerate() {
+            writeln!(f, "    Scope {}: {:?}", i, scope)?;
+        }
+        writeln!(f, "  ]")?;
+
+        match &self.previous {
+            Some(prev_scopes) => {
+                writeln!(f, "  previous: [")?;
+                for (i, scope) in prev_scopes.iter().enumerate() {
+                    writeln!(f, "    Scope {}: {:?}", i, scope)?;
+                }
+                writeln!(f, "  ]")?;
+            }
+            None => {
+                writeln!(f, "  previous: None")?;
+            }
+        }
+
+        writeln!(f, "}}")
     }
 }
