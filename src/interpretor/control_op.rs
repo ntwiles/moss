@@ -29,5 +29,6 @@ pub enum ControlOp {
     ApplyAssign(String),
 
     // Scope
+    ApplyBinding(String),
     PushScope(TypedFunc),
 }

@@ -6,4 +6,4 @@ let sub = (a: Int, b: Int) => {
     a - b;
 };
 
-sub(add(3, 2), 5);
+sub(add(3, 2), 1);

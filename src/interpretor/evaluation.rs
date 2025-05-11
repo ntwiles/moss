@@ -135,15 +135,25 @@ pub fn apply_func_call(ctx: &mut Context, args: Vec<TypedExpr>) {
         _ => unreachable!(),
     };
 
+    if func.is_closure {
+        ctx.control_stack.push(ControlOp::ApplyClosureFuncCall);
+    } else {
+        ctx.control_stack.push(ControlOp::ApplyNonClosureFuncCall);
+    }
+
     ctx.control_stack
         .push(ControlOp::EvalBlock(*func.block.clone()));
 
-    ctx.control_stack.push(ControlOp::PushScope(func.clone()));
+    let func_copy = func.clone();
 
-    for (param, arg) in func.params.into_iter().zip(args.into_iter()) {
+    for param in func.params.into_iter() {
         let (param, _ty) = param;
-        ctx.control_stack.push(ControlOp::ApplyAssign(param));
-        println!("ApplyFuncCall Arg: {arg:?}");
+        ctx.control_stack.push(ControlOp::ApplyBinding(param));
+    }
+
+    ctx.control_stack.push(ControlOp::PushScope(func_copy));
+
+    for arg in args.into_iter().rev() {
         ctx.control_stack.push(ControlOp::EvalExpr(arg));
     }
 }

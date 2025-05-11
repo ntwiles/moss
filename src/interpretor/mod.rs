@@ -53,6 +53,7 @@ pub fn interpret_program(block: TypedExpr) -> Result<ResolvedValue, RuntimeError
             ControlOp::ApplyFuncCall(args) => apply_func_call(&mut ctx, args),
             ControlOp::ApplyClosureFuncCall => apply_closure_func_call(&mut ctx),
             ControlOp::ApplyNonClosureFuncCall => apply_non_closure_func_call(&mut ctx),
+            ControlOp::ApplyBinding(ident) => apply_binding(&mut ctx, ident),
             ControlOp::PushScope(func) => apply_push_scope(&mut ctx, func),
             ControlOp::ApplyIfElse(then, els) => apply_if_else(&mut ctx, then, els),
         }
@@ -88,7 +89,6 @@ fn push_if_else(ctx: &mut Context, cond: TypedExpr, then: Box<TypedExpr>, els: B
 }
 
 fn push_block(ctx: &mut Context, block: TypedExpr) {
-    println!("Scope: {:#?}", ctx.scope_stack);
     let stmts = match block {
         TypedExpr::Block(stmts, _ty) => stmts,
         _ => unreachable!(),
@@ -121,12 +121,16 @@ where
 
 fn apply_push_scope(ctx: &mut Context, func: TypedFunc) {
     if func.is_closure {
-        ctx.control_stack.push(ControlOp::ApplyClosureFuncCall);
         ctx.scope_stack.push_scope()
     } else {
-        ctx.control_stack.push(ControlOp::ApplyNonClosureFuncCall);
         ctx.scope_stack.create_new_stack()
     }
+}
+
+// This is not used by the assignment operation, but instead for things like func call args.
+pub fn apply_binding(ctx: &mut Context, ident: String) {
+    let value = ctx.value_stack.pop().unwrap();
+    ctx.scope_stack.insert(ident.clone(), value);
 }
 
 fn apply_if_else(ctx: &mut Context, then_block: TypedExpr, else_block: TypedExpr) {
