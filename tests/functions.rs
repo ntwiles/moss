@@ -126,3 +126,24 @@ fn call_too_many_args() {
 
     analyzer::analyze_program(parsed).expect_err("foo expects 1 arguments, got 2.");
 }
+
+#[test]
+fn call_with_composition() {
+    let code = r"
+    let add = (a: Int, b: Int) => {
+        a + b;
+    };
+
+    let sub = (a: Int, b: Int) => {
+        a - b;
+    };
+
+    sub(add(3, 2), 1);
+    ";
+
+    let parsed = ProgramParser::new().parse(code).unwrap();
+    let analyzed = analyzer::analyze_program(parsed).unwrap();
+    let result = interpretor::interpret_program(analyzed).unwrap();
+
+    assert_eq!(result.unwrap_int(), 4);
+}
