@@ -7,7 +7,7 @@ pub enum Type {
     String,
     Bool,
     Void,
-    Function(Vec<(String, Type)>),
+    Function(Vec<Type>),
 }
 
 impl Type {

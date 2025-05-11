@@ -334,7 +334,12 @@ fn analyze_func_call(
         .map(|arg| analyze_expr(scope_stack, arg))
         .collect::<Result<Vec<_>, _>>()?;
 
-    if let Type::Function(param_types) = callee.ty() {
+    if let Type::Function(inner_types) = callee.ty() {
+        let mut inner_types = inner_types.clone();
+
+        let return_type = inner_types.pop().unwrap();
+        let param_types = inner_types;
+
         if param_types.len() != args.len() {
             return Err(TypeError {
                 // TODO: Better printing for types here, right now it's just debug printing a tuple.
@@ -343,19 +348,18 @@ fn analyze_func_call(
         }
 
         // TODO: Check that arg types are correct.
+
+        let func_call = TypedFuncCall {
+            func_expr: Box::new(callee),
+            args,
+        };
+
+        Ok(TypedExpr::FuncCall(func_call, return_type))
     } else {
         return Err(TypeError {
             message: format!("Cannot call non-function: {:?}", callee.ty()),
         });
     }
-
-    let func_call = TypedFuncCall {
-        func_expr: Box::new(callee),
-        args,
-    };
-
-    // TODO: We're hardcoding Type::Int here which is wrong.
-    Ok(TypedExpr::FuncCall(func_call, Type::Int))
 }
 
 // Primaries
@@ -415,7 +419,13 @@ fn analyze_func_declare(
         is_closure: func.is_closure,
     };
 
-    Ok(TypedExpr::FuncDeclare(func, Type::Function(params)))
+    let mut inner_types: Vec<Type> = params.into_iter().map(|p| p.1).collect();
+
+    // TODO: This is the return type. We're just hardcoding int for now because we don't yet
+    // have a return type declaration syntax.
+    inner_types.push(Type::Int);
+
+    Ok(TypedExpr::FuncDeclare(func, Type::Function(inner_types)))
 }
 
 fn analyze_if_else(
