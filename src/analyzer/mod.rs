@@ -342,12 +342,17 @@ fn analyze_func_call(
 
         if param_types.len() != args.len() {
             return Err(TypeError {
-                // TODO: Better printing for types here, right now it's just debug printing a tuple.
+                // TODO: Impl Display for types here, right now it's just debug printing a tuple.
                 message: format!("Called function with wrong number of args.\n\tExpected: {:?}\n\tReceived: {:?}", param_types, args)
             });
         }
 
-        // TODO: Check that arg types are correct.
+        for (param_type, arg) in param_types.clone().into_iter().zip(args.clone()) {
+            if arg.ty() != param_type {
+                // TODO: Impl Display for types here, right now it's just debug printing a tuple.
+                return Err(TypeError { message: format!("Called function with incorrect arg types.\n\tExpected: {:?}\n\tReceived: {:?}", param_types, args)});
+            }
+        }
 
         let func_call = TypedFuncCall {
             func_expr: Box::new(callee),

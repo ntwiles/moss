@@ -3,6 +3,13 @@ use moss::grammar::ProgramParser;
 use moss::interpretor;
 
 #[test]
+fn declare_with_no_return_type() {
+    ProgramParser::new()
+        .parse("let foo = () => { 7; }; foo();")
+        .expect_err("Missing return type");
+}
+
+#[test]
 fn non_closure_no_params() {
     let parsed = ProgramParser::new()
         .parse("let foo = (): Int => { 7; }; foo();")
@@ -98,16 +105,14 @@ fn call_two_args() {
     assert_eq!(result.unwrap_int(), 15);
 }
 
-// TODO: Errors when args don't match params.
+#[test]
+fn call_wrong_arg() {
+    let parsed = ProgramParser::new()
+        .parse("let foo = (x: Int): Int => { x; }; foo(false);")
+        .unwrap();
 
-// #[test]
-// fn call_wrong_arg() {
-//     let parsed = ProgramParser::new()
-//         .parse("let foo = (x: Int) => { x; }; foo(false);")
-//         .unwrap();
-
-//     analyzer::analyze_program(parsed).expect_err("foo expects int argument, got bool.");
-// }
+    analyzer::analyze_program(parsed).expect_err("foo expects int argument, got bool.");
+}
 
 #[test]
 fn call_too_few_args() {
