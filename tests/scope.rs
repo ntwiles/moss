@@ -4,7 +4,7 @@ use moss::{analyzer, grammar::ProgramParser, interpretor};
 fn search_parent_scope() {
     let code = r#"
         let foo = 2 + 5;
-        let bar = || => { foo; };
+        let bar = ||: Int => { foo; };
         bar();
     "#;
 
@@ -20,7 +20,7 @@ fn search_parent_scope() {
 fn search_parent_scope_non_closure_type_error() {
     let code = r#"
         let foo = 2 + 5;
-        let bar = () => { foo; };
+        let bar = (): Int => { foo; };
         bar();
     "#;
 
@@ -32,7 +32,7 @@ fn search_parent_scope_non_closure_type_error() {
 #[test]
 fn search_child_scope_error_type_error() {
     let code = r#"
-        let foo = () => { let bar = 2 + 5; };
+        let foo = (): Void => { let bar = 2 + 5; };
         foo();
         bar;
     "#;

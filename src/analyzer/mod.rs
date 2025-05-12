@@ -413,6 +413,14 @@ fn analyze_func_declare(
         .map(|(ident, ty)| (ident.clone(), Type::from_str(ty).unwrap()))
         .collect();
 
+    let return_type = if let Ok(return_type) = Type::from_str(&func.return_type) {
+        return_type
+    } else {
+        return Err(TypeError {
+            message: format!("Unknown return type: {}", func.return_type),
+        });
+    };
+
     let func = TypedFunc {
         params: params.clone(),
         block: Box::new(block),
@@ -420,10 +428,7 @@ fn analyze_func_declare(
     };
 
     let mut inner_types: Vec<Type> = params.into_iter().map(|p| p.1).collect();
-
-    // TODO: This is the return type. We're just hardcoding int for now because we don't yet
-    // have a return type declaration syntax.
-    inner_types.push(Type::Int);
+    inner_types.push(return_type);
 
     Ok(TypedExpr::FuncDeclare(func, Type::Function(inner_types)))
 }

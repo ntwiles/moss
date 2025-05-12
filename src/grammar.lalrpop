@@ -113,8 +113,8 @@ Identifier: String = {
 };
 
 FuncDeclare: Expr = {
-    "(" <params:ParameterList> ")" "=>" "{" <stmts:StmtList> "}" => Expr::FuncDeclare(FuncDeclare{ params, block: Box::new(Expr::Block(stmts)), is_closure: false }),
-    "|" <params:ParameterList> "|" "=>" "{" <stmts:StmtList> "}" => Expr::FuncDeclare(FuncDeclare{ params, block: Box::new(Expr::Block(stmts)), is_closure: true }),
+    "(" <params:ParameterList> ")" ":" <return_type:Identifier> "=>" "{" <stmts:StmtList> "}" => Expr::FuncDeclare(FuncDeclare{ params, return_type, block: Box::new(Expr::Block(stmts)), is_closure: false }),
+    "|" <params:ParameterList> "|" ":" <return_type:Identifier> "=>" "{" <stmts:StmtList> "}" => Expr::FuncDeclare(FuncDeclare{ params, return_type, block: Box::new(Expr::Block(stmts)), is_closure: true }),
 };
 
 ParameterList: Vec<(String, String)> = Comma<Parameter>;

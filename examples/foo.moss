@@ -1,6 +1,0 @@
-let fact = (rec: Function, x: Int) => {
-    if x == 1 { x; } 
-    else { rec(rec, x - 1) * x; };
-};
-
-fact(fact, 5);

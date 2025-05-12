@@ -1,1 +1,0 @@
-let foo = (x: Int, y: Int) => { 7; }; foo(7, 5);

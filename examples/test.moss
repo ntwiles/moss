@@ -1,8 +1,8 @@
-let add = (a: Int, b: Int) => {
+let add = (a: Int, b: Int): String => {
     a + b;
 };
 
-let sub = (a: Int, b: Int) => {
+let sub = (a: Int, b: Int): Int => {
     a - b;
 };
 

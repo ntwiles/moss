@@ -5,7 +5,7 @@ use moss::interpretor;
 #[test]
 fn non_closure_no_params() {
     let parsed = ProgramParser::new()
-        .parse("let foo = () => { 7; }; foo();")
+        .parse("let foo = (): Int => { 7; }; foo();")
         .unwrap();
 
     let analyzed = analyzer::analyze_program(parsed).unwrap();
@@ -17,7 +17,7 @@ fn non_closure_no_params() {
 #[test]
 fn closure_no_params() {
     let parsed = ProgramParser::new()
-        .parse("let foo = || => { 7; }; foo();")
+        .parse("let foo = ||: Int => { 7; }; foo();")
         .unwrap();
 
     let analyzed = analyzer::analyze_program(parsed).unwrap();
@@ -29,7 +29,7 @@ fn closure_no_params() {
 #[test]
 fn non_closure_one_param() {
     let parsed = ProgramParser::new()
-        .parse("let foo = (x: Int) => { 7; }; foo(0);")
+        .parse("let foo = (x: Int): Int => { 7; }; foo(0);")
         .unwrap();
 
     let analyzed = analyzer::analyze_program(parsed).unwrap();
@@ -41,7 +41,7 @@ fn non_closure_one_param() {
 #[test]
 fn closure_one_param() {
     let parsed = ProgramParser::new()
-        .parse("let foo = |x: Int| => { 7; }; foo(0);")
+        .parse("let foo = |x: Int|: Int => { 7; }; foo(0);")
         .unwrap();
 
     let analyzed = analyzer::analyze_program(parsed).unwrap();
@@ -53,7 +53,7 @@ fn closure_one_param() {
 #[test]
 fn non_closure_two_params() {
     let parsed = ProgramParser::new()
-        .parse("let foo = (x: Int, y: Int) => { 7; }; foo(0, 0);")
+        .parse("let foo = (x: Int, y: Int): Int => { 7; }; foo(0, 0);")
         .unwrap();
 
     let analyzed = analyzer::analyze_program(parsed).unwrap();
@@ -65,7 +65,7 @@ fn non_closure_two_params() {
 #[test]
 fn closure_two_params() {
     let parsed = ProgramParser::new()
-        .parse("let foo = |x: Int, y: Int| => { 7; }; foo(0, 0);")
+        .parse("let foo = |x: Int, y: Int|: Int => { 7; }; foo(0, 0);")
         .unwrap();
 
     let analyzed = analyzer::analyze_program(parsed).unwrap();
@@ -77,7 +77,7 @@ fn closure_two_params() {
 #[test]
 fn call_one_arg() {
     let parsed = ProgramParser::new()
-        .parse("let foo = (x: Int) => { x; }; foo(7);")
+        .parse("let foo = (x: Int): Int => { x; }; foo(7);")
         .unwrap();
 
     let analyzed = analyzer::analyze_program(parsed).unwrap();
@@ -89,7 +89,7 @@ fn call_one_arg() {
 #[test]
 fn call_two_args() {
     let parsed = ProgramParser::new()
-        .parse("let add = (x: Int, y: Int) => { x + y; }; add(7, 8);")
+        .parse("let add = (x: Int, y: Int): Int => { x + y; }; add(7, 8);")
         .unwrap();
 
     let analyzed = analyzer::analyze_program(parsed).unwrap();
@@ -112,7 +112,7 @@ fn call_two_args() {
 #[test]
 fn call_too_few_args() {
     let parsed = ProgramParser::new()
-        .parse("let foo = (x: Int, y: Int) => { x + y; }; foo(7);")
+        .parse("let foo = (x: Int, y: Int): Int => { x + y; }; foo(7);")
         .unwrap();
 
     analyzer::analyze_program(parsed).expect_err("foo expects 2 arguments, got 1.");
@@ -121,7 +121,7 @@ fn call_too_few_args() {
 #[test]
 fn call_too_many_args() {
     let parsed = ProgramParser::new()
-        .parse("let foo = (x: Int) => { x; }; foo(7, 5);")
+        .parse("let foo = (x: Int): Int => { x; }; foo(7, 5);")
         .unwrap();
 
     analyzer::analyze_program(parsed).expect_err("foo expects 1 arguments, got 2.");
@@ -130,11 +130,11 @@ fn call_too_many_args() {
 #[test]
 fn call_with_composition() {
     let code = r"
-    let add = (a: Int, b: Int) => {
+    let add = (a: Int, b: Int): Int => {
         a + b;
     };
 
-    let sub = (a: Int, b: Int) => {
+    let sub = (a: Int, b: Int): Int => {
         a - b;
     };
 

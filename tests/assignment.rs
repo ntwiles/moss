@@ -27,7 +27,7 @@ fn assignment_operated_on() {
 #[test]
 fn assignment_function() {
     let parsed = ProgramParser::new()
-        .parse("let foo = || => { 5; };")
+        .parse("let foo = ||: Int => { 5; };")
         .unwrap();
 
     let analyzed = analyzer::analyze_program(parsed).unwrap();
