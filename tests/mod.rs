@@ -1,13 +1,14 @@
 use moss::analyzer;
 use moss::grammar::ProgramParser;
 use moss::interpretor;
+use moss::shared::builtins::get_builtins;
 
 #[test]
 fn operation_precedence() {
     let parsed = ProgramParser::new().parse("10 + 5 * 2 - 8 / 4;").unwrap();
 
-    let analyzed = analyzer::analyze_program(parsed).unwrap();
-    let result = interpretor::interpret_program(analyzed).unwrap();
+    let analyzed = analyzer::analyze_program(parsed, get_builtins()).unwrap();
+    let result = interpretor::interpret_program(analyzed, get_builtins()).unwrap();
 
     assert_eq!(result.unwrap_int(), 18);
 }
@@ -18,8 +19,8 @@ fn operation_precedence_with_negatives() {
         .parse("-10 + -5 * 2 - -8 / 4;")
         .unwrap();
 
-    let analyzed = analyzer::analyze_program(parsed).unwrap();
-    let result = interpretor::interpret_program(analyzed).unwrap();
+    let analyzed = analyzer::analyze_program(parsed, get_builtins()).unwrap();
+    let result = interpretor::interpret_program(analyzed, get_builtins()).unwrap();
 
     assert_eq!(result.unwrap_int(), -18);
 }
@@ -28,8 +29,8 @@ fn operation_precedence_with_negatives() {
 fn equality_comparison_true() {
     let parsed = ProgramParser::new().parse("15 - 5 == 5 + 5;").unwrap();
 
-    let analyzed = analyzer::analyze_program(parsed).unwrap();
-    let result = interpretor::interpret_program(analyzed).unwrap();
+    let analyzed = analyzer::analyze_program(parsed, get_builtins()).unwrap();
+    let result = interpretor::interpret_program(analyzed, get_builtins()).unwrap();
 
     assert_eq!(result.unwrap_bool(), true);
 }
@@ -38,8 +39,8 @@ fn equality_comparison_true() {
 fn equality_comparison_false() {
     let parsed = ProgramParser::new().parse("15 + 5 == 5 + 5;").unwrap();
 
-    let analyzed = analyzer::analyze_program(parsed).unwrap();
-    let result = interpretor::interpret_program(analyzed).unwrap();
+    let analyzed = analyzer::analyze_program(parsed, get_builtins()).unwrap();
+    let result = interpretor::interpret_program(analyzed, get_builtins()).unwrap();
 
     assert_eq!(result.unwrap_bool(), false);
 }
@@ -48,8 +49,8 @@ fn equality_comparison_false() {
 fn greater_than_comparison_true() {
     let parsed = ProgramParser::new().parse("15 + 5 > 5 + 5;").unwrap();
 
-    let analyzed = analyzer::analyze_program(parsed).unwrap();
-    let result = interpretor::interpret_program(analyzed).unwrap();
+    let analyzed = analyzer::analyze_program(parsed, get_builtins()).unwrap();
+    let result = interpretor::interpret_program(analyzed, get_builtins()).unwrap();
 
     assert_eq!(result.unwrap_bool(), true);
 }
@@ -58,8 +59,8 @@ fn greater_than_comparison_true() {
 fn greater_than_comparison_false() {
     let parsed = ProgramParser::new().parse("15 - 5 > 5 + 5;").unwrap();
 
-    let analyzed = analyzer::analyze_program(parsed).unwrap();
-    let result = interpretor::interpret_program(analyzed).unwrap();
+    let analyzed = analyzer::analyze_program(parsed, get_builtins()).unwrap();
+    let result = interpretor::interpret_program(analyzed, get_builtins()).unwrap();
 
     assert_eq!(result.unwrap_bool(), false);
 }
@@ -68,8 +69,8 @@ fn greater_than_comparison_false() {
 fn less_than_comparison_true() {
     let parsed = ProgramParser::new().parse("10 - 5 < 5 + 5;").unwrap();
 
-    let analyzed = analyzer::analyze_program(parsed).unwrap();
-    let result = interpretor::interpret_program(analyzed).unwrap();
+    let analyzed = analyzer::analyze_program(parsed, get_builtins()).unwrap();
+    let result = interpretor::interpret_program(analyzed, get_builtins()).unwrap();
 
     assert_eq!(result.unwrap_bool(), true);
 }
@@ -78,8 +79,8 @@ fn less_than_comparison_true() {
 fn less_than_comparison_false() {
     let parsed = ProgramParser::new().parse("15 + 5 < 5 + 5;").unwrap();
 
-    let analyzed = analyzer::analyze_program(parsed).unwrap();
-    let result = interpretor::interpret_program(analyzed).unwrap();
+    let analyzed = analyzer::analyze_program(parsed, get_builtins()).unwrap();
+    let result = interpretor::interpret_program(analyzed, get_builtins()).unwrap();
 
     assert_eq!(result.unwrap_bool(), false);
 }
@@ -88,8 +89,8 @@ fn less_than_comparison_false() {
 fn boolean_literal_true() {
     let parsed = ProgramParser::new().parse("true == true;").unwrap();
 
-    let analyzed = analyzer::analyze_program(parsed).unwrap();
-    let result = interpretor::interpret_program(analyzed).unwrap();
+    let analyzed = analyzer::analyze_program(parsed, get_builtins()).unwrap();
+    let result = interpretor::interpret_program(analyzed, get_builtins()).unwrap();
 
     assert_eq!(result.unwrap_bool(), true);
 }
@@ -98,8 +99,8 @@ fn boolean_literal_true() {
 fn boolean_literal_false() {
     let parsed = ProgramParser::new().parse("true == false;").unwrap();
 
-    let analyzed = analyzer::analyze_program(parsed).unwrap();
-    let result = interpretor::interpret_program(analyzed).unwrap();
+    let analyzed = analyzer::analyze_program(parsed, get_builtins()).unwrap();
+    let result = interpretor::interpret_program(analyzed, get_builtins()).unwrap();
 
     assert_eq!(result.unwrap_bool(), false);
 }
@@ -110,8 +111,8 @@ fn string_concatenation() {
         .parse("\"hello\" + \" world\";")
         .unwrap();
 
-    let analyzed = analyzer::analyze_program(parsed).unwrap();
-    let result = interpretor::interpret_program(analyzed).unwrap();
+    let analyzed = analyzer::analyze_program(parsed, get_builtins()).unwrap();
+    let result = interpretor::interpret_program(analyzed, get_builtins()).unwrap();
 
     assert_eq!(result.unwrap_string(), "hello world");
 }
@@ -122,8 +123,8 @@ fn string_concatenation_assigned() {
         .parse("let foo = \"hello\"; foo + \" world\";")
         .unwrap();
 
-    let analyzed = analyzer::analyze_program(parsed).unwrap();
-    let result = interpretor::interpret_program(analyzed).unwrap();
+    let analyzed = analyzer::analyze_program(parsed, get_builtins()).unwrap();
+    let result = interpretor::interpret_program(analyzed, get_builtins()).unwrap();
 
     assert_eq!(result.unwrap_string(), "hello world");
 }

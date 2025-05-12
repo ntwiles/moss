@@ -1,6 +1,7 @@
 use moss::analyzer;
 use moss::grammar::ProgramParser;
 use moss::interpretor;
+use moss::shared::builtins::get_builtins;
 
 #[test]
 fn declare_with_no_return_type() {
@@ -15,8 +16,8 @@ fn non_closure_no_params() {
         .parse("let foo = (): Int => { 7; }; foo();")
         .unwrap();
 
-    let analyzed = analyzer::analyze_program(parsed).unwrap();
-    let result = interpretor::interpret_program(analyzed).unwrap();
+    let analyzed = analyzer::analyze_program(parsed, get_builtins()).unwrap();
+    let result = interpretor::interpret_program(analyzed, get_builtins()).unwrap();
 
     assert_eq!(result.unwrap_int(), 7);
 }
@@ -27,8 +28,8 @@ fn closure_no_params() {
         .parse("let foo = ||: Int => { 7; }; foo();")
         .unwrap();
 
-    let analyzed = analyzer::analyze_program(parsed).unwrap();
-    let result = interpretor::interpret_program(analyzed).unwrap();
+    let analyzed = analyzer::analyze_program(parsed, get_builtins()).unwrap();
+    let result = interpretor::interpret_program(analyzed, get_builtins()).unwrap();
 
     assert_eq!(result.unwrap_int(), 7);
 }
@@ -39,8 +40,8 @@ fn non_closure_one_param() {
         .parse("let foo = (x: Int): Int => { 7; }; foo(0);")
         .unwrap();
 
-    let analyzed = analyzer::analyze_program(parsed).unwrap();
-    let result = interpretor::interpret_program(analyzed).unwrap();
+    let analyzed = analyzer::analyze_program(parsed, get_builtins()).unwrap();
+    let result = interpretor::interpret_program(analyzed, get_builtins()).unwrap();
 
     assert_eq!(result.unwrap_int(), 7);
 }
@@ -51,8 +52,8 @@ fn closure_one_param() {
         .parse("let foo = |x: Int|: Int => { 7; }; foo(0);")
         .unwrap();
 
-    let analyzed = analyzer::analyze_program(parsed).unwrap();
-    let result = interpretor::interpret_program(analyzed).unwrap();
+    let analyzed = analyzer::analyze_program(parsed, get_builtins()).unwrap();
+    let result = interpretor::interpret_program(analyzed, get_builtins()).unwrap();
 
     assert_eq!(result.unwrap_int(), 7);
 }
@@ -63,8 +64,8 @@ fn non_closure_two_params() {
         .parse("let foo = (x: Int, y: Int): Int => { 7; }; foo(0, 0);")
         .unwrap();
 
-    let analyzed = analyzer::analyze_program(parsed).unwrap();
-    let result = interpretor::interpret_program(analyzed).unwrap();
+    let analyzed = analyzer::analyze_program(parsed, get_builtins()).unwrap();
+    let result = interpretor::interpret_program(analyzed, get_builtins()).unwrap();
 
     assert_eq!(result.unwrap_int(), 7);
 }
@@ -75,8 +76,8 @@ fn closure_two_params() {
         .parse("let foo = |x: Int, y: Int|: Int => { 7; }; foo(0, 0);")
         .unwrap();
 
-    let analyzed = analyzer::analyze_program(parsed).unwrap();
-    let result = interpretor::interpret_program(analyzed).unwrap();
+    let analyzed = analyzer::analyze_program(parsed, get_builtins()).unwrap();
+    let result = interpretor::interpret_program(analyzed, get_builtins()).unwrap();
 
     assert_eq!(result.unwrap_int(), 7);
 }
@@ -87,8 +88,8 @@ fn call_one_arg() {
         .parse("let foo = (x: Int): Int => { x; }; foo(7);")
         .unwrap();
 
-    let analyzed = analyzer::analyze_program(parsed).unwrap();
-    let result = interpretor::interpret_program(analyzed).unwrap();
+    let analyzed = analyzer::analyze_program(parsed, get_builtins()).unwrap();
+    let result = interpretor::interpret_program(analyzed, get_builtins()).unwrap();
 
     assert_eq!(result.unwrap_int(), 7);
 }
@@ -99,8 +100,8 @@ fn call_two_args() {
         .parse("let add = (x: Int, y: Int): Int => { x + y; }; add(7, 8);")
         .unwrap();
 
-    let analyzed = analyzer::analyze_program(parsed).unwrap();
-    let result = interpretor::interpret_program(analyzed).unwrap();
+    let analyzed = analyzer::analyze_program(parsed, get_builtins()).unwrap();
+    let result = interpretor::interpret_program(analyzed, get_builtins()).unwrap();
 
     assert_eq!(result.unwrap_int(), 15);
 }
@@ -111,7 +112,8 @@ fn call_wrong_arg() {
         .parse("let foo = (x: Int): Int => { x; }; foo(false);")
         .unwrap();
 
-    analyzer::analyze_program(parsed).expect_err("foo expects int argument, got bool.");
+    analyzer::analyze_program(parsed, get_builtins())
+        .expect_err("foo expects int argument, got bool.");
 }
 
 #[test]
@@ -120,7 +122,7 @@ fn call_too_few_args() {
         .parse("let foo = (x: Int, y: Int): Int => { x + y; }; foo(7);")
         .unwrap();
 
-    analyzer::analyze_program(parsed).expect_err("foo expects 2 arguments, got 1.");
+    analyzer::analyze_program(parsed, get_builtins()).expect_err("foo expects 2 arguments, got 1.");
 }
 
 #[test]
@@ -129,7 +131,7 @@ fn call_too_many_args() {
         .parse("let foo = (x: Int): Int => { x; }; foo(7, 5);")
         .unwrap();
 
-    analyzer::analyze_program(parsed).expect_err("foo expects 1 arguments, got 2.");
+    analyzer::analyze_program(parsed, get_builtins()).expect_err("foo expects 1 arguments, got 2.");
 }
 
 #[test]
@@ -147,8 +149,8 @@ fn call_with_composition() {
     ";
 
     let parsed = ProgramParser::new().parse(code).unwrap();
-    let analyzed = analyzer::analyze_program(parsed).unwrap();
-    let result = interpretor::interpret_program(analyzed).unwrap();
+    let analyzed = analyzer::analyze_program(parsed, get_builtins()).unwrap();
+    let result = interpretor::interpret_program(analyzed, get_builtins()).unwrap();
 
     assert_eq!(result.unwrap_int(), 4);
 }
@@ -162,5 +164,6 @@ fn call_with_wrong_return_type() {
     ";
 
     let parsed = ProgramParser::new().parse(code).unwrap();
-    analyzer::analyze_program(parsed).expect_err("wrong return type for signature.");
+    analyzer::analyze_program(parsed, get_builtins())
+        .expect_err("wrong return type for signature.");
 }

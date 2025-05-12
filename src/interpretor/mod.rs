@@ -13,12 +13,17 @@ use evaluation::{
 use resolved_value::ResolvedValue;
 
 use crate::{
-    analyzer::typed_ast::{typed_expr::TypedExpr, TypedFunc, TypedFuncCall, TypedStmt},
+    analyzer::typed_ast::{
+        typed_block::TypedBlock, typed_expr::TypedExpr, TypedFunc, TypedFuncCall, TypedStmt,
+    },
     errors::runtime_error::RuntimeError,
     shared::scope_stack::ScopeStack,
 };
 
-pub fn interpret_program(block: TypedExpr) -> Result<ResolvedValue, RuntimeError> {
+pub fn interpret_program(
+    block: TypedExpr,
+    builtins: Vec<(String, TypedExpr)>,
+) -> Result<ResolvedValue, RuntimeError> {
     let mut ctx = context::Context {
         control_stack: Vec::new(),
         value_stack: Vec::new(),
@@ -26,13 +31,23 @@ pub fn interpret_program(block: TypedExpr) -> Result<ResolvedValue, RuntimeError
     };
 
     let stmts = match block {
-        TypedExpr::Block(stmts, _ty) => stmts,
+        TypedExpr::Block(TypedBlock::Interpreted(stmts, _ty)) => stmts,
         _ => unreachable!(),
     };
 
     for stmt in stmts.into_iter().rev() {
         ctx.control_stack
             .push(ControlOp::EvalStmt(stmt, ctx.control_stack.len()));
+    }
+
+    // Evaluate builtins
+    for (ident, expr) in builtins {
+        if let TypedExpr::FuncDeclare(func, _) = expr {
+            let resolved = ResolvedValue::Function(func);
+            ctx.scope_stack.insert(ident, resolved);
+        } else {
+            unreachable!();
+        }
     }
 
     while let Some(current_op) = ctx.control_stack.pop() {
@@ -89,15 +104,24 @@ fn push_if_else(ctx: &mut Context, cond: TypedExpr, then: Box<TypedExpr>, els: B
 }
 
 fn push_block(ctx: &mut Context, block: TypedExpr) {
-    let stmts = match block {
-        TypedExpr::Block(stmts, _ty) => stmts,
+    let block = match block {
+        TypedExpr::Block(block) => block,
         _ => unreachable!(),
     };
 
-    for stmt in stmts.into_iter().rev() {
-        ctx.control_stack
-            .push(ControlOp::EvalStmt(stmt, ctx.control_stack.len()));
-    }
+    match block {
+        TypedBlock::Interpreted(stmts, _ty) => {
+            for stmt in stmts.into_iter().rev() {
+                ctx.control_stack
+                    .push(ControlOp::EvalStmt(stmt, ctx.control_stack.len()));
+            }
+        }
+        // TODO: Is it safe to execute right now instead of pushing to the control stack?
+        TypedBlock::Builtin(func, _ty) => {
+            let arg = ctx.scope_stack.lookup::<RuntimeError>("message").unwrap();
+            func(vec![arg.clone()]);
+        }
+    };
 }
 
 fn apply_binary_op<F>(ctx: &mut Context, op: F)
@@ -144,7 +168,7 @@ fn apply_if_else(ctx: &mut Context, then_block: TypedExpr, else_block: TypedExpr
     let block = if cond_bool { then_block } else { else_block };
 
     let stmts = match block {
-        TypedExpr::Block(stmts, _ty) => stmts,
+        TypedExpr::Block(TypedBlock::Interpreted(stmts, _ty)) => stmts,
         _ => unreachable!(),
     };
 

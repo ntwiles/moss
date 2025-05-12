@@ -6,4 +6,10 @@ let sub = (a: Int, b: Int): Int => {
     a - b;
 };
 
-sub(add(3, 2), 1);
+let mul = (a: Int, b: Int): Int => {
+    a * b;
+};
+
+let result = mul(sub(add(3, 2), 1), 2);
+
+print(result);

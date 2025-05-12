@@ -9,11 +9,19 @@ use super::ast::{Expr, Literal};
 use super::errors::type_error::TypeError;
 use scope_entry::ScopeEntry;
 use ty::Type;
+use typed_ast::typed_block::TypedBlock;
 use typed_ast::typed_expr::TypedExpr;
 use typed_ast::{TypedFunc, TypedFuncCall, TypedLiteral, TypedStmt};
 
-pub fn analyze_program(stmts: Expr) -> Result<TypedExpr, TypeError> {
+pub fn analyze_program(
+    stmts: Expr,
+    builtins: Vec<(String, TypedExpr)>,
+) -> Result<TypedExpr, TypeError> {
     let mut scope_stack = ScopeStack::<ScopeEntry>::new();
+
+    for (ident, binding) in builtins {
+        scope_stack.insert(ident, ScopeEntry::TypedExpr(binding));
+    }
 
     analyze_block(&mut scope_stack, stmts)
 }
@@ -348,7 +356,7 @@ fn analyze_func_call(
         }
 
         for (param_type, arg) in param_types.clone().into_iter().zip(args.clone()) {
-            if arg.ty() != param_type {
+            if arg.ty() != param_type && param_type != Type::Any {
                 // TODO: Impl Display for types here, right now it's just debug printing a tuple.
                 return Err(TypeError { message: format!("Called function with incorrect arg types.\n\tExpected: {:?}\n\tReceived: {:?}", param_types, args)});
             }
@@ -508,5 +516,5 @@ fn analyze_block(
         .map(|stmt| stmt.expr.ty())
         .unwrap_or(Type::Void);
 
-    Ok(TypedExpr::Block(stmts, ty))
+    Ok(TypedExpr::Block(TypedBlock::Interpreted(stmts, ty)))
 }

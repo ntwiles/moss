@@ -7,6 +7,7 @@ lalrpop_mod!(pub grammar);
 
 use grammar::ProgramParser;
 use lalrpop_util::lalrpop_mod;
+use shared::builtins::get_builtins;
 use std::{env, fs};
 
 fn main() {
@@ -30,19 +31,17 @@ fn main() {
         return;
     }
 
-    let analyzed = analyzer::analyze_program(parsed.unwrap());
+    let analyzed = analyzer::analyze_program(parsed.unwrap(), get_builtins());
 
     if let Err(error) = analyzed {
         println!("Type Error: {}", error.message);
         return;
     }
 
-    let run_result = interpretor::interpret_program(analyzed.unwrap());
+    let run_result = interpretor::interpret_program(analyzed.unwrap(), get_builtins());
 
     if let Err(error) = run_result {
         println!("Runtime Error: {}", error.message);
         return;
     }
-
-    println!("{}", run_result.unwrap());
 }

@@ -2,6 +2,7 @@ use crate::errors::{type_error::TypeError, Error};
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Type {
+    Any, // TODO: Temporary for string coercion in print. Do not use, and remove when generics are implemented.
     Int,
     Float,
     String,

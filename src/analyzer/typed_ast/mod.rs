@@ -1,5 +1,7 @@
+pub mod typed_block;
 pub mod typed_expr;
 
+use typed_block::TypedBlock;
 use typed_expr::TypedExpr;
 
 use crate::ast::Stmt;

@@ -40,7 +40,7 @@ pub fn eval_expr(ctx: &mut Context, expr: TypedExpr) -> Result<(), RuntimeError>
 
         // Control flow
         TypedExpr::IfElse(cond, then, els, _ty) => push_if_else(ctx, *cond, then, els),
-        TypedExpr::Block(stmts, ty) => push_block(ctx, TypedExpr::Block(stmts, ty)),
+        TypedExpr::Block(block) => push_block(ctx, TypedExpr::Block(block)),
 
         // Primaries
         TypedExpr::Literal(literal, _ty) => eval_literal(ctx, literal),
