@@ -418,11 +418,24 @@ fn analyze_func_declare(
         .map(|(ident, ty)| (ident.clone(), Type::from_str(ty).unwrap()))
         .collect();
 
-    let return_type = if let Ok(return_type) = Type::from_str(&func.return_type) {
+    let declared_return_type = if let Ok(return_type) = Type::from_str(&func.return_type) {
         return_type
     } else {
         return Err(TypeError {
             message: format!("Unknown return type: {}", func.return_type),
+        });
+    };
+
+    let actual_return_type = block.ty();
+
+    if declared_return_type != actual_return_type {
+        // TODO: Impl Display so we don't have to use debug output here.
+        return Err(TypeError {
+            message: format!(
+                "Return type does not match declared return type in function signature.\n\tDeclared: {:?}\n\tActual: {:?}",
+                declared_return_type,
+                actual_return_type,
+            ),
         });
     };
 
@@ -433,7 +446,7 @@ fn analyze_func_declare(
     };
 
     let mut inner_types: Vec<Type> = params.into_iter().map(|p| p.1).collect();
-    inner_types.push(return_type);
+    inner_types.push(declared_return_type);
 
     Ok(TypedExpr::FuncDeclare(func, Type::Function(inner_types)))
 }

@@ -152,3 +152,15 @@ fn call_with_composition() {
 
     assert_eq!(result.unwrap_int(), 4);
 }
+
+#[test]
+fn call_with_wrong_return_type() {
+    let code = r"
+        let add = (a: Int, b: Int): String => {
+        a + b;
+    };
+    ";
+
+    let parsed = ProgramParser::new().parse(code).unwrap();
+    analyzer::analyze_program(parsed).expect_err("wrong return type for signature.");
+}
