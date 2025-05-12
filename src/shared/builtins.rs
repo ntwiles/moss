@@ -9,12 +9,16 @@ use crate::{
 pub type BuiltinFunc = fn(Vec<ResolvedValue>) -> ResolvedValue;
 
 pub fn get_builtins() -> Vec<(String, TypedExpr)> {
-    return vec![(String::from("print"), make_print())];
+    return vec![
+        (String::from("print_line"), make_print_line()),
+        (String::from("read_line"), make_read_line()),
+    ];
 }
 
-fn make_print() -> TypedExpr {
+fn make_print_line() -> TypedExpr {
     let block = Box::new(TypedExpr::Block(TypedBlock::Builtin(
-        eval_print,
+        vec![String::from("message")],
+        eval_print_line,
         Type::Void,
     )));
 
@@ -27,7 +31,7 @@ fn make_print() -> TypedExpr {
     TypedExpr::FuncDeclare(func, Type::Function(vec![Type::Any, Type::Void]))
 }
 
-fn eval_print(mut args: Vec<ResolvedValue>) -> ResolvedValue {
+fn eval_print_line(mut args: Vec<ResolvedValue>) -> ResolvedValue {
     let message = args.pop().unwrap();
 
     // TODO: This isn't the place to handle string coercion.
@@ -43,4 +47,34 @@ fn eval_print(mut args: Vec<ResolvedValue>) -> ResolvedValue {
     println!("{}", message);
 
     ResolvedValue::Void
+}
+
+fn make_read_line() -> TypedExpr {
+    let block = Box::new(TypedExpr::Block(TypedBlock::Builtin(
+        vec![],
+        eval_read_line,
+        Type::String,
+    )));
+
+    let func = TypedFunc {
+        params: vec![],
+        is_closure: false,
+        block,
+    };
+
+    TypedExpr::FuncDeclare(func, Type::Function(vec![Type::String]))
+}
+
+fn eval_read_line(mut _args: Vec<ResolvedValue>) -> ResolvedValue {
+    let mut line = String::new();
+    std::io::stdin().read_line(&mut line).unwrap();
+
+    if let Some('\n') = line.chars().last() {
+        line.pop();
+        if let Some('\r') = line.chars().last() {
+            line.pop();
+        }
+    }
+
+    ResolvedValue::String(line)
 }

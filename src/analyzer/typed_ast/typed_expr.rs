@@ -48,7 +48,7 @@ impl TypedExpr {
             TypedExpr::FuncCall(_, ty) => ty.clone(),
             TypedExpr::FuncDeclare(_, ty) => ty.clone(),
             TypedExpr::IfElse(_, _, _, ty) => ty.clone(),
-            TypedExpr::Block(TypedBlock::Builtin(_, ty)) => ty.clone(),
+            TypedExpr::Block(TypedBlock::Builtin(_, _, ty)) => ty.clone(),
             TypedExpr::Block(TypedBlock::Interpreted(_, ty)) => ty.clone(),
         }
     }

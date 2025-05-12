@@ -117,9 +117,19 @@ fn push_block(ctx: &mut Context, block: TypedExpr) {
             }
         }
         // TODO: Is it safe to execute right now instead of pushing to the control stack?
-        TypedBlock::Builtin(func, _ty) => {
-            let arg = ctx.scope_stack.lookup::<RuntimeError>("message").unwrap();
-            func(vec![arg.clone()]);
+        TypedBlock::Builtin(params, func, _ty) => {
+            let args = params
+                .iter()
+                .map(|param| {
+                    ctx.scope_stack
+                        .lookup::<RuntimeError>(param)
+                        .unwrap()
+                        .clone()
+                })
+                .collect();
+
+            let result = func(args);
+            ctx.value_stack.push(result);
         }
     };
 }
