@@ -10,9 +10,42 @@ pub type BuiltinFunc = fn(Vec<ResolvedValue>) -> ResolvedValue;
 
 pub fn get_builtins() -> Vec<(String, TypedExpr)> {
     return vec![
+        (String::from("int"), make_int()),
         (String::from("print_line"), make_print_line()),
         (String::from("read_line"), make_read_line()),
     ];
+}
+
+fn make_int() -> TypedExpr {
+    let block = Box::new(TypedExpr::Block(TypedBlock::Builtin(
+        vec![String::from("value")],
+        eval_int,
+        Type::Int,
+    )));
+
+    let func = TypedFunc {
+        params: vec![(String::from("value"), Type::Any)],
+        is_closure: false,
+        block,
+    };
+
+    TypedExpr::FuncDeclare(func, Type::Function(vec![Type::Any, Type::Int]))
+}
+
+fn eval_int(mut args: Vec<ResolvedValue>) -> ResolvedValue {
+    let value = args.pop().unwrap();
+
+    match value {
+        ResolvedValue::String(str) => ResolvedValue::Int(i32::from_str_radix(&str, 10).unwrap()),
+        ResolvedValue::Bool(bool) => {
+            if bool {
+                ResolvedValue::Int(1)
+            } else {
+                ResolvedValue::Int(0)
+            }
+        }
+        _ => todo!("Implement other types."),
+    }
 }
 
 fn make_print_line() -> TypedExpr {
