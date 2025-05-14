@@ -1,3 +1,0 @@
-print_line("Hello! Please enter your name:");
-let input = int(read_line());
-print_line(input + 1);

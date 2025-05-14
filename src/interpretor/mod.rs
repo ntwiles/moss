@@ -35,9 +35,11 @@ pub fn interpret_program(
         _ => unreachable!(),
     };
 
+    let block_start_marker = ctx.control_stack.len();
+
     for stmt in stmts.into_iter().rev() {
         ctx.control_stack
-            .push(ControlOp::EvalStmt(stmt, ctx.control_stack.len()));
+            .push(ControlOp::EvalStmt(stmt, block_start_marker));
     }
 
     // Evaluate builtins
@@ -71,6 +73,7 @@ pub fn interpret_program(
             ControlOp::ApplyBinding(ident) => apply_binding(&mut ctx, ident),
             ControlOp::PushScope(func) => apply_push_scope(&mut ctx, func),
             ControlOp::ApplyIfElse(then, els) => apply_if_else(&mut ctx, then, els),
+            ControlOp::PushLoop(block) => push_loop(&mut ctx, block),
         }
     }
 
@@ -111,9 +114,11 @@ fn push_block(ctx: &mut Context, block: TypedExpr) {
 
     match block {
         TypedBlock::Interpreted(stmts, _ty) => {
+            let block_start_marker = ctx.control_stack.len();
+
             for stmt in stmts.into_iter().rev() {
                 ctx.control_stack
-                    .push(ControlOp::EvalStmt(stmt, ctx.control_stack.len()));
+                    .push(ControlOp::EvalStmt(stmt, block_start_marker));
             }
         }
         // TODO: Is it safe to execute right now instead of pushing to the control stack?
@@ -132,6 +137,11 @@ fn push_block(ctx: &mut Context, block: TypedExpr) {
             ctx.value_stack.push(result);
         }
     };
+}
+
+fn push_loop(ctx: &mut Context, block: TypedExpr) {
+    ctx.control_stack.push(ControlOp::PushLoop(block.clone()));
+    ctx.control_stack.push(ControlOp::EvalBlock(block));
 }
 
 fn apply_binary_op<F>(ctx: &mut Context, op: F)
@@ -182,8 +192,10 @@ fn apply_if_else(ctx: &mut Context, then_block: TypedExpr, else_block: TypedExpr
         _ => unreachable!(),
     };
 
+    let block_start_marker = ctx.control_stack.len();
+
     for stmt in stmts.into_iter().rev() {
         ctx.control_stack
-            .push(ControlOp::EvalStmt(stmt, ctx.control_stack.len()));
+            .push(ControlOp::EvalStmt(stmt, block_start_marker));
     }
 }

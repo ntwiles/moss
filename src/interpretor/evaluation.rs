@@ -5,11 +5,12 @@ use crate::{
 
 use super::{
     apply_binary_op, apply_unary_op, context::Context, control_op::ControlOp, push_binary_op,
-    push_block, push_func_call, push_if_else, push_unary_op, resolved_value::ResolvedValue,
+    push_block, push_func_call, push_if_else, push_loop, push_unary_op,
+    resolved_value::ResolvedValue,
 };
 
 pub fn apply_stmt(ctx: &mut Context, block_start_marker: usize) {
-    let value = ctx.value_stack.last().unwrap().clone();
+    let value = ctx.value_stack.last().unwrap();
 
     if let ResolvedValue::Void = value {
         return;
@@ -17,6 +18,7 @@ pub fn apply_stmt(ctx: &mut Context, block_start_marker: usize) {
 
     // We have our first non-void value, so we can return early. Remove everything from the control
     // stack after the last ApplyFuncCall.
+    // TODO: This feels dangerous. Can we be sure that we're not erasing something important here?
     ctx.control_stack.truncate(block_start_marker + 1);
 }
 
@@ -41,6 +43,7 @@ pub fn eval_expr(ctx: &mut Context, expr: TypedExpr) -> Result<(), RuntimeError>
         // Control flow
         TypedExpr::IfElse(cond, then, els, _ty) => push_if_else(ctx, *cond, then, els),
         TypedExpr::Block(block) => push_block(ctx, TypedExpr::Block(block)),
+        TypedExpr::Loop(block) => push_loop(ctx, *block),
 
         // Primaries
         TypedExpr::Literal(literal, _ty) => eval_literal(ctx, literal),

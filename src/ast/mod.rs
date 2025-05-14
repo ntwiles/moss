@@ -19,6 +19,7 @@ pub enum Expr {
     // Control flow
     IfElse(Box<Expr>, Box<Expr>, Box<Expr>),
     Block(Vec<Stmt>),
+    Loop(Box<Expr>),
 
     // Primaries
     Literal(Literal),

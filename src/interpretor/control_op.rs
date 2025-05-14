@@ -23,6 +23,7 @@ pub enum ControlOp {
 
     // Control flow
     ApplyIfElse(TypedExpr, TypedExpr),
+    PushLoop(TypedExpr),
 
     // Unary operations
     ApplyNegate,

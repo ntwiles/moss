@@ -66,7 +66,9 @@ fn analyze_expr(
         Expr::Assignment(ident, expr) => analyze_assign(scope_stack, ident, *expr),
         Expr::FuncDeclare(func) => analyze_func_declare(scope_stack, func),
         Expr::FuncCall(call) => analyze_func_call(scope_stack, call),
+
         Expr::IfElse(expr, then, els) => analyze_if_else(scope_stack, *expr, *then, *els),
+        Expr::Loop(block) => analyze_loop(scope_stack, *block),
     }
 }
 
@@ -494,6 +496,17 @@ fn analyze_if_else(
         Box::new(else_block),
         ty,
     ))
+}
+
+fn analyze_loop(
+    scope_stack: &mut ScopeStack<ScopeEntry>,
+    block: Expr,
+) -> Result<TypedExpr, TypeError> {
+    // TODO: Currently just using this as a wrapper to analyze the block, there may be more we can
+    // do here later though.
+    let block = analyze_block(scope_stack, block)?;
+
+    Ok(TypedExpr::Loop(Box::new(block)))
 }
 
 fn analyze_block(

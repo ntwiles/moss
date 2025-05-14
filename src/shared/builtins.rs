@@ -32,10 +32,13 @@ fn make_int() -> TypedExpr {
     TypedExpr::FuncDeclare(func, Type::Function(vec![Type::Any, Type::Int]))
 }
 
+// TODO: This is a free function right now, but we might consider implementing it as a static method
+// on the Int type when that's available as an option.
 fn eval_int(mut args: Vec<ResolvedValue>) -> ResolvedValue {
     let value = args.pop().unwrap();
 
     match value {
+        // TODO: Parse error handling.
         ResolvedValue::String(str) => ResolvedValue::Int(i32::from_str_radix(&str, 10).unwrap()),
         ResolvedValue::Bool(bool) => {
             if bool {

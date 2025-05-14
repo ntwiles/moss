@@ -1,0 +1,20 @@
+let secret_number = 68;
+
+print_line("I've thought of a secret number. Try go guess it!");
+
+loop {
+    let guess = int(read_line());
+
+    if guess > secret_number {
+        print_line("Too high!");
+    } else {
+        if guess < secret_number {
+            print_line("Too Low!");
+        } else {
+            print_line("You got it!");
+            8;
+        };
+    };
+};
+
+print_line("Game over.");
