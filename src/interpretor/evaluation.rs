@@ -17,10 +17,6 @@ pub fn apply_stmt(ctx: &mut Context) -> ControlFlow {
     } else {
         ControlFlow::Return
     }
-
-    // We have our first non-void value, so we can return early. Remove everything from the control
-    // stack after the last ApplyFuncCall.
-    // TODO: This feels dangerous. Can we be sure that we're not erasing something important here?
 }
 
 pub fn eval_expr(ctx: &mut Context, expr: TypedExpr) -> Result<ControlFlow, RuntimeError> {
