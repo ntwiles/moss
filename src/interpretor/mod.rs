@@ -19,7 +19,7 @@ use crate::{
         typed_block::TypedBlock, typed_expr::TypedExpr, TypedFunc, TypedFuncCall, TypedStmt,
     },
     errors::runtime_error::RuntimeError,
-    shared::scope_stack::ScopeStack,
+    scopes::scope_stack::ScopeStack,
 };
 
 pub fn interpret_program(

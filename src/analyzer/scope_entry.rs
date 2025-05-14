@@ -1,4 +1,4 @@
-use crate::shared::types::Type;
+use crate::types::Type;
 
 use crate::ast::typed::typed_expr::TypedExpr;
 

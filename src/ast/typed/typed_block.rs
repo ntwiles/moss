@@ -1,4 +1,5 @@
-use crate::shared::{builtins::BuiltinFunc, types::Type};
+use crate::builtins::BuiltinFunc;
+use crate::types::Type;
 
 use super::TypedStmt;
 

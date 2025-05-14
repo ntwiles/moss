@@ -5,8 +5,8 @@ use crate::ast::typed::typed_expr::TypedExpr;
 use crate::ast::typed::{TypedFunc, TypedFuncCall, TypedLiteral, TypedStmt};
 use crate::ast::untyped::{Expr, FuncCall, FuncDeclare, Literal, Stmt};
 use crate::errors::type_error::TypeError;
-use crate::shared::scope_stack::ScopeStack;
-use crate::shared::types::Type;
+use crate::scopes::scope_stack::ScopeStack;
+use crate::types::Type;
 
 use scope_entry::ScopeEntry;
 

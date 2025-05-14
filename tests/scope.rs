@@ -1,4 +1,4 @@
-use moss::{analyzer, grammar::ProgramParser, interpretor, shared::builtins::get_builtins};
+use moss::{analyzer, builtins::get_builtins, grammar::ProgramParser, interpretor};
 
 #[test]
 fn search_parent_scope() {

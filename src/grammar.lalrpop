@@ -1,4 +1,4 @@
-use crate::ast::untyped::{self, Expr, Stmt, FuncCall, FuncDeclare, Literal};
+use crate::ast::untyped::{Expr, Stmt, FuncCall, FuncDeclare, Literal};
 
 grammar;
 

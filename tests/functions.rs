@@ -1,7 +1,7 @@
 use moss::analyzer;
+use moss::builtins::get_builtins;
 use moss::grammar::ProgramParser;
 use moss::interpretor;
-use moss::shared::builtins::get_builtins;
 
 #[test]
 fn declare_with_no_return_type() {

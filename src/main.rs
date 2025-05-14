@@ -1,13 +1,15 @@
 pub mod analyzer;
 mod ast;
+pub mod builtins;
 mod errors;
 pub mod interpretor;
-pub mod shared;
+mod scopes;
+mod types;
 lalrpop_mod!(pub grammar);
 
+use builtins::get_builtins;
 use grammar::ProgramParser;
 use lalrpop_util::lalrpop_mod;
-use shared::builtins::get_builtins;
 use std::{env, fs};
 
 fn main() {
