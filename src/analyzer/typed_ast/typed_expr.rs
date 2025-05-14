@@ -25,6 +25,7 @@ pub enum TypedExpr {
     IfElse(Box<TypedExpr>, Box<TypedExpr>, Box<TypedExpr>, Type),
     Block(TypedBlock),
     Loop(Box<TypedExpr>),
+    Break,
 
     // Primaries
     Literal(TypedLiteral, Type),
@@ -50,6 +51,7 @@ impl TypedExpr {
             TypedExpr::FuncDeclare(_, ty) => ty.clone(),
             TypedExpr::IfElse(_, _, _, ty) => ty.clone(),
             TypedExpr::Loop(block) => block.ty(), // TODO: Is this correct? Maybe loops are always Void?
+            TypedExpr::Break => Type::Void,
             TypedExpr::Block(TypedBlock::Builtin(_, _, ty)) => ty.clone(),
             TypedExpr::Block(TypedBlock::Interpreted(_, ty)) => ty.clone(),
         }

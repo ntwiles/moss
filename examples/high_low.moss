@@ -12,7 +12,7 @@ loop {
             print_line("Too Low!");
         } else {
             print_line("You got it!");
-            8;
+            break;
         };
     };
 };

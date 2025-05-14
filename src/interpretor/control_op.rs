@@ -3,8 +3,8 @@ use crate::analyzer::typed_ast::{typed_expr::TypedExpr, TypedFunc, TypedStmt};
 #[derive(Clone, Debug)]
 pub enum ControlOp {
     EvalBlock(TypedExpr),
-    EvalStmt(TypedStmt, usize),
-    ApplyStmt(usize),
+    EvalStmt(TypedStmt),
+    ApplyStmt,
     EvalExpr(TypedExpr),
 
     // Binary operations
@@ -32,4 +32,8 @@ pub enum ControlOp {
     // Scope
     ApplyBinding(String),
     PushScope(TypedFunc),
+
+    // Markers
+    MarkLoopStart,
+    MarkBlockStart
 }

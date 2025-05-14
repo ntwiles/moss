@@ -4,26 +4,25 @@ use crate::{
 };
 
 use super::{
-    apply_binary_op, apply_unary_op, context::Context, control_op::ControlOp, push_binary_op,
-    push_block, push_func_call, push_if_else, push_loop, push_unary_op,
-    resolved_value::ResolvedValue,
+    apply_binary_op, apply_unary_op, context::Context, control_flow::ControlFlow, control_op::ControlOp, mark_loop, push_binary_op, push_block, push_func_call, push_if_else, push_unary_op, resolved_value::ResolvedValue
 };
 
-pub fn apply_stmt(ctx: &mut Context, block_start_marker: usize) {
+pub fn apply_stmt(ctx: &mut Context) -> ControlFlow {
     let value = ctx.value_stack.last().unwrap();
 
     if let ResolvedValue::Void = value {
-        return;
+        ControlFlow::Continue
+    } else {
+        ControlFlow::Return
     }
 
     // We have our first non-void value, so we can return early. Remove everything from the control
     // stack after the last ApplyFuncCall.
     // TODO: This feels dangerous. Can we be sure that we're not erasing something important here?
-    ctx.control_stack.truncate(block_start_marker + 1);
 }
 
-pub fn eval_expr(ctx: &mut Context, expr: TypedExpr) -> Result<(), RuntimeError> {
-    match expr {
+pub fn eval_expr(ctx: &mut Context, expr: TypedExpr) -> Result<ControlFlow, RuntimeError> {
+    let control_flow = match expr {
         // Binary operations
         TypedExpr::Eq(l, r, _ty) => push_binary_op(ctx, ControlOp::ApplyEq, l, r),
         TypedExpr::Gt(l, r, _ty) => push_binary_op(ctx, ControlOp::ApplyGt, l, r),
@@ -43,7 +42,8 @@ pub fn eval_expr(ctx: &mut Context, expr: TypedExpr) -> Result<(), RuntimeError>
         // Control flow
         TypedExpr::IfElse(cond, then, els, _ty) => push_if_else(ctx, *cond, then, els),
         TypedExpr::Block(block) => push_block(ctx, TypedExpr::Block(block)),
-        TypedExpr::Loop(block) => push_loop(ctx, *block),
+        TypedExpr::Loop(block) => mark_loop(ctx, *block),
+        TypedExpr::Break => ControlFlow::Break,
 
         // Primaries
         TypedExpr::Literal(literal, _ty) => eval_literal(ctx, literal),
@@ -51,45 +51,53 @@ pub fn eval_expr(ctx: &mut Context, expr: TypedExpr) -> Result<(), RuntimeError>
         TypedExpr::FuncDeclare(func, _ty) => eval_func_declare(ctx, func),
     };
 
-    Ok(())
+    Ok(control_flow)
 }
 
 // Binary operations
 
-pub fn apply_add(ctx: &mut Context) {
+pub fn apply_add(ctx: &mut Context) -> ControlFlow {
     apply_binary_op(ctx, |l, r| match (l, r) {
         (ResolvedValue::Int(l), ResolvedValue::Int(r)) => ResolvedValue::Int(l + r),
         (ResolvedValue::Float(l), ResolvedValue::Float(r)) => ResolvedValue::Float(l + r),
         (ResolvedValue::String(l), ResolvedValue::String(r)) => ResolvedValue::String(l + &r),
         _ => unreachable!(),
     });
+
+    ControlFlow::Continue
 }
 
-pub fn apply_sub(ctx: &mut Context) {
+pub fn apply_sub(ctx: &mut Context) -> ControlFlow {
     apply_binary_op(ctx, |l, r| match (l, r) {
         (ResolvedValue::Int(l), ResolvedValue::Int(r)) => ResolvedValue::Int(l - r),
         (ResolvedValue::Float(l), ResolvedValue::Float(r)) => ResolvedValue::Float(l - r),
         _ => unreachable!(),
     });
+
+    ControlFlow::Continue
 }
 
-pub fn apply_mult(ctx: &mut Context) {
+pub fn apply_mult(ctx: &mut Context) -> ControlFlow {
     apply_binary_op(ctx, |l, r| match (l, r) {
         (ResolvedValue::Int(l), ResolvedValue::Int(r)) => ResolvedValue::Int(l * r),
         (ResolvedValue::Float(l), ResolvedValue::Float(r)) => ResolvedValue::Float(l * r),
         _ => unreachable!(),
     });
+
+    ControlFlow::Continue
 }
 
-pub fn apply_div(ctx: &mut Context) {
+pub fn apply_div(ctx: &mut Context) -> ControlFlow {
     apply_binary_op(ctx, |l, r| match (l, r) {
         (ResolvedValue::Int(l), ResolvedValue::Int(r)) => ResolvedValue::Int(l / r),
         (ResolvedValue::Float(l), ResolvedValue::Float(r)) => ResolvedValue::Float(l / r),
         _ => unreachable!(),
     });
+
+    ControlFlow::Continue
 }
 
-pub fn apply_eq(ctx: &mut Context) {
+pub fn apply_eq(ctx: &mut Context) -> ControlFlow {
     apply_binary_op(ctx, |l, r| match (l, r) {
         (ResolvedValue::Int(l), ResolvedValue::Int(r)) => ResolvedValue::Bool(l == r),
         (ResolvedValue::Float(l), ResolvedValue::Float(r)) => ResolvedValue::Bool(l == r),
@@ -97,42 +105,52 @@ pub fn apply_eq(ctx: &mut Context) {
         (ResolvedValue::Bool(l), ResolvedValue::Bool(r)) => ResolvedValue::Bool(l == r),
         _ => unreachable!(),
     });
+
+    ControlFlow::Continue
 }
 
-pub fn apply_gt(ctx: &mut Context) {
+pub fn apply_gt(ctx: &mut Context) -> ControlFlow {
     apply_binary_op(ctx, |l, r| match (l, r) {
         (ResolvedValue::Int(l), ResolvedValue::Int(r)) => ResolvedValue::Bool(l > r),
         (ResolvedValue::Float(l), ResolvedValue::Float(r)) => ResolvedValue::Bool(l > r),
         _ => unreachable!(),
     });
+
+    ControlFlow::Continue
 }
 
-pub fn apply_lt(ctx: &mut Context) {
+pub fn apply_lt(ctx: &mut Context) -> ControlFlow {
     apply_binary_op(ctx, |l, r| match (l, r) {
         (ResolvedValue::Int(l), ResolvedValue::Int(r)) => ResolvedValue::Bool(l < r),
         (ResolvedValue::Float(l), ResolvedValue::Float(r)) => ResolvedValue::Bool(l < r),
         _ => unreachable!(),
     });
+
+    ControlFlow::Continue
 }
 
 // Unary operations
-pub fn apply_negate(ctx: &mut Context) {
+pub fn apply_negate(ctx: &mut Context) -> ControlFlow {
     apply_unary_op(ctx, |_scope_stack, v| match v {
         ResolvedValue::Int(int) => ResolvedValue::Int(-int),
         ResolvedValue::Float(float) => ResolvedValue::Float(-float),
         _ => unreachable!(),
     });
+
+    ControlFlow::Continue
 }
 
-pub fn apply_assign(ctx: &mut Context, ident: String) {
+pub fn apply_assign(ctx: &mut Context, ident: String) -> ControlFlow {
     apply_unary_op(ctx, |ctx, v| {
         ctx.scope_stack.insert(ident.clone(), v.clone());
         ResolvedValue::Void
     });
+
+    ControlFlow::Continue
 }
 
 // Postfix operations
-pub fn apply_func_call(ctx: &mut Context, args: Vec<TypedExpr>) {
+pub fn apply_func_call(ctx: &mut Context, args: Vec<TypedExpr>) -> ControlFlow {
     let func = match ctx.value_stack.pop().unwrap() {
         ResolvedValue::Function(func) => func,
         _ => unreachable!(),
@@ -159,33 +177,43 @@ pub fn apply_func_call(ctx: &mut Context, args: Vec<TypedExpr>) {
     for arg in args.into_iter().rev() {
         ctx.control_stack.push(ControlOp::EvalExpr(arg));
     }
+
+    ControlFlow::Continue
 }
 
-pub fn apply_closure_func_call(ctx: &mut Context) {
+pub fn apply_closure_func_call(ctx: &mut Context) -> ControlFlow {
     ctx.scope_stack.pop_scope();
+
+    ControlFlow::Continue
 }
 
-pub fn apply_non_closure_func_call(ctx: &mut Context) {
+pub fn apply_non_closure_func_call(ctx: &mut Context) -> ControlFlow {
     ctx.scope_stack.restore_previous_stack();
+
+    ControlFlow::Continue
 }
 
 // Primaries
-pub fn eval_literal(ctx: &mut Context, literal: TypedLiteral) {
+pub fn eval_literal(ctx: &mut Context, literal: TypedLiteral) -> ControlFlow {
     match literal {
         TypedLiteral::Int(int) => ctx.value_stack.push(ResolvedValue::Int(int)),
         TypedLiteral::Float(float) => ctx.value_stack.push(ResolvedValue::Float(float)),
         TypedLiteral::String(string) => ctx.value_stack.push(ResolvedValue::String(string)),
         TypedLiteral::Bool(boolean) => ctx.value_stack.push(ResolvedValue::Bool(boolean)),
     }
+
+    ControlFlow::Continue
 }
 
-pub fn eval_identifier(ctx: &mut Context, ident: String) -> Result<(), RuntimeError> {
+pub fn eval_identifier(ctx: &mut Context, ident: String) -> Result<ControlFlow, RuntimeError> {
     let value = ctx.scope_stack.lookup(&ident)?;
     ctx.value_stack.push(value.clone());
 
-    Ok(())
+    Ok(ControlFlow::Continue)
 }
 
-pub fn eval_func_declare(ctx: &mut Context, func: TypedFunc) {
+pub fn eval_func_declare(ctx: &mut Context, func: TypedFunc) -> ControlFlow{
     ctx.value_stack.push(ResolvedValue::Function(func));
+
+    ControlFlow::Continue
 }

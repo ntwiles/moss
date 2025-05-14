@@ -20,6 +20,7 @@ pub enum Expr {
     IfElse(Box<Expr>, Box<Expr>, Box<Expr>),
     Block(Vec<Stmt>),
     Loop(Box<Expr>),
+    Break,
 
     // Primaries
     Literal(Literal),

@@ -13,7 +13,7 @@ match {
     "=", "==", ">", "<", "+", "-", "*", "/",
 
     // syntax constructs
-    "=>", "if", "else", "loop",
+    "=>", "if", "else", "loop", "break",
 
     // literals
     "true", "false",
@@ -44,6 +44,7 @@ Expr: Expr = {
     Equality,
     IfElse,
     Loop,
+    Break,
 };
 
 // TODO: Support just if without else, and else elif chains.
@@ -58,6 +59,10 @@ IfElse: Expr = {
 
 Loop: Expr = {
     "loop" "{" <body:StmtList> "}" => Expr::Loop(Box::new(Expr::Block(body))),
+};
+
+Break: Expr = {
+    "break" => Expr::Break,
 };
 
 Assignment: Expr = {

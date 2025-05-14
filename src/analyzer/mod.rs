@@ -69,6 +69,7 @@ fn analyze_expr(
 
         Expr::IfElse(expr, then, els) => analyze_if_else(scope_stack, *expr, *then, *els),
         Expr::Loop(block) => analyze_loop(scope_stack, *block),
+        Expr::Break => analyze_break(scope_stack),
     }
 }
 
@@ -507,6 +508,13 @@ fn analyze_loop(
     let block = analyze_block(scope_stack, block)?;
 
     Ok(TypedExpr::Loop(Box::new(block)))
+}
+
+fn analyze_break(_scope_stack: &mut ScopeStack<ScopeEntry>) -> Result<TypedExpr, TypeError> {
+    // TODO: Check if break makes sense. This might be a new type of error like ContextError or it 
+    // might make sense to treat as a TypeError.
+
+    Ok(TypedExpr::Break)
 }
 
 fn analyze_block(
