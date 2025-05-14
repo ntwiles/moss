@@ -83,27 +83,27 @@ pub fn interpret_program(
         };
 
         if let ControlFlow::Break = control_flow {
-            loop {
-                let op = ctx.control_stack.pop().unwrap();
-
-                if let ControlOp::MarkLoopStart = op {
-                    break;
-                }
-            }
-        }
+            unwind_until(&mut ctx, |op| matches!(op, ControlOp::MarkLoopStart));
+        };
 
         if let ControlFlow::Return = control_flow {
-            loop {
-                let op = ctx.control_stack.pop().unwrap();
-
-                if let ControlOp::MarkBlockStart = op {
-                    break;
-                }
-            }
-        }
+            unwind_until(&mut ctx, |op| matches!(op, ControlOp::MarkBlockStart));
+        };
     }
 
     Ok(ctx.value_stack.pop().unwrap())
+}
+
+// Pop items from the control stack until the condition is met; generally when a marker is found.
+fn unwind_until<F>(ctx: &mut Context, meets_pattern: F)
+where
+    F: Fn(&ControlOp) -> bool,
+{
+    while let Some(op) = ctx.control_stack.pop() {
+        if meets_pattern(&op) {
+            break;
+        }
+    }
 }
 
 fn push_stmt(ctx: &mut Context, stmt: TypedStmt) -> ControlFlow {
