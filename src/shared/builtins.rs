@@ -1,10 +1,9 @@
 use crate::{
-    analyzer::{
-        ty::Type,
-        typed_ast::{typed_block::TypedBlock, typed_expr::TypedExpr, TypedFunc},
-    },
+    ast::typed::{typed_block::TypedBlock, typed_expr::TypedExpr, TypedFunc},
     interpretor::resolved_value::ResolvedValue,
 };
+
+use super::types::Type;
 
 pub type BuiltinFunc = fn(Vec<ResolvedValue>) -> ResolvedValue;
 

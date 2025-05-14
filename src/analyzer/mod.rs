@@ -1,17 +1,14 @@
 mod scope_entry;
-pub mod ty;
-pub mod typed_ast;
 
-use crate::ast::{FuncCall, FuncDeclare, Stmt};
+use crate::ast::typed::typed_block::TypedBlock;
+use crate::ast::typed::typed_expr::TypedExpr;
+use crate::ast::typed::{TypedFunc, TypedFuncCall, TypedLiteral, TypedStmt};
+use crate::ast::untyped::{Expr, FuncCall, FuncDeclare, Literal, Stmt};
+use crate::errors::type_error::TypeError;
 use crate::shared::scope_stack::ScopeStack;
+use crate::shared::types::Type;
 
-use super::ast::{Expr, Literal};
-use super::errors::type_error::TypeError;
 use scope_entry::ScopeEntry;
-use ty::Type;
-use typed_ast::typed_block::TypedBlock;
-use typed_ast::typed_expr::TypedExpr;
-use typed_ast::{TypedFunc, TypedFuncCall, TypedLiteral, TypedStmt};
 
 pub fn analyze_program(
     stmts: Expr,
@@ -511,7 +508,7 @@ fn analyze_loop(
 }
 
 fn analyze_break(_scope_stack: &mut ScopeStack<ScopeEntry>) -> Result<TypedExpr, TypeError> {
-    // TODO: Check if break makes sense. This might be a new type of error like ContextError or it 
+    // TODO: Check if break makes sense. This might be a new type of error like ContextError or it
     // might make sense to treat as a TypeError.
 
     Ok(TypedExpr::Break)

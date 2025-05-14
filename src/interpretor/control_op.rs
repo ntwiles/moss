@@ -1,4 +1,4 @@
-use crate::analyzer::typed_ast::{typed_expr::TypedExpr, TypedFunc, TypedStmt};
+use crate::ast::typed::{typed_expr::TypedExpr, TypedFunc, TypedStmt};
 
 #[derive(Clone, Debug)]
 pub enum ControlOp {
@@ -35,5 +35,5 @@ pub enum ControlOp {
 
     // Markers
     MarkLoopStart,
-    MarkBlockStart
+    MarkBlockStart,
 }

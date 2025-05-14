@@ -1,4 +1,6 @@
-use super::{ty::Type, typed_ast::typed_expr::TypedExpr};
+use crate::shared::types::Type;
+
+use crate::ast::typed::typed_expr::TypedExpr;
 
 #[derive(Clone, Debug)]
 pub enum ScopeEntry {

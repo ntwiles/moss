@@ -1,6 +1,6 @@
 use std::fmt::{Display, Formatter, Result};
 
-use crate::analyzer::typed_ast::TypedFunc;
+use crate::ast::typed::TypedFunc;
 
 #[derive(Clone, Debug)]
 pub enum ResolvedValue {

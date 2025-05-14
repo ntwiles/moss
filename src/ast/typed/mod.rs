@@ -4,9 +4,7 @@ pub mod typed_expr;
 use typed_block::TypedBlock;
 use typed_expr::TypedExpr;
 
-use crate::ast::Stmt;
-
-use super::ty::Type;
+use crate::shared::types::Type;
 
 #[derive(Clone, Debug)]
 pub enum TypedLiteral {
@@ -25,13 +23,6 @@ pub struct TypedStmt {
 pub struct TypedFuncCall {
     pub func_expr: Box<TypedExpr>,
     pub args: Vec<TypedExpr>,
-}
-
-#[derive(Clone, Debug)]
-pub struct TypedFuncDeclare {
-    pub params: Vec<(String, Type)>,
-    pub stmts: Vec<Stmt>,
-    pub is_closure: bool,
 }
 
 #[derive(Clone, Debug)]

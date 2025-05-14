@@ -1,4 +1,4 @@
-use crate::ast::{self, Expr, Stmt, FuncCall, FuncDeclare};
+use crate::ast::untyped::{self, Expr, Stmt, FuncCall, FuncDeclare, Literal};
 
 grammar;
 
@@ -111,11 +111,11 @@ Primary: Expr = {
     FuncDeclare,
 };
 
-Literal: ast::Literal = {
-    Int => ast::Literal::Int(<>),
-    Float => ast::Literal::Float(<>),
-    Str => ast::Literal::String(<>),
-    Bool => ast::Literal::Bool(<>),
+Literal: Literal = {
+    Int => Literal::Int(<>),
+    Float => Literal::Float(<>),
+    Str => Literal::String(<>),
+    Bool => Literal::Bool(<>),
 }
 
 Identifier: String = {

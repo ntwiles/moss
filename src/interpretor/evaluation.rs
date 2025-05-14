@@ -1,10 +1,12 @@
 use crate::{
-    analyzer::typed_ast::{typed_expr::TypedExpr, TypedFunc, TypedLiteral},
+    ast::typed::{typed_expr::TypedExpr, TypedFunc, TypedLiteral},
     errors::runtime_error::RuntimeError,
 };
 
 use super::{
-    apply_binary_op, apply_unary_op, context::Context, control_flow::ControlFlow, control_op::ControlOp, mark_loop, push_binary_op, push_block, push_func_call, push_if_else, push_unary_op, resolved_value::ResolvedValue
+    apply_binary_op, apply_unary_op, context::Context, control_flow::ControlFlow,
+    control_op::ControlOp, mark_loop, push_binary_op, push_block, push_func_call, push_if_else,
+    push_unary_op, resolved_value::ResolvedValue,
 };
 
 pub fn apply_stmt(ctx: &mut Context) -> ControlFlow {
@@ -212,7 +214,7 @@ pub fn eval_identifier(ctx: &mut Context, ident: String) -> Result<ControlFlow, 
     Ok(ControlFlow::Continue)
 }
 
-pub fn eval_func_declare(ctx: &mut Context, func: TypedFunc) -> ControlFlow{
+pub fn eval_func_declare(ctx: &mut Context, func: TypedFunc) -> ControlFlow {
     ctx.value_stack.push(ResolvedValue::Function(func));
 
     ControlFlow::Continue

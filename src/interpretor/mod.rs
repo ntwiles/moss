@@ -1,6 +1,6 @@
 mod context;
-mod control_op;
 mod control_flow;
+mod control_op;
 mod evaluation;
 pub mod resolved_value;
 
@@ -15,7 +15,7 @@ use evaluation::{
 use resolved_value::ResolvedValue;
 
 use crate::{
-    analyzer::typed_ast::{
+    ast::typed::{
         typed_block::TypedBlock, typed_expr::TypedExpr, TypedFunc, TypedFuncCall, TypedStmt,
     },
     errors::runtime_error::RuntimeError,
@@ -42,8 +42,7 @@ pub fn interpret_program(
     ctx.control_stack.push(ControlOp::MarkBlockStart);
 
     for stmt in stmts.into_iter().rev() {
-        ctx.control_stack
-            .push(ControlOp::EvalStmt(stmt));
+        ctx.control_stack.push(ControlOp::EvalStmt(stmt));
     }
 
     // Evaluate builtins
@@ -121,7 +120,12 @@ fn push_unary_op(ctx: &mut Context, op: ControlOp, expr: TypedExpr) -> ControlFl
     ControlFlow::Continue
 }
 
-fn push_binary_op(ctx: &mut Context, op: ControlOp, left: Box<TypedExpr>, right: Box<TypedExpr>) -> ControlFlow {
+fn push_binary_op(
+    ctx: &mut Context,
+    op: ControlOp,
+    left: Box<TypedExpr>,
+    right: Box<TypedExpr>,
+) -> ControlFlow {
     ctx.control_stack.push(op);
     ctx.control_stack.push(ControlOp::EvalExpr(*right));
     ctx.control_stack.push(ControlOp::EvalExpr(*left));
@@ -136,7 +140,12 @@ fn push_func_call(ctx: &mut Context, call: TypedFuncCall) -> ControlFlow {
     ControlFlow::Continue
 }
 
-fn push_if_else(ctx: &mut Context, cond: TypedExpr, then: Box<TypedExpr>, els: Box<TypedExpr>) -> ControlFlow {
+fn push_if_else(
+    ctx: &mut Context,
+    cond: TypedExpr,
+    then: Box<TypedExpr>,
+    els: Box<TypedExpr>,
+) -> ControlFlow {
     ctx.control_stack.push(ControlOp::ApplyIfElse(*then, *els));
     ctx.control_stack.push(ControlOp::EvalExpr(cond));
 
@@ -153,8 +162,7 @@ fn push_block(ctx: &mut Context, block: TypedExpr) -> ControlFlow {
         TypedBlock::Interpreted(stmts, _ty) => {
             ctx.control_stack.push(ControlOp::MarkBlockStart);
             for stmt in stmts.into_iter().rev() {
-                ctx.control_stack
-                    .push(ControlOp::EvalStmt(stmt));
+                ctx.control_stack.push(ControlOp::EvalStmt(stmt));
             }
         }
         // TODO: Is it safe to execute right now instead of pushing to the control stack?
@@ -242,8 +250,7 @@ fn apply_if_else(ctx: &mut Context, then_block: TypedExpr, else_block: TypedExpr
     };
 
     for stmt in stmts.into_iter().rev() {
-        ctx.control_stack
-            .push(ControlOp::EvalStmt(stmt));
+        ctx.control_stack.push(ControlOp::EvalStmt(stmt));
     }
 
     ControlFlow::Continue

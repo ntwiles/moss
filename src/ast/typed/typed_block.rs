@@ -1,4 +1,4 @@
-use crate::{analyzer::ty::Type, shared::builtins::BuiltinFunc};
+use crate::shared::{builtins::BuiltinFunc, types::Type};
 
 use super::TypedStmt;
 
