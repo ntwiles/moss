@@ -1,5 +1,6 @@
 use moss::{
-    analyzer, builtins::get_builtin_bindings, grammar::ProgramParser, test_util::exec_program,
+    grammar::ProgramParser,
+    test_util::{analyze_program, exec_program},
 };
 
 #[test]
@@ -12,7 +13,7 @@ fn search_parent_scope() {
 
     let parsed = ProgramParser::new().parse(code).unwrap();
 
-    let analyzed = analyzer::analyze_program(parsed, get_builtin_bindings()).unwrap();
+    let analyzed = analyze_program(parsed).unwrap();
     let result = exec_program(analyzed).unwrap();
 
     assert_eq!(result.unwrap_int(), 7);
@@ -28,8 +29,7 @@ fn search_parent_scope_non_closure_type_error() {
 
     let parsed = ProgramParser::new().parse(code).unwrap();
 
-    analyzer::analyze_program(parsed, get_builtin_bindings())
-        .expect_err("() => {} syntax should not create a closure.");
+    analyze_program(parsed).expect_err("() => {} syntax should not create a closure.");
 }
 
 #[test]
@@ -42,5 +42,5 @@ fn search_child_scope_error_type_error() {
 
     let parsed = ProgramParser::new().parse(code).unwrap();
 
-    analyzer::analyze_program(parsed, get_builtin_bindings()).expect_err("bar is not in scope.");
+    analyze_program(parsed).expect_err("bar is not in scope.");
 }

@@ -1,13 +1,18 @@
 use std::io::{self, BufReader, BufWriter};
 
 use crate::{
-    ast::typed::typed_expr::TypedExpr,
+    analyzer,
+    ast::{typed::typed_expr::TypedExpr, untyped::Expr},
     builtins::{get_builtin_bindings, get_builtins},
-    errors::runtime_error::RuntimeError,
+    errors::{runtime_error::RuntimeError, type_error::TypeError},
     interpreter::{self, resolved_value::ResolvedValue},
     scopes::scope_stack::ScopeStack,
     state::{exec_context::ExecContext, io_context::IoContext},
 };
+
+pub fn analyze_program(program: Expr) -> Result<TypedExpr, TypeError> {
+    analyzer::analyze_program(program, get_builtin_bindings())
+}
 
 pub fn exec_program(program: TypedExpr) -> Result<ResolvedValue, RuntimeError> {
     interpreter::interpret_program(
