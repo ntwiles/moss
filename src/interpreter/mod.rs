@@ -1,12 +1,19 @@
-mod context;
-mod control_flow;
-mod control_op;
 mod evaluation;
 pub mod resolved_value;
 
-use context::Context;
-use control_flow::ControlFlow;
-use control_op::ControlOp;
+use std::collections::HashMap;
+use std::io::{Read, Write};
+
+use crate::ast::typed::{
+    typed_block::TypedBlock, typed_expr::TypedExpr, TypedFunc, TypedFuncCall, TypedStmt,
+};
+use crate::builtins::{BuiltinFunc, BuiltinId};
+use crate::errors::runtime_error::RuntimeError;
+use crate::state::{
+    control_flow::ControlFlow, control_op::ControlOp, exec_context::ExecContext,
+    io_context::IoContext,
+};
+
 use evaluation::{
     apply_add, apply_assign, apply_closure_func_call, apply_div, apply_eq, apply_func_call,
     apply_gt, apply_lt, apply_mult, apply_negate, apply_non_closure_func_call, apply_stmt,
@@ -14,88 +21,77 @@ use evaluation::{
 };
 use resolved_value::ResolvedValue;
 
-use crate::{
-    ast::typed::{
-        typed_block::TypedBlock, typed_expr::TypedExpr, TypedFunc, TypedFuncCall, TypedStmt,
-    },
-    errors::runtime_error::RuntimeError,
-    scopes::scope_stack::ScopeStack,
-};
-
-pub fn interpret_program(
+pub fn interpret_program<R: Read, W: Write>(
     block: TypedExpr,
-    builtins: Vec<(String, TypedExpr)>,
+    mut exec: ExecContext,
+    mut io: IoContext<R, W>,
+    builtin_bindings: Vec<(String, TypedExpr)>,
+    builtins: HashMap<BuiltinId, BuiltinFunc<R, W>>,
 ) -> Result<ResolvedValue, RuntimeError> {
-    let mut ctx = context::Context {
-        control_stack: Vec::new(),
-        value_stack: Vec::new(),
-        scope_stack: ScopeStack::new(),
-    };
-
     // TODO: The logic below has a lot of overlap with push_block(). Should that just be called here?
-
     let stmts = match block {
         TypedExpr::Block(TypedBlock::Interpreted(stmts, _ty)) => stmts,
         _ => unreachable!(),
     };
 
-    ctx.control_stack.push(ControlOp::MarkBlockStart);
+    exec.control_stack.push(ControlOp::MarkBlockStart);
 
     for stmt in stmts.into_iter().rev() {
-        ctx.control_stack.push(ControlOp::EvalStmt(stmt));
+        exec.control_stack.push(ControlOp::EvalStmt(stmt));
     }
 
+    // TODO: Inject this into the AST prior to execution instead of doing it here.
     // Evaluate builtins
-    for (ident, expr) in builtins {
+    for (ident, expr) in builtin_bindings {
         if let TypedExpr::FuncDeclare(func, _) = expr {
             let resolved = ResolvedValue::Function(func);
-            ctx.scope_stack.insert(ident, resolved);
+            exec.scope_stack.insert(ident, resolved);
         } else {
             unreachable!();
         }
     }
 
-    while let Some(current_op) = ctx.control_stack.pop() {
+    while let Some(current_op) = exec.control_stack.pop() {
         let control_flow = match current_op {
-            ControlOp::EvalBlock(block) => push_block(&mut ctx, block),
-            ControlOp::EvalStmt(stmt) => push_stmt(&mut ctx, stmt),
-            ControlOp::EvalExpr(expr) => eval_expr(&mut ctx, expr)?,
-            ControlOp::ApplyStmt => apply_stmt(&mut ctx),
-            ControlOp::ApplyAdd => apply_add(&mut ctx),
-            ControlOp::ApplySub => apply_sub(&mut ctx),
-            ControlOp::ApplyMult => apply_mult(&mut ctx),
-            ControlOp::ApplyDiv => apply_div(&mut ctx),
-            ControlOp::ApplyEq => apply_eq(&mut ctx),
-            ControlOp::ApplyGt => apply_gt(&mut ctx),
-            ControlOp::ApplyLt => apply_lt(&mut ctx),
-            ControlOp::ApplyNegate => apply_negate(&mut ctx),
-            ControlOp::ApplyAssign(ident) => apply_assign(&mut ctx, ident),
-            ControlOp::ApplyFuncCall(args) => apply_func_call(&mut ctx, args),
-            ControlOp::ApplyClosureFuncCall => apply_closure_func_call(&mut ctx),
-            ControlOp::ApplyNonClosureFuncCall => apply_non_closure_func_call(&mut ctx),
-            ControlOp::ApplyBinding(ident) => apply_binding(&mut ctx, ident),
-            ControlOp::PushScope(func) => apply_push_scope(&mut ctx, func),
-            ControlOp::ApplyIfElse(then, els) => apply_if_else(&mut ctx, then, els),
-            ControlOp::PushLoop(block) => push_loop(&mut ctx, block),
+            ControlOp::EvalBlock(block) => push_block(&mut exec, &mut io, &builtins, block)?,
+            ControlOp::EvalStmt(stmt) => push_stmt(&mut exec, stmt)?,
+            ControlOp::EvalExpr(expr) => eval_expr(&mut exec, &mut io, &builtins, expr)?,
+            ControlOp::ApplyStmt => apply_stmt(&mut exec),
+            ControlOp::ApplyAdd => apply_add(&mut exec),
+            ControlOp::ApplySub => apply_sub(&mut exec),
+            ControlOp::ApplyMult => apply_mult(&mut exec),
+            ControlOp::ApplyDiv => apply_div(&mut exec),
+            ControlOp::ApplyEq => apply_eq(&mut exec),
+            ControlOp::ApplyGt => apply_gt(&mut exec),
+            ControlOp::ApplyLt => apply_lt(&mut exec),
+            ControlOp::ApplyNegate => apply_negate(&mut exec),
+            ControlOp::ApplyAssign(ident) => apply_assign(&mut exec, ident),
+            ControlOp::ApplyFuncCall(args) => apply_func_call(&mut exec, args),
+            ControlOp::ApplyClosureFuncCall => apply_closure_func_call(&mut exec),
+            ControlOp::ApplyNonClosureFuncCall => apply_non_closure_func_call(&mut exec),
+            ControlOp::ApplyBinding(ident) => apply_binding(&mut exec, ident),
+            ControlOp::PushScope(func) => apply_push_scope(&mut exec, func),
+            ControlOp::ApplyIfElse(then, els) => apply_if_else(&mut exec, then, els),
+            ControlOp::PushLoop(block) => push_loop(&mut exec, block),
 
             ControlOp::MarkLoopStart => ControlFlow::Continue,
             ControlOp::MarkBlockStart => ControlFlow::Continue,
         };
 
         if let ControlFlow::Break = control_flow {
-            unwind_until(&mut ctx, |op| matches!(op, ControlOp::MarkLoopStart));
+            unwind_until(&mut exec, |op| matches!(op, ControlOp::MarkLoopStart));
         };
 
         if let ControlFlow::Return = control_flow {
-            unwind_until(&mut ctx, |op| matches!(op, ControlOp::MarkBlockStart));
+            unwind_until(&mut exec, |op| matches!(op, ControlOp::MarkBlockStart));
         };
     }
 
-    Ok(ctx.value_stack.pop().unwrap())
+    Ok(exec.value_stack.pop().unwrap())
 }
 
 // Pop items from the control stack until the condition is met; generally when a marker is found.
-fn unwind_until<F>(ctx: &mut Context, meets_pattern: F)
+fn unwind_until<F>(ctx: &mut ExecContext, meets_pattern: F)
 where
     F: Fn(&ControlOp) -> bool,
 {
@@ -106,14 +102,14 @@ where
     }
 }
 
-fn push_stmt(ctx: &mut Context, stmt: TypedStmt) -> ControlFlow {
+fn push_stmt(ctx: &mut ExecContext, stmt: TypedStmt) -> Result<ControlFlow, RuntimeError> {
     ctx.control_stack.push(ControlOp::ApplyStmt);
     ctx.control_stack.push(ControlOp::EvalExpr(stmt.expr));
 
-    ControlFlow::Continue
+    Ok(ControlFlow::Continue)
 }
 
-fn push_unary_op(ctx: &mut Context, op: ControlOp, expr: TypedExpr) -> ControlFlow {
+fn push_unary_op(ctx: &mut ExecContext, op: ControlOp, expr: TypedExpr) -> ControlFlow {
     ctx.control_stack.push(op);
     ctx.control_stack.push(ControlOp::EvalExpr(expr));
 
@@ -121,7 +117,7 @@ fn push_unary_op(ctx: &mut Context, op: ControlOp, expr: TypedExpr) -> ControlFl
 }
 
 fn push_binary_op(
-    ctx: &mut Context,
+    ctx: &mut ExecContext,
     op: ControlOp,
     left: Box<TypedExpr>,
     right: Box<TypedExpr>,
@@ -133,7 +129,7 @@ fn push_binary_op(
     ControlFlow::Continue
 }
 
-fn push_func_call(ctx: &mut Context, call: TypedFuncCall) -> ControlFlow {
+fn push_func_call(ctx: &mut ExecContext, call: TypedFuncCall) -> ControlFlow {
     ctx.control_stack.push(ControlOp::ApplyFuncCall(call.args));
     ctx.control_stack.push(ControlOp::EvalExpr(*call.func_expr));
 
@@ -141,7 +137,7 @@ fn push_func_call(ctx: &mut Context, call: TypedFuncCall) -> ControlFlow {
 }
 
 fn push_if_else(
-    ctx: &mut Context,
+    ctx: &mut ExecContext,
     cond: TypedExpr,
     then: Box<TypedExpr>,
     els: Box<TypedExpr>,
@@ -152,7 +148,12 @@ fn push_if_else(
     ControlFlow::Continue
 }
 
-fn push_block(ctx: &mut Context, block: TypedExpr) -> ControlFlow {
+fn push_block<R: Read, W: Write>(
+    exec: &mut ExecContext,
+    io: &mut IoContext<R, W>,
+    builtins: &HashMap<BuiltinId, BuiltinFunc<R, W>>,
+    block: TypedExpr,
+) -> Result<ControlFlow, RuntimeError> {
     let block = match block {
         TypedExpr::Block(block) => block,
         _ => unreachable!(),
@@ -160,44 +161,46 @@ fn push_block(ctx: &mut Context, block: TypedExpr) -> ControlFlow {
 
     match block {
         TypedBlock::Interpreted(stmts, _ty) => {
-            ctx.control_stack.push(ControlOp::MarkBlockStart);
+            exec.control_stack.push(ControlOp::MarkBlockStart);
             for stmt in stmts.into_iter().rev() {
-                ctx.control_stack.push(ControlOp::EvalStmt(stmt));
+                exec.control_stack.push(ControlOp::EvalStmt(stmt));
             }
         }
         // TODO: Is it safe to execute right now instead of pushing to the control stack?
-        TypedBlock::Builtin(params, func, _ty) => {
+        TypedBlock::Builtin(params, builtin_id, _ty) => {
             let args = params
                 .iter()
                 .map(|param| {
-                    ctx.scope_stack
+                    exec.scope_stack
                         .lookup::<RuntimeError>(param)
                         .unwrap()
                         .clone()
                 })
                 .collect();
 
-            let result = func(args);
-            ctx.value_stack.push(result);
+            let func = builtins.get(&builtin_id).unwrap();
+
+            let result = func(io, args)?;
+            exec.value_stack.push(result);
         }
     };
 
-    ControlFlow::Continue
+    Ok(ControlFlow::Continue)
 }
 
-fn mark_loop(ctx: &mut Context, block: TypedExpr) -> ControlFlow {
+fn mark_loop(ctx: &mut ExecContext, block: TypedExpr) -> ControlFlow {
     ctx.control_stack.push(ControlOp::MarkLoopStart);
     push_loop(ctx, block)
 }
 
-fn push_loop(ctx: &mut Context, block: TypedExpr) -> ControlFlow {
+fn push_loop(ctx: &mut ExecContext, block: TypedExpr) -> ControlFlow {
     ctx.control_stack.push(ControlOp::PushLoop(block.clone()));
     ctx.control_stack.push(ControlOp::EvalBlock(block));
 
     ControlFlow::Continue
 }
 
-fn apply_binary_op<F>(ctx: &mut Context, op: F)
+fn apply_binary_op<F>(ctx: &mut ExecContext, op: F)
 where
     F: Fn(ResolvedValue, ResolvedValue) -> ResolvedValue,
 {
@@ -207,16 +210,16 @@ where
     ctx.value_stack.push(op(left, right));
 }
 
-fn apply_unary_op<F>(ctx: &mut Context, op: F)
+fn apply_unary_op<F>(ctx: &mut ExecContext, op: F)
 where
-    F: Fn(&mut Context, ResolvedValue) -> ResolvedValue,
+    F: Fn(&mut ExecContext, ResolvedValue) -> ResolvedValue,
 {
     let value = ctx.value_stack.pop().unwrap();
     let result = op(ctx, value);
     ctx.value_stack.push(result);
 }
 
-fn apply_push_scope(ctx: &mut Context, func: TypedFunc) -> ControlFlow {
+fn apply_push_scope(ctx: &mut ExecContext, func: TypedFunc) -> ControlFlow {
     if func.is_closure {
         ctx.scope_stack.push_scope()
     } else {
@@ -227,14 +230,18 @@ fn apply_push_scope(ctx: &mut Context, func: TypedFunc) -> ControlFlow {
 }
 
 // This is not used by the assignment operation, but instead for things like func call args.
-pub fn apply_binding(ctx: &mut Context, ident: String) -> ControlFlow {
+pub fn apply_binding(ctx: &mut ExecContext, ident: String) -> ControlFlow {
     let value = ctx.value_stack.pop().unwrap();
     ctx.scope_stack.insert(ident.clone(), value);
 
     ControlFlow::Continue
 }
 
-fn apply_if_else(ctx: &mut Context, then_block: TypedExpr, else_block: TypedExpr) -> ControlFlow {
+fn apply_if_else(
+    ctx: &mut ExecContext,
+    then_block: TypedExpr,
+    else_block: TypedExpr,
+) -> ControlFlow {
     let cond = ctx.value_stack.pop().unwrap();
 
     let cond_bool = match cond {

@@ -2,15 +2,24 @@ pub mod analyzer;
 mod ast;
 pub mod builtins;
 mod errors;
-pub mod interpretor;
+pub mod interpreter;
 mod scopes;
+mod state;
+pub mod test_util;
 mod types;
+mod util;
+
 lalrpop_mod!(pub grammar);
 
-use builtins::get_builtins;
+use builtins::{get_builtin_bindings, get_builtins};
 use grammar::ProgramParser;
 use lalrpop_util::lalrpop_mod;
-use std::{env, fs};
+use scopes::scope_stack::ScopeStack;
+use state::{exec_context::ExecContext, io_context::IoContext};
+use std::{
+    env, fs,
+    io::{self, BufReader, BufWriter},
+};
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -33,14 +42,27 @@ fn main() {
         return;
     }
 
-    let analyzed = analyzer::analyze_program(parsed.unwrap(), get_builtins());
+    let analyzed = analyzer::analyze_program(parsed.unwrap(), get_builtin_bindings());
 
     if let Err(error) = analyzed {
         println!("Type Error: {}", error.message);
         return;
     }
 
-    let run_result = interpretor::interpret_program(analyzed.unwrap(), get_builtins());
+    let run_result = interpreter::interpret_program(
+        analyzed.unwrap(),
+        ExecContext {
+            control_stack: Vec::new(),
+            value_stack: Vec::new(),
+            scope_stack: ScopeStack::new(),
+        },
+        IoContext {
+            reader: BufReader::new(io::stdin().lock()),
+            writer: BufWriter::new(io::stdout().lock()),
+        },
+        get_builtin_bindings(),
+        get_builtins(),
+    );
 
     if let Err(error) = run_result {
         println!("Runtime Error: {}", error.message);

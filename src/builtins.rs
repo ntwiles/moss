@@ -1,23 +1,47 @@
+use std::{
+    collections::HashMap,
+    io::{Read, Write},
+};
+
 use crate::{
     ast::typed::{typed_block::TypedBlock, typed_expr::TypedExpr, TypedFunc},
-    interpretor::resolved_value::ResolvedValue,
+    errors::runtime_error::RuntimeError,
+    hashmap,
+    interpreter::resolved_value::ResolvedValue,
+    state::io_context::IoContext,
     types::Type,
 };
 
-pub type BuiltinFunc = fn(Vec<ResolvedValue>) -> ResolvedValue;
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub enum BuiltinId {
+    Int,
+    PrintLine,
+    ReadLine,
+}
 
-pub fn get_builtins() -> Vec<(String, TypedExpr)> {
-    return vec![
+pub type BuiltinFunc<R, W> =
+    fn(&mut IoContext<R, W>, Vec<ResolvedValue>) -> Result<ResolvedValue, RuntimeError>;
+
+pub fn get_builtin_bindings() -> Vec<(String, TypedExpr)> {
+    vec![
         (String::from("int"), make_int()),
         (String::from("print_line"), make_print_line()),
         (String::from("read_line"), make_read_line()),
-    ];
+    ]
+}
+
+pub fn get_builtins<R: Read, W: Write>() -> HashMap<BuiltinId, BuiltinFunc<R, W>> {
+    hashmap! {
+        BuiltinId::Int => eval_int as BuiltinFunc<R, W>,
+        BuiltinId::PrintLine => eval_print_line as BuiltinFunc<R, W>,
+        BuiltinId::ReadLine => eval_read_line as BuiltinFunc<R, W>
+    }
 }
 
 fn make_int() -> TypedExpr {
     let block = Box::new(TypedExpr::Block(TypedBlock::Builtin(
         vec![String::from("value")],
-        eval_int,
+        BuiltinId::Int,
         Type::Int,
     )));
 
@@ -32,17 +56,22 @@ fn make_int() -> TypedExpr {
 
 // TODO: This is a free function right now, but we might consider implementing it as a static method
 // on the Int type when that's available as an option.
-fn eval_int(mut args: Vec<ResolvedValue>) -> ResolvedValue {
+fn eval_int<R: Read, W: Write>(
+    _io: &mut IoContext<R, W>,
+    mut args: Vec<ResolvedValue>,
+) -> Result<ResolvedValue, RuntimeError> {
     let value = args.pop().unwrap();
 
     match value {
         // TODO: Parse error handling.
-        ResolvedValue::String(str) => ResolvedValue::Int(i32::from_str_radix(&str, 10).unwrap()),
+        ResolvedValue::String(str) => {
+            Ok(ResolvedValue::Int(i32::from_str_radix(&str, 10).unwrap()))
+        }
         ResolvedValue::Bool(bool) => {
             if bool {
-                ResolvedValue::Int(1)
+                Ok(ResolvedValue::Int(1))
             } else {
-                ResolvedValue::Int(0)
+                Ok(ResolvedValue::Int(0))
             }
         }
         _ => todo!("Implement other types."),
@@ -52,7 +81,7 @@ fn eval_int(mut args: Vec<ResolvedValue>) -> ResolvedValue {
 fn make_print_line() -> TypedExpr {
     let block = Box::new(TypedExpr::Block(TypedBlock::Builtin(
         vec![String::from("message")],
-        eval_print_line,
+        BuiltinId::PrintLine,
         Type::Void,
     )));
 
@@ -65,7 +94,10 @@ fn make_print_line() -> TypedExpr {
     TypedExpr::FuncDeclare(func, Type::Function(vec![Type::Any, Type::Void]))
 }
 
-fn eval_print_line(mut args: Vec<ResolvedValue>) -> ResolvedValue {
+fn eval_print_line<R: Read, W: Write>(
+    io: &mut IoContext<R, W>,
+    mut args: Vec<ResolvedValue>,
+) -> Result<ResolvedValue, RuntimeError> {
     let message = args.pop().unwrap();
 
     // TODO: This isn't the place to handle string coercion.
@@ -78,15 +110,15 @@ fn eval_print_line(mut args: Vec<ResolvedValue>) -> ResolvedValue {
         ResolvedValue::Void => String::from("Void"),
     };
 
-    println!("{}", message);
+    io.write_line(&message)?;
 
-    ResolvedValue::Void
+    Ok(ResolvedValue::Void)
 }
 
 fn make_read_line() -> TypedExpr {
     let block = Box::new(TypedExpr::Block(TypedBlock::Builtin(
         vec![],
-        eval_read_line,
+        BuiltinId::ReadLine,
         Type::String,
     )));
 
@@ -99,16 +131,11 @@ fn make_read_line() -> TypedExpr {
     TypedExpr::FuncDeclare(func, Type::Function(vec![Type::String]))
 }
 
-fn eval_read_line(mut _args: Vec<ResolvedValue>) -> ResolvedValue {
-    let mut line = String::new();
-    std::io::stdin().read_line(&mut line).unwrap();
+fn eval_read_line<R: Read, W: Write>(
+    io: &mut IoContext<R, W>,
+    mut _args: Vec<ResolvedValue>,
+) -> Result<ResolvedValue, RuntimeError> {
+    let line = io.read_line()?;
 
-    if let Some('\n') = line.chars().last() {
-        line.pop();
-        if let Some('\r') = line.chars().last() {
-            line.pop();
-        }
-    }
-
-    ResolvedValue::String(line)
+    Ok(ResolvedValue::String(line))
 }

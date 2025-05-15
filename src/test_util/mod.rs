@@ -1,0 +1,27 @@
+use std::io::{self, BufReader, BufWriter};
+
+use crate::{
+    ast::typed::typed_expr::TypedExpr,
+    builtins::{get_builtin_bindings, get_builtins},
+    errors::runtime_error::RuntimeError,
+    interpreter::{self, resolved_value::ResolvedValue},
+    scopes::scope_stack::ScopeStack,
+    state::{exec_context::ExecContext, io_context::IoContext},
+};
+
+pub fn exec_program(program: TypedExpr) -> Result<ResolvedValue, RuntimeError> {
+    interpreter::interpret_program(
+        program,
+        ExecContext {
+            control_stack: Vec::new(),
+            value_stack: Vec::new(),
+            scope_stack: ScopeStack::new(),
+        },
+        IoContext {
+            reader: BufReader::new(io::stdin().lock()),
+            writer: BufWriter::new(io::stdout().lock()),
+        },
+        get_builtin_bindings(),
+        get_builtins(),
+    )
+}
