@@ -91,59 +91,60 @@ pub fn interpret_program<R: Read, W: Write>(
 }
 
 // Pop items from the control stack until the condition is met; generally when a marker is found.
-fn unwind_until<F>(ctx: &mut ExecContext, meets_pattern: F)
+fn unwind_until<F>(exec: &mut ExecContext, meets_pattern: F)
 where
     F: Fn(&ControlOp) -> bool,
 {
-    while let Some(op) = ctx.control_stack.pop() {
+    while let Some(op) = exec.control_stack.pop() {
         if meets_pattern(&op) {
             break;
         }
     }
 }
 
-fn push_stmt(ctx: &mut ExecContext, stmt: TypedStmt) -> Result<ControlFlow, RuntimeError> {
-    ctx.control_stack.push(ControlOp::ApplyStmt);
-    ctx.control_stack.push(ControlOp::EvalExpr(stmt.expr));
+fn push_stmt(exec: &mut ExecContext, stmt: TypedStmt) -> Result<ControlFlow, RuntimeError> {
+    exec.control_stack.push(ControlOp::ApplyStmt);
+    exec.control_stack.push(ControlOp::EvalExpr(stmt.expr));
 
     Ok(ControlFlow::Continue)
 }
 
-fn push_unary_op(ctx: &mut ExecContext, op: ControlOp, expr: TypedExpr) -> ControlFlow {
-    ctx.control_stack.push(op);
-    ctx.control_stack.push(ControlOp::EvalExpr(expr));
+fn push_unary_op(exec: &mut ExecContext, op: ControlOp, expr: TypedExpr) -> ControlFlow {
+    exec.control_stack.push(op);
+    exec.control_stack.push(ControlOp::EvalExpr(expr));
 
     ControlFlow::Continue
 }
 
 fn push_binary_op(
-    ctx: &mut ExecContext,
+    exec: &mut ExecContext,
     op: ControlOp,
     left: Box<TypedExpr>,
     right: Box<TypedExpr>,
 ) -> ControlFlow {
-    ctx.control_stack.push(op);
-    ctx.control_stack.push(ControlOp::EvalExpr(*right));
-    ctx.control_stack.push(ControlOp::EvalExpr(*left));
+    exec.control_stack.push(op);
+    exec.control_stack.push(ControlOp::EvalExpr(*right));
+    exec.control_stack.push(ControlOp::EvalExpr(*left));
 
     ControlFlow::Continue
 }
 
-fn push_func_call(ctx: &mut ExecContext, call: TypedFuncCall) -> ControlFlow {
-    ctx.control_stack.push(ControlOp::ApplyFuncCall(call.args));
-    ctx.control_stack.push(ControlOp::EvalExpr(*call.func_expr));
+fn push_func_call(exec: &mut ExecContext, call: TypedFuncCall) -> ControlFlow {
+    exec.control_stack.push(ControlOp::ApplyFuncCall(call.args));
+    exec.control_stack
+        .push(ControlOp::EvalExpr(*call.func_expr));
 
     ControlFlow::Continue
 }
 
 fn push_if_else(
-    ctx: &mut ExecContext,
+    exec: &mut ExecContext,
     cond: TypedExpr,
     then: Box<TypedExpr>,
     els: Box<TypedExpr>,
 ) -> ControlFlow {
-    ctx.control_stack.push(ControlOp::ApplyIfElse(*then, *els));
-    ctx.control_stack.push(ControlOp::EvalExpr(cond));
+    exec.control_stack.push(ControlOp::ApplyIfElse(*then, *els));
+    exec.control_stack.push(ControlOp::EvalExpr(cond));
 
     ControlFlow::Continue
 }
@@ -188,61 +189,61 @@ fn push_block<R: Read, W: Write>(
     Ok(ControlFlow::Continue)
 }
 
-fn mark_loop(ctx: &mut ExecContext, block: TypedExpr) -> ControlFlow {
-    ctx.control_stack.push(ControlOp::MarkLoopStart);
-    push_loop(ctx, block)
+fn mark_loop(exec: &mut ExecContext, block: TypedExpr) -> ControlFlow {
+    exec.control_stack.push(ControlOp::MarkLoopStart);
+    push_loop(exec, block)
 }
 
-fn push_loop(ctx: &mut ExecContext, block: TypedExpr) -> ControlFlow {
-    ctx.control_stack.push(ControlOp::PushLoop(block.clone()));
-    ctx.control_stack.push(ControlOp::EvalBlock(block));
+fn push_loop(exec: &mut ExecContext, block: TypedExpr) -> ControlFlow {
+    exec.control_stack.push(ControlOp::PushLoop(block.clone()));
+    exec.control_stack.push(ControlOp::EvalBlock(block));
 
     ControlFlow::Continue
 }
 
-fn apply_binary_op<F>(ctx: &mut ExecContext, op: F)
+fn apply_binary_op<F>(exec: &mut ExecContext, op: F)
 where
     F: Fn(ResolvedValue, ResolvedValue) -> ResolvedValue,
 {
-    let right = ctx.value_stack.pop().unwrap();
-    let left = ctx.value_stack.pop().unwrap();
+    let right = exec.value_stack.pop().unwrap();
+    let left = exec.value_stack.pop().unwrap();
 
-    ctx.value_stack.push(op(left, right));
+    exec.value_stack.push(op(left, right));
 }
 
-fn apply_unary_op<F>(ctx: &mut ExecContext, op: F)
+fn apply_unary_op<F>(exec: &mut ExecContext, op: F)
 where
     F: Fn(&mut ExecContext, ResolvedValue) -> ResolvedValue,
 {
-    let value = ctx.value_stack.pop().unwrap();
-    let result = op(ctx, value);
-    ctx.value_stack.push(result);
+    let value = exec.value_stack.pop().unwrap();
+    let result = op(exec, value);
+    exec.value_stack.push(result);
 }
 
-fn apply_push_scope(ctx: &mut ExecContext, func: TypedFunc) -> ControlFlow {
+fn apply_push_scope(exec: &mut ExecContext, func: TypedFunc) -> ControlFlow {
     if func.is_closure {
-        ctx.scope_stack.push_scope()
+        exec.scope_stack.push_scope()
     } else {
-        ctx.scope_stack.create_new_stack()
+        exec.scope_stack.create_new_stack()
     }
 
     ControlFlow::Continue
 }
 
 // This is not used by the assignment operation, but instead for things like func call args.
-pub fn apply_binding(ctx: &mut ExecContext, ident: String) -> ControlFlow {
-    let value = ctx.value_stack.pop().unwrap();
-    ctx.scope_stack.insert(ident.clone(), value);
+pub fn apply_binding(exec: &mut ExecContext, ident: String) -> ControlFlow {
+    let value = exec.value_stack.pop().unwrap();
+    exec.scope_stack.insert(ident.clone(), value);
 
     ControlFlow::Continue
 }
 
 fn apply_if_else(
-    ctx: &mut ExecContext,
+    exec: &mut ExecContext,
     then_block: TypedExpr,
     else_block: TypedExpr,
 ) -> ControlFlow {
-    let cond = ctx.value_stack.pop().unwrap();
+    let cond = exec.value_stack.pop().unwrap();
 
     let cond_bool = match cond {
         ResolvedValue::Bool(b) => b,
@@ -257,7 +258,7 @@ fn apply_if_else(
     };
 
     for stmt in stmts.into_iter().rev() {
-        ctx.control_stack.push(ControlOp::EvalStmt(stmt));
+        exec.control_stack.push(ControlOp::EvalStmt(stmt));
     }
 
     ControlFlow::Continue
