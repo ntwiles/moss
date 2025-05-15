@@ -3,7 +3,6 @@ use moss::test_util;
 
 mod analyzer;
 mod interpreter;
-mod parser;
 
 #[test]
 fn operation_precedence() {
