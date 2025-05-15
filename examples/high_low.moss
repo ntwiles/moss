@@ -1,6 +1,6 @@
 let secret_number = 68;
 
-print_line("I've thought of a secret number. Try go guess it!");
+print_line("I've thought of a secret number. Try to guess it!");
 
 loop {
     let guess = int(read_line());
