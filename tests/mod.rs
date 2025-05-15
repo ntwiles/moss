@@ -1,6 +1,10 @@
 use moss::grammar::ProgramParser;
 use moss::test_util;
 
+mod analyzer;
+mod interpreter;
+mod parser;
+
 #[test]
 fn operation_precedence() {
     let parsed = ProgramParser::new().parse("10 + 5 * 2 - 8 / 4;").unwrap();
