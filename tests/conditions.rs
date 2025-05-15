@@ -1,5 +1,5 @@
 use moss::grammar::ProgramParser;
-use moss::test_util::{analyze_program, exec_program};
+use moss::test_util;
 
 #[test]
 fn if_else_basic_true() {
@@ -7,8 +7,8 @@ fn if_else_basic_true() {
         .parse("if true { 7; } else { 8; };")
         .unwrap();
 
-    let analyzed = analyze_program(parsed).unwrap();
-    let result = exec_program(analyzed).unwrap();
+    let analyzed = test_util::analyze_program(parsed).unwrap();
+    let result = test_util::exec_program(analyzed).unwrap();
 
     assert_eq!(result.unwrap_int(), 7);
 }
@@ -19,8 +19,8 @@ fn if_else_basic_false() {
         .parse("if false { 7; } else { 8; };")
         .unwrap();
 
-    let analyzed = analyze_program(parsed).unwrap();
-    let result = exec_program(analyzed).unwrap();
+    let analyzed = test_util::analyze_program(parsed).unwrap();
+    let result = test_util::exec_program(analyzed).unwrap();
 
     assert_eq!(result.unwrap_int(), 8);
 }
@@ -31,8 +31,8 @@ fn if_else_assign() {
         .parse("let foo = if true { 7; } else { 8; }; foo;")
         .unwrap();
 
-    let analyzed = analyze_program(parsed).unwrap();
-    let result = exec_program(analyzed).unwrap();
+    let analyzed = test_util::analyze_program(parsed).unwrap();
+    let result = test_util::exec_program(analyzed).unwrap();
 
     assert_eq!(result.unwrap_int(), 7);
 }
@@ -43,5 +43,5 @@ fn if_else_non_matching() {
         .parse("let foo = if true { 7; } else { false; }; foo;")
         .unwrap();
 
-    analyze_program(parsed).expect_err("if-else branches must return the same type.");
+    test_util::analyze_program(parsed).expect_err("if-else branches must return the same type.");
 }
