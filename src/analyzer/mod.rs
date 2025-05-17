@@ -54,6 +54,8 @@ fn analyze_expr(
         Expr::Eq(left, right) => analyze_eq(scope_stack, *left, *right),
         Expr::Gt(left, right) => analyze_gt(scope_stack, *left, *right),
         Expr::Lt(left, right) => analyze_lt(scope_stack, *left, *right),
+        Expr::Gte(left, right) => analyze_gte(scope_stack, *left, *right),
+        Expr::Lte(left, right) => analyze_lte(scope_stack, *left, *right),
         Expr::Add(left, right) => analyze_add(scope_stack, *left, *right),
         Expr::Sub(left, right) => analyze_sub(scope_stack, *left, *right),
         Expr::Mult(left, right) => analyze_mult(scope_stack, *left, *right),
@@ -125,6 +127,38 @@ fn analyze_gt(
     Ok(TypedExpr::Gt(Box::new(left), Box::new(right), Type::Bool))
 }
 
+fn analyze_gte(
+    scope_stack: &mut ScopeStack<ScopeEntry>,
+    left: Expr,
+    right: Expr,
+) -> Result<TypedExpr, TypeError> {
+    let left = analyze_expr(scope_stack, left)?;
+    let right = analyze_expr(scope_stack, right)?;
+
+    if left.ty() != right.ty() {
+        return Err(TypeError {
+            message: format!(
+                "Invalid types for >= comparison: {:?} != {:?}",
+                left.ty(),
+                right.ty()
+            ),
+        });
+    }
+
+    // TODO: Support gt for strings?
+    if left.ty() != Type::Int && left.ty() != Type::Float {
+        return Err(TypeError {
+            message: format!(
+                "Invalid types for >= comparison: {:?} != {:?}",
+                left.ty(),
+                right.ty()
+            ),
+        });
+    }
+
+    Ok(TypedExpr::Gte(Box::new(left), Box::new(right), Type::Bool))
+}
+
 fn analyze_lt(
     scope_stack: &mut ScopeStack<ScopeEntry>,
     left: Expr,
@@ -155,6 +189,38 @@ fn analyze_lt(
     }
 
     Ok(TypedExpr::Lt(Box::new(left), Box::new(right), Type::Bool))
+}
+
+fn analyze_lte(
+    scope_stack: &mut ScopeStack<ScopeEntry>,
+    left: Expr,
+    right: Expr,
+) -> Result<TypedExpr, TypeError> {
+    let left = analyze_expr(scope_stack, left)?;
+    let right = analyze_expr(scope_stack, right)?;
+
+    if left.ty() != right.ty() {
+        return Err(TypeError {
+            message: format!(
+                "Invalid types for <= comparison: {:?} != {:?}",
+                left.ty(),
+                right.ty()
+            ),
+        });
+    }
+
+    // TODO: Support lt for strings?
+    if left.ty() != Type::Int && left.ty() != Type::Float {
+        return Err(TypeError {
+            message: format!(
+                "Invalid types for <= comparison: {:?} != {:?}",
+                left.ty(),
+                right.ty()
+            ),
+        });
+    }
+
+    Ok(TypedExpr::Lte(Box::new(left), Box::new(right), Type::Bool))
 }
 
 fn analyze_add(

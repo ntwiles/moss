@@ -39,6 +39,8 @@ pub fn eval_expr<R: Read, W: Write>(
         TypedExpr::Eq(l, r, _ty) => push_binary_op(exec, ControlOp::ApplyEq, l, r),
         TypedExpr::Gt(l, r, _ty) => push_binary_op(exec, ControlOp::ApplyGt, l, r),
         TypedExpr::Lt(l, r, _ty) => push_binary_op(exec, ControlOp::ApplyLt, l, r),
+        TypedExpr::Gte(l, r, _ty) => push_binary_op(exec, ControlOp::ApplyGte, l, r),
+        TypedExpr::Lte(l, r, _ty) => push_binary_op(exec, ControlOp::ApplyLte, l, r),
         TypedExpr::Add(l, r, _ty) => push_binary_op(exec, ControlOp::ApplyAdd, l, r),
         TypedExpr::Sub(l, r, _ty) => push_binary_op(exec, ControlOp::ApplySub, l, r),
         TypedExpr::Mult(l, r, _ty) => push_binary_op(exec, ControlOp::ApplyMult, l, r),
@@ -131,10 +133,30 @@ pub fn apply_gt(exec: &mut ExecContext) -> ControlFlow {
     ControlFlow::Continue
 }
 
+pub fn apply_gte(exec: &mut ExecContext) -> ControlFlow {
+    apply_binary_op(exec, |l, r| match (l, r) {
+        (ResolvedValue::Int(l), ResolvedValue::Int(r)) => ResolvedValue::Bool(l >= r),
+        (ResolvedValue::Float(l), ResolvedValue::Float(r)) => ResolvedValue::Bool(l >= r),
+        _ => unreachable!(),
+    });
+
+    ControlFlow::Continue
+}
+
 pub fn apply_lt(exec: &mut ExecContext) -> ControlFlow {
     apply_binary_op(exec, |l, r| match (l, r) {
         (ResolvedValue::Int(l), ResolvedValue::Int(r)) => ResolvedValue::Bool(l < r),
         (ResolvedValue::Float(l), ResolvedValue::Float(r)) => ResolvedValue::Bool(l < r),
+        _ => unreachable!(),
+    });
+
+    ControlFlow::Continue
+}
+
+pub fn apply_lte(exec: &mut ExecContext) -> ControlFlow {
+    apply_binary_op(exec, |l, r| match (l, r) {
+        (ResolvedValue::Int(l), ResolvedValue::Int(r)) => ResolvedValue::Bool(l <= r),
+        (ResolvedValue::Float(l), ResolvedValue::Float(r)) => ResolvedValue::Bool(l <= r),
         _ => unreachable!(),
     });
 

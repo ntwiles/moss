@@ -15,6 +15,8 @@ pub enum ControlOp {
     ApplyEq,
     ApplyGt,
     ApplyLt,
+    ApplyGte,
+    ApplyLte,
 
     // Postfix operations
     ApplyFuncCall(Vec<TypedExpr>),

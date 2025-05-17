@@ -1,0 +1,22 @@
+let a = |k: Int, x1: Function, x2: Function, x3: Function, x4: Function, x5: Function|: Int => {
+    let b = ||: Int => {
+        a(k - 1, b, x1, x2, x3, x4);
+    };
+
+    if k <= 0 {
+        x4() + x5();
+    } else {
+        b();
+    };
+};
+
+let result = a(
+    10,
+    ||: Int => { 1; },
+    ||: Int => { -1; },
+    ||: Int => { -1; },
+    ||: Int => { 1; },
+    ||: Int => { 0; }
+);
+
+print_line(result);

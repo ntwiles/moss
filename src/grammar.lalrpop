@@ -10,7 +10,7 @@ match {
     "let",
 
     // operators
-    "=", "==", ">", "<", "+", "-", "*", "/",
+    "=", "==", ">", "<", "<=", ">=", "+", "-", "*", "/",
 
     // syntax constructs
     "=>", "if", "else", "loop", "break",
@@ -77,6 +77,8 @@ Equality: Expr = {
 Relational: Expr = {
     <l:Relational> ">" <r:Addition> => Expr::Gt(Box::new(l), Box::new(r)),
     <l:Relational> "<" <r:Addition> => Expr::Lt(Box::new(l), Box::new(r)),
+    <l:Relational> ">=" <r:Addition> => Expr::Gte(Box::new(l), Box::new(r)),
+    <l:Relational> "<=" <r:Addition> => Expr::Lte(Box::new(l), Box::new(r)),
     Addition,
 };
 
