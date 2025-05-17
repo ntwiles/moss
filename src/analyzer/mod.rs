@@ -17,7 +17,7 @@ pub fn analyze_program(
     let mut scope_stack = ScopeStack::<ScopeEntry>::new();
 
     for (ident, binding) in builtins {
-        scope_stack.insert(ident, ScopeEntry::TypedExpr(binding));
+        scope_stack.insert(ident, binding.ty());
     }
 
     analyze_block(&mut scope_stack, stmts)
@@ -380,6 +380,27 @@ fn analyze_assign(
     ident: String,
     value: Expr,
 ) -> Result<TypedExpr, TypeError> {
+    let mut predeclared = false;
+
+    if let Expr::FuncDeclare(FuncDeclare {
+        params,
+        return_type,
+        ..
+    }) = &value
+    {
+        let mut type_args: Vec<_> = params
+            .iter()
+            .map(|(_, ty)| Type::from_str(ty))
+            .collect::<Result<_, _>>()?;
+
+        type_args.push(Type::from_str(&return_type)?);
+
+        let func_type = Type::Function(type_args);
+
+        scope_stack.insert(ident.clone(), func_type);
+        predeclared = true;
+    }
+
     let inner = analyze_expr(scope_stack, value)?;
 
     if inner.ty() == Type::Void {
@@ -388,8 +409,9 @@ fn analyze_assign(
         });
     }
 
-    let entry = ScopeEntry::TypedExpr(inner.clone());
-    scope_stack.insert(ident.clone(), entry);
+    if !predeclared {
+        scope_stack.insert(ident.clone(), inner.ty());
+    }
 
     Ok(TypedExpr::Assign(ident, Box::new(inner), Type::Void))
 }
@@ -457,9 +479,8 @@ fn analyze_identifier(
     scope_stack: &mut ScopeStack<ScopeEntry>,
     ident: String,
 ) -> Result<TypedExpr, TypeError> {
-    let expr = scope_stack.lookup(&ident)?;
-
-    Ok(TypedExpr::Identifier(ident, expr.ty()))
+    let ty = scope_stack.lookup(&ident)?;
+    Ok(TypedExpr::Identifier(ident, ty.clone()))
 }
 
 fn analyze_func_declare(
@@ -475,7 +496,7 @@ fn analyze_func_declare(
     for param in &func.params {
         let ident = param.0.clone();
         let ty = Type::from_str(&param.1)?;
-        scope_stack.insert(ident, ScopeEntry::Type(ty));
+        scope_stack.insert(ident, ty);
     }
 
     let block = analyze_block(scope_stack, *func.block)?;
