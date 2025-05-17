@@ -1,4 +1,4 @@
-let a = |k: Int, x1: Function, x2: Function, x3: Function, x4: Function, x5: Function|: Int => {
+let a = |k: Int, x1: Func, x2: Func, x3: Func, x4: Func, x5: Func|: Int => {
     let b = ||: Int => {
         a(k - 1, b, x1, x2, x3, x4);
     };

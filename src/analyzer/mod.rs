@@ -436,17 +436,32 @@ fn analyze_func_call(
         let return_type = inner_types.pop().unwrap();
         let param_types = inner_types;
 
+        let param_types_list = param_types
+            .iter()
+            .map(|t| t.to_string())
+            .collect::<Vec<_>>()
+            .join(", ");
+
+        let arg_types_list = args
+            .iter()
+            .map(|t| t.ty().to_string())
+            .collect::<Vec<_>>()
+            .join(", ");
+
         if param_types.len() != args.len() {
             return Err(TypeError {
-                // TODO: Impl Display for types here, right now it's just debug printing a tuple.
-                message: format!("Called function with wrong number of args.\n\tExpected: {:?}\n\tReceived: {:?}", param_types, args)
+                message: format!("Called function with wrong number of args.\n\tExpected: [{}]\n\tReceived: [{}]", param_types_list, arg_types_list)
             });
         }
 
         for (param_type, arg) in param_types.clone().into_iter().zip(args.clone()) {
             if arg.ty() != param_type && param_type != Type::Any {
-                // TODO: Impl Display for types here, right now it's just debug printing a tuple.
-                return Err(TypeError { message: format!("Called function with incorrect arg types.\n\tExpected: {:?}\n\tReceived: {:?}", param_types, args)});
+                return Err(TypeError {
+                    message: format!(
+                        "Called function with incorrect arg types.\n\tExpected: [{}]\n\tReceived: [{}]",
+                        param_types_list, arg_types_list
+                    ),
+                });
             }
         }
 
