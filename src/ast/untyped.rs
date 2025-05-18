@@ -53,7 +53,7 @@ pub struct FuncCall {
 
 #[derive(Clone, Debug)]
 pub struct FuncDeclare {
-    pub params: Vec<(String, String)>,
+    pub params: Vec<(String, ProtoType)>,
     pub return_type: Box<ProtoType>,
     pub block: Box<Expr>,
     pub is_closure: bool,

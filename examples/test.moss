@@ -1,1 +1,11 @@
-let add = (x: Int, y: Int): Int => { x + y; }; add(7, 8);
+let call_speaker = (func: Func<String>): String => { 
+    func(); 
+};
+
+let say_hello = ||: String => {
+    "Hello.";
+};
+
+let response = call_speaker(say_hello);
+
+print_line(response);

@@ -135,11 +135,11 @@ FuncDeclare: Expr = {
     "|" <params:ParameterList> "|" ":" <return_type:TypeExpr> "=>" "{" <stmts:StmtList> "}" => Expr::FuncDeclare(FuncDeclare{ params, return_type: Box::new(return_type), block: Box::new(Expr::Block(stmts)), is_closure: true }),
 };
 
-ParameterList: Vec<(String, String)> = Comma<Parameter>;
+ParameterList: Vec<(String, ProtoType)> = Comma<Parameter>;
 
 // Stubbed to support type annotations.
-Parameter: (String, String) = {
-    <ident:Identifier> ":" <ty:Identifier> => (ident, ty),
+Parameter: (String, ProtoType) = {
+    <ident:Identifier> ":" <ty:TypeExpr> => (ident, ty),
 };
 
 Bool: bool = {

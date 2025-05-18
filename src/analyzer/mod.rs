@@ -416,7 +416,7 @@ fn analyze_assign(
     {
         let mut type_args: Vec<_> = params
             .iter()
-            .map(|(_, ty)| Type::from_str(ty))
+            .map(|(_, proto)| analyze_proto_type(type_scope, proto.clone()))
             .collect::<Result<_, _>>()?;
 
         let return_type = analyze_proto_type(type_scope, *return_type.clone())?;
@@ -424,8 +424,6 @@ fn analyze_assign(
         type_args.push(return_type);
 
         let func_type = Type::Func(type_args);
-
-        println!("Binding assign for func type: {}", func_type);
 
         value_scope_stack.insert(ident.clone(), func_type);
         predeclared = true;
@@ -534,8 +532,6 @@ fn analyze_func_declare(
     type_scope: &mut Scope<Type>,
     func: FuncDeclare,
 ) -> Result<TypedExpr, TypeError> {
-    println!("Analyze func declare");
-
     if func.is_closure {
         value_scope_stack.push_scope();
     } else {
@@ -544,7 +540,7 @@ fn analyze_func_declare(
 
     for param in &func.params {
         let ident = param.0.clone();
-        let ty = Type::from_str(&param.1)?;
+        let ty = analyze_proto_type(type_scope, param.1.clone())?;
         value_scope_stack.insert(ident, ty);
     }
 
@@ -559,8 +555,11 @@ fn analyze_func_declare(
     let params: Vec<(String, Type)> = func
         .params
         .iter()
-        .map(|(ident, ty)| (ident.clone(), Type::from_str(ty).unwrap()))
-        .collect();
+        .map(|(ident, ty)| {
+            let ty = analyze_proto_type(type_scope, ty.clone())?;
+            Ok((ident.clone(), ty))
+        })
+        .collect::<Result<_, TypeError>>()?;
 
     let declared_return_type = analyze_proto_type(type_scope, *func.return_type)?;
     let actual_return_type = block.ty();
@@ -584,8 +583,6 @@ fn analyze_func_declare(
 
     let mut inner_types: Vec<Type> = params.into_iter().map(|p| p.1).collect();
     inner_types.push(declared_return_type);
-
-    println!("Function Type: {}", Type::Func(inner_types.clone()));
 
     Ok(TypedExpr::FuncDeclare(func, Type::Func(inner_types)))
 }
@@ -679,6 +676,17 @@ fn analyze_proto_type(type_scope: &mut Scope<Type>, proto: ProtoType) -> Result<
                 message: format!("TODO"),
             })
             .cloned(),
-        ProtoType::Applied(_outer, _inners) => todo!(),
+        ProtoType::Applied(outer, inners) => {
+            if outer == "Func" {
+                Ok(Type::Func(
+                    inners
+                        .iter()
+                        .map(|proto| analyze_proto_type(type_scope, proto.clone()))
+                        .collect::<Result<_, _>>()?,
+                ))
+            } else {
+                todo!();
+            }
+        }
     }
 }
