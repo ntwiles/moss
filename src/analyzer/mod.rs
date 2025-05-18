@@ -478,19 +478,12 @@ fn analyze_func_call(
             .join(", ");
 
         if param_types.len() != args.len() {
-            return Err(TypeError {
-                message: format!("Called function with wrong number of args.\n\tExpected: [{}]\n\tReceived: [{}]", param_types_list, arg_types_list)
-            });
+            return Err(make_wrong_signature_error(param_types_list, arg_types_list));
         }
 
         for (param_type, arg) in param_types.clone().into_iter().zip(args.clone()) {
             if arg.ty() != param_type && param_type != Type::Any {
-                return Err(TypeError {
-                    message: format!(
-                        "Called function with incorrect arg types.\n\tExpected: [{}]\n\tReceived: [{}]",
-                        param_types_list, arg_types_list
-                    ),
-                });
+                return Err(make_wrong_signature_error(param_types_list, arg_types_list));
             }
         }
 
@@ -504,6 +497,15 @@ fn analyze_func_call(
         return Err(TypeError {
             message: format!("Cannot call non-function: {:?}", callee.ty()),
         });
+    }
+}
+
+fn make_wrong_signature_error(param_types_list: String, arg_types_list: String) -> TypeError {
+    TypeError {
+        message: format!(
+            "Called function with wrong argument signature.\n\tExpected: ({})\n\tReceived: ({})",
+            param_types_list, arg_types_list
+        ),
     }
 }
 
