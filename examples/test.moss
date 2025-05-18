@@ -1,4 +1,4 @@
-let call_speaker = (func: Func<Int>): Int => { 
+let call_speaker = (func: Func<Str>): Str => { 
     func(); 
 };
 
