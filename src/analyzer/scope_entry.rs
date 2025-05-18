@@ -1,3 +1,3 @@
-use crate::types::Type;
+use crate::typing::Type;
 
 pub type ScopeEntry = Type;

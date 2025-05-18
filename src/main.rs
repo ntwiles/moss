@@ -6,12 +6,12 @@ pub mod interpreter;
 mod scopes;
 mod state;
 pub mod test_util;
-mod types;
+mod typing;
 mod util;
 
 lalrpop_mod!(pub grammar);
 
-use builtins::{get_builtin_bindings, get_builtins};
+use builtins::{get_builtin_func_bindings, get_builtin_funcs, get_builtin_type_bindings};
 use grammar::ProgramParser;
 use lalrpop_util::lalrpop_mod;
 use scopes::scope_stack::ScopeStack;
@@ -42,7 +42,11 @@ fn main() {
         return;
     }
 
-    let analyzed = analyzer::analyze_program(parsed.unwrap(), get_builtin_bindings());
+    let analyzed = analyzer::analyze_program(
+        parsed.unwrap(),
+        get_builtin_func_bindings(),
+        get_builtin_type_bindings(),
+    );
 
     if let Err(error) = analyzed {
         println!("Type Error: {}", error.message);
@@ -60,8 +64,8 @@ fn main() {
             reader: BufReader::new(io::stdin().lock()),
             writer: BufWriter::new(io::stdout().lock()),
         },
-        get_builtin_bindings(),
-        get_builtins(),
+        get_builtin_func_bindings(),
+        get_builtin_funcs(),
     );
 
     if let Err(error) = run_result {

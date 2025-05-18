@@ -7,7 +7,7 @@ use std::io::{Read, Write};
 use crate::ast::typed::{
     typed_block::TypedBlock, typed_expr::TypedExpr, TypedFunc, TypedFuncCall, TypedStmt,
 };
-use crate::builtins::{BuiltinFunc, BuiltinId};
+use crate::builtins::{BuiltinFunc, BuiltinFuncId};
 use crate::errors::runtime_error::RuntimeError;
 use crate::state::{
     control_flow::ControlFlow, control_op::ControlOp, exec_context::ExecContext,
@@ -26,7 +26,7 @@ pub fn interpret_program<R: Read, W: Write>(
     mut exec: ExecContext,
     mut io: IoContext<R, W>,
     builtin_bindings: Vec<(String, TypedExpr)>,
-    builtins: HashMap<BuiltinId, BuiltinFunc<R, W>>,
+    builtins: HashMap<BuiltinFuncId, BuiltinFunc<R, W>>,
 ) -> Result<ResolvedValue, RuntimeError> {
     // TODO: The logic below has a lot of overlap with push_block(). Should that just be called here?
     let stmts = match block {
@@ -154,7 +154,7 @@ fn push_if_else(
 fn push_block<R: Read, W: Write>(
     exec: &mut ExecContext,
     io: &mut IoContext<R, W>,
-    builtins: &HashMap<BuiltinId, BuiltinFunc<R, W>>,
+    builtins: &HashMap<BuiltinFuncId, BuiltinFunc<R, W>>,
     block: TypedExpr,
 ) -> Result<ControlFlow, RuntimeError> {
     let block = match block {

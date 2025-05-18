@@ -1,47 +1,19 @@
-use std::{
-    collections::HashMap,
-    io::{Read, Write},
-};
+use std::io::{Read, Write};
 
 use crate::{
     ast::typed::{typed_block::TypedBlock, typed_expr::TypedExpr, TypedFunc},
     errors::runtime_error::RuntimeError,
-    hashmap,
     interpreter::resolved_value::ResolvedValue,
     state::io_context::IoContext,
-    types::Type,
+    typing::Type,
 };
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub enum BuiltinId {
-    Int,
-    PrintLine,
-    ReadLine,
-}
+use super::BuiltinFuncId;
 
-pub type BuiltinFunc<R, W> =
-    fn(&mut IoContext<R, W>, Vec<ResolvedValue>) -> Result<ResolvedValue, RuntimeError>;
-
-pub fn get_builtin_bindings() -> Vec<(String, TypedExpr)> {
-    vec![
-        (String::from("int"), make_int()),
-        (String::from("print_line"), make_print_line()),
-        (String::from("read_line"), make_read_line()),
-    ]
-}
-
-pub fn get_builtins<R: Read, W: Write>() -> HashMap<BuiltinId, BuiltinFunc<R, W>> {
-    hashmap! {
-        BuiltinId::Int => eval_int as BuiltinFunc<R, W>,
-        BuiltinId::PrintLine => eval_print_line as BuiltinFunc<R, W>,
-        BuiltinId::ReadLine => eval_read_line as BuiltinFunc<R, W>
-    }
-}
-
-fn make_int() -> TypedExpr {
+pub fn make_int() -> TypedExpr {
     let block = Box::new(TypedExpr::Block(TypedBlock::Builtin(
         vec![String::from("value")],
-        BuiltinId::Int,
+        BuiltinFuncId::Int,
         Type::Int,
     )));
 
@@ -51,12 +23,12 @@ fn make_int() -> TypedExpr {
         block,
     };
 
-    TypedExpr::FuncDeclare(func, Type::Function(vec![Type::Any, Type::Int]))
+    TypedExpr::FuncDeclare(func, Type::Func(vec![Type::Any, Type::Int]))
 }
 
 // TODO: This is a free function right now, but we might consider implementing it as a static method
 // on the Int type when that's available as an option.
-fn eval_int<R: Read, W: Write>(
+pub fn eval_int<R: Read, W: Write>(
     _io: &mut IoContext<R, W>,
     mut args: Vec<ResolvedValue>,
 ) -> Result<ResolvedValue, RuntimeError> {
@@ -78,10 +50,10 @@ fn eval_int<R: Read, W: Write>(
     }
 }
 
-fn make_print_line() -> TypedExpr {
+pub fn make_print_line() -> TypedExpr {
     let block = Box::new(TypedExpr::Block(TypedBlock::Builtin(
         vec![String::from("message")],
-        BuiltinId::PrintLine,
+        BuiltinFuncId::PrintLine,
         Type::Void,
     )));
 
@@ -91,10 +63,10 @@ fn make_print_line() -> TypedExpr {
         block,
     };
 
-    TypedExpr::FuncDeclare(func, Type::Function(vec![Type::Any, Type::Void]))
+    TypedExpr::FuncDeclare(func, Type::Func(vec![Type::Any, Type::Void]))
 }
 
-fn eval_print_line<R: Read, W: Write>(
+pub fn eval_print_line<R: Read, W: Write>(
     io: &mut IoContext<R, W>,
     mut args: Vec<ResolvedValue>,
 ) -> Result<ResolvedValue, RuntimeError> {
@@ -115,10 +87,10 @@ fn eval_print_line<R: Read, W: Write>(
     Ok(ResolvedValue::Void)
 }
 
-fn make_read_line() -> TypedExpr {
+pub fn make_read_line() -> TypedExpr {
     let block = Box::new(TypedExpr::Block(TypedBlock::Builtin(
         vec![],
-        BuiltinId::ReadLine,
+        BuiltinFuncId::ReadLine,
         Type::String,
     )));
 
@@ -128,10 +100,10 @@ fn make_read_line() -> TypedExpr {
         block,
     };
 
-    TypedExpr::FuncDeclare(func, Type::Function(vec![Type::String]))
+    TypedExpr::FuncDeclare(func, Type::Func(vec![Type::String]))
 }
 
-fn eval_read_line<R: Read, W: Write>(
+pub fn eval_read_line<R: Read, W: Write>(
     io: &mut IoContext<R, W>,
     mut _args: Vec<ResolvedValue>,
 ) -> Result<ResolvedValue, RuntimeError> {

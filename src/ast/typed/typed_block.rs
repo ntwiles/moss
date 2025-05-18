@@ -1,12 +1,12 @@
-use crate::builtins::BuiltinId;
-use crate::types::Type;
+use crate::builtins::BuiltinFuncId;
+use crate::typing::Type;
 
 use super::TypedStmt;
 
 #[derive(Clone, Debug)]
 pub enum TypedBlock {
     Interpreted(Vec<TypedStmt>, Type),
-    Builtin(Vec<String>, BuiltinId, Type),
+    Builtin(Vec<String>, BuiltinFuncId, Type),
 }
 
 impl TypedBlock {

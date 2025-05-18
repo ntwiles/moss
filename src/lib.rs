@@ -8,7 +8,7 @@ pub mod interpreter;
 pub mod scopes;
 pub mod state;
 pub mod test_util;
-pub mod types;
+pub mod typing;
 pub mod util;
 
 lalrpop_mod!(pub grammar);

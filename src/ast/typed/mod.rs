@@ -4,7 +4,7 @@ pub mod typed_expr;
 use typed_block::TypedBlock;
 use typed_expr::TypedExpr;
 
-use crate::types::Type;
+use crate::typing::Type;
 
 #[derive(Clone, Debug)]
 pub enum TypedLiteral {

@@ -1,4 +1,4 @@
-use crate::types::Type;
+use crate::typing::Type;
 
 use super::{TypedBlock, TypedFunc, TypedFuncCall, TypedLiteral};
 

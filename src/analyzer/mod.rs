@@ -5,82 +5,98 @@ use crate::ast::typed::typed_expr::TypedExpr;
 use crate::ast::typed::{TypedFunc, TypedFuncCall, TypedLiteral, TypedStmt};
 use crate::ast::untyped::{Expr, FuncCall, FuncDeclare, Literal, Stmt};
 use crate::errors::type_error::TypeError;
+use crate::scopes::scope::Scope;
 use crate::scopes::scope_stack::ScopeStack;
-use crate::types::Type;
+use crate::typing::{ProtoType, Type};
 
 use scope_entry::ScopeEntry;
 
 pub fn analyze_program(
     stmts: Expr,
-    builtins: Vec<(String, TypedExpr)>,
+    builtin_funcs: Vec<(String, TypedExpr)>,
+    builtin_types: Vec<(String, Type)>,
 ) -> Result<TypedExpr, TypeError> {
-    let mut scope_stack = ScopeStack::<ScopeEntry>::new();
+    let mut value_scope_stack = ScopeStack::<ScopeEntry>::new();
 
-    for (ident, binding) in builtins {
-        scope_stack.insert(ident, binding.ty());
+    for (ident, binding) in builtin_funcs {
+        value_scope_stack.insert(ident, binding.ty());
     }
 
-    analyze_block(&mut scope_stack, stmts)
+    let mut type_scope = Scope::new();
+
+    for (ident, binding) in builtin_types {
+        type_scope.insert(ident, binding);
+    }
+
+    analyze_block(&mut value_scope_stack, &mut type_scope, stmts)
 }
 
 fn analyze_stmts(
-    scope_stack: &mut ScopeStack<ScopeEntry>,
+    value_scope_stack: &mut ScopeStack<ScopeEntry>,
+    type_scope: &mut Scope<Type>,
     stmts: Vec<Stmt>,
 ) -> Result<Vec<TypedStmt>, TypeError> {
     stmts
         .into_iter()
-        .map(|stmt| analyze_stmt(scope_stack, stmt))
+        .map(|stmt| analyze_stmt(value_scope_stack, type_scope, stmt))
         .collect()
 }
 
 fn analyze_stmt(
-    scope_stack: &mut ScopeStack<ScopeEntry>,
+    value_scope_stack: &mut ScopeStack<ScopeEntry>,
+    type_scope: &mut Scope<Type>,
     stmt: Stmt,
 ) -> Result<TypedStmt, TypeError> {
-    let expr = analyze_expr(scope_stack, stmt.expr)?;
+    let expr = analyze_expr(value_scope_stack, type_scope, stmt.expr)?;
 
     Ok(TypedStmt { expr })
 }
 
 fn analyze_expr(
-    scope_stack: &mut ScopeStack<ScopeEntry>,
+    value_scope_stack: &mut ScopeStack<ScopeEntry>,
+    type_scope: &mut Scope<Type>,
     expr: Expr,
 ) -> Result<TypedExpr, TypeError> {
     match expr {
-        Expr::Block(stmts) => analyze_block(scope_stack, Expr::Block(stmts)),
+        Expr::Block(stmts) => analyze_block(value_scope_stack, type_scope, Expr::Block(stmts)),
         Expr::Literal(literal) => analyze_literal(literal),
-        Expr::Identifier(ident) => analyze_identifier(scope_stack, ident),
+        Expr::Identifier(ident) => analyze_identifier(value_scope_stack, ident),
 
-        Expr::Eq(left, right) => analyze_eq(scope_stack, *left, *right),
-        Expr::Gt(left, right) => analyze_gt(scope_stack, *left, *right),
-        Expr::Lt(left, right) => analyze_lt(scope_stack, *left, *right),
-        Expr::Gte(left, right) => analyze_gte(scope_stack, *left, *right),
-        Expr::Lte(left, right) => analyze_lte(scope_stack, *left, *right),
-        Expr::Add(left, right) => analyze_add(scope_stack, *left, *right),
-        Expr::Sub(left, right) => analyze_sub(scope_stack, *left, *right),
-        Expr::Mult(left, right) => analyze_mult(scope_stack, *left, *right),
-        Expr::Div(left, right) => analyze_div(scope_stack, *left, *right),
+        Expr::Eq(left, right) => analyze_eq(value_scope_stack, type_scope, *left, *right),
+        Expr::Gt(left, right) => analyze_gt(value_scope_stack, type_scope, *left, *right),
+        Expr::Lt(left, right) => analyze_lt(value_scope_stack, type_scope, *left, *right),
+        Expr::Gte(left, right) => analyze_gte(value_scope_stack, type_scope, *left, *right),
+        Expr::Lte(left, right) => analyze_lte(value_scope_stack, type_scope, *left, *right),
+        Expr::Add(left, right) => analyze_add(value_scope_stack, type_scope, *left, *right),
+        Expr::Sub(left, right) => analyze_sub(value_scope_stack, type_scope, *left, *right),
+        Expr::Mult(left, right) => analyze_mult(value_scope_stack, type_scope, *left, *right),
+        Expr::Div(left, right) => analyze_div(value_scope_stack, type_scope, *left, *right),
 
-        Expr::Negate(inner) => analyze_negate(scope_stack, *inner),
-        Expr::Assignment(ident, expr) => analyze_assign(scope_stack, ident, *expr),
-        Expr::FuncDeclare(func) => analyze_func_declare(scope_stack, func),
-        Expr::FuncCall(call) => analyze_func_call(scope_stack, call),
+        Expr::Negate(inner) => analyze_negate(value_scope_stack, type_scope, *inner),
+        Expr::Assignment(ident, expr) => {
+            analyze_assign(value_scope_stack, type_scope, ident, *expr)
+        }
+        Expr::FuncDeclare(func) => analyze_func_declare(value_scope_stack, type_scope, func),
+        Expr::FuncCall(call) => analyze_func_call(value_scope_stack, type_scope, call),
 
-        Expr::IfElse(expr, then, els) => analyze_if_else(scope_stack, *expr, *then, *els),
-        Expr::Loop(block) => analyze_loop(scope_stack, *block),
-        Expr::Break => analyze_break(scope_stack),
+        Expr::IfElse(expr, then, els) => {
+            analyze_if_else(value_scope_stack, type_scope, *expr, *then, *els)
+        }
+        Expr::Loop(block) => analyze_loop(value_scope_stack, type_scope, *block),
+        Expr::Break => analyze_break(value_scope_stack),
     }
 }
 
 // Binary operations
 
 fn analyze_eq(
-    scope_stack: &mut ScopeStack<ScopeEntry>,
+    value_scope_stack: &mut ScopeStack<ScopeEntry>,
+    type_scope: &mut Scope<Type>,
     left: Expr,
     right: Expr,
 ) -> Result<TypedExpr, TypeError> {
-    let left = analyze_expr(scope_stack, left)?;
-    let right = analyze_expr(scope_stack, right)?;
+    let left = analyze_expr(value_scope_stack, type_scope, left)?;
+    let right = analyze_expr(value_scope_stack, type_scope, right)?;
 
     if left.ty() != right.ty() {
         return Err(TypeError {
@@ -96,12 +112,13 @@ fn analyze_eq(
 }
 
 fn analyze_gt(
-    scope_stack: &mut ScopeStack<ScopeEntry>,
+    value_scope_stack: &mut ScopeStack<ScopeEntry>,
+    type_scope: &mut Scope<Type>,
     left: Expr,
     right: Expr,
 ) -> Result<TypedExpr, TypeError> {
-    let left = analyze_expr(scope_stack, left)?;
-    let right = analyze_expr(scope_stack, right)?;
+    let left = analyze_expr(value_scope_stack, type_scope, left)?;
+    let right = analyze_expr(value_scope_stack, type_scope, right)?;
 
     if left.ty() != right.ty() {
         return Err(TypeError {
@@ -128,12 +145,13 @@ fn analyze_gt(
 }
 
 fn analyze_gte(
-    scope_stack: &mut ScopeStack<ScopeEntry>,
+    value_scope_stack: &mut ScopeStack<ScopeEntry>,
+    type_scope: &mut Scope<Type>,
     left: Expr,
     right: Expr,
 ) -> Result<TypedExpr, TypeError> {
-    let left = analyze_expr(scope_stack, left)?;
-    let right = analyze_expr(scope_stack, right)?;
+    let left = analyze_expr(value_scope_stack, type_scope, left)?;
+    let right = analyze_expr(value_scope_stack, type_scope, right)?;
 
     if left.ty() != right.ty() {
         return Err(TypeError {
@@ -160,12 +178,13 @@ fn analyze_gte(
 }
 
 fn analyze_lt(
-    scope_stack: &mut ScopeStack<ScopeEntry>,
+    value_scope_stack: &mut ScopeStack<ScopeEntry>,
+    type_scope: &mut Scope<Type>,
     left: Expr,
     right: Expr,
 ) -> Result<TypedExpr, TypeError> {
-    let left = analyze_expr(scope_stack, left)?;
-    let right = analyze_expr(scope_stack, right)?;
+    let left = analyze_expr(value_scope_stack, type_scope, left)?;
+    let right = analyze_expr(value_scope_stack, type_scope, right)?;
 
     if left.ty() != right.ty() {
         return Err(TypeError {
@@ -192,12 +211,13 @@ fn analyze_lt(
 }
 
 fn analyze_lte(
-    scope_stack: &mut ScopeStack<ScopeEntry>,
+    value_scope_stack: &mut ScopeStack<ScopeEntry>,
+    type_scope: &mut Scope<Type>,
     left: Expr,
     right: Expr,
 ) -> Result<TypedExpr, TypeError> {
-    let left = analyze_expr(scope_stack, left)?;
-    let right = analyze_expr(scope_stack, right)?;
+    let left = analyze_expr(value_scope_stack, type_scope, left)?;
+    let right = analyze_expr(value_scope_stack, type_scope, right)?;
 
     if left.ty() != right.ty() {
         return Err(TypeError {
@@ -224,12 +244,13 @@ fn analyze_lte(
 }
 
 fn analyze_add(
-    scope_stack: &mut ScopeStack<ScopeEntry>,
+    value_scope_stack: &mut ScopeStack<ScopeEntry>,
+    type_scope: &mut Scope<Type>,
     left: Expr,
     right: Expr,
 ) -> Result<TypedExpr, TypeError> {
-    let left = analyze_expr(scope_stack, left)?;
-    let right = analyze_expr(scope_stack, right)?;
+    let left = analyze_expr(value_scope_stack, type_scope, left)?;
+    let right = analyze_expr(value_scope_stack, type_scope, right)?;
 
     if left.ty() != right.ty() {
         return Err(TypeError {
@@ -256,12 +277,13 @@ fn analyze_add(
 }
 
 fn analyze_sub(
-    scope_stack: &mut ScopeStack<ScopeEntry>,
+    value_scope_stack: &mut ScopeStack<ScopeEntry>,
+    type_scope: &mut Scope<Type>,
     left: Expr,
     right: Expr,
 ) -> Result<TypedExpr, TypeError> {
-    let left = analyze_expr(scope_stack, left)?;
-    let right = analyze_expr(scope_stack, right)?;
+    let left = analyze_expr(value_scope_stack, type_scope, left)?;
+    let right = analyze_expr(value_scope_stack, type_scope, right)?;
 
     if left.ty() != right.ty() {
         return Err(TypeError {
@@ -288,12 +310,13 @@ fn analyze_sub(
 }
 
 fn analyze_mult(
-    scope_stack: &mut ScopeStack<ScopeEntry>,
+    value_scope_stack: &mut ScopeStack<ScopeEntry>,
+    type_scope: &mut Scope<Type>,
     left: Expr,
     right: Expr,
 ) -> Result<TypedExpr, TypeError> {
-    let left = analyze_expr(scope_stack, left)?;
-    let right = analyze_expr(scope_stack, right)?;
+    let left = analyze_expr(value_scope_stack, type_scope, left)?;
+    let right = analyze_expr(value_scope_stack, type_scope, right)?;
 
     if left.ty() != right.ty() {
         return Err(TypeError {
@@ -320,12 +343,13 @@ fn analyze_mult(
 }
 
 fn analyze_div(
-    scope_stack: &mut ScopeStack<ScopeEntry>,
+    value_scope_stack: &mut ScopeStack<ScopeEntry>,
+    type_scope: &mut Scope<Type>,
     left: Expr,
     right: Expr,
 ) -> Result<TypedExpr, TypeError> {
-    let left = analyze_expr(scope_stack, left)?;
-    let right = analyze_expr(scope_stack, right)?;
+    let left = analyze_expr(value_scope_stack, type_scope, left)?;
+    let right = analyze_expr(value_scope_stack, type_scope, right)?;
 
     if left.ty() != right.ty() {
         return Err(TypeError {
@@ -360,10 +384,11 @@ fn analyze_div(
 // Unary operations
 
 fn analyze_negate(
-    scope_stack: &mut ScopeStack<ScopeEntry>,
+    value_scope_stack: &mut ScopeStack<ScopeEntry>,
+    type_scope: &mut Scope<Type>,
     inner: Expr,
 ) -> Result<TypedExpr, TypeError> {
-    let inner = analyze_expr(scope_stack, inner)?;
+    let inner = analyze_expr(value_scope_stack, type_scope, inner)?;
 
     if inner.ty() != Type::Int && inner.ty() != Type::Float {
         return Err(TypeError {
@@ -376,7 +401,8 @@ fn analyze_negate(
 }
 
 fn analyze_assign(
-    scope_stack: &mut ScopeStack<ScopeEntry>,
+    value_scope_stack: &mut ScopeStack<ScopeEntry>,
+    type_scope: &mut Scope<Type>,
     ident: String,
     value: Expr,
 ) -> Result<TypedExpr, TypeError> {
@@ -393,15 +419,19 @@ fn analyze_assign(
             .map(|(_, ty)| Type::from_str(ty))
             .collect::<Result<_, _>>()?;
 
-        type_args.push(Type::from_str(&return_type)?);
+        let return_type = analyze_proto_type(type_scope, *return_type.clone())?;
 
-        let func_type = Type::Function(type_args);
+        type_args.push(return_type);
 
-        scope_stack.insert(ident.clone(), func_type);
+        let func_type = Type::Func(type_args);
+
+        println!("Binding assign for func type: {}", func_type);
+
+        value_scope_stack.insert(ident.clone(), func_type);
         predeclared = true;
     }
 
-    let inner = analyze_expr(scope_stack, value)?;
+    let inner = analyze_expr(value_scope_stack, type_scope, value)?;
 
     if inner.ty() == Type::Void {
         return Err(TypeError {
@@ -410,7 +440,7 @@ fn analyze_assign(
     }
 
     if !predeclared {
-        scope_stack.insert(ident.clone(), inner.ty());
+        value_scope_stack.insert(ident.clone(), inner.ty());
     }
 
     Ok(TypedExpr::Assign(ident, Box::new(inner), Type::Void))
@@ -419,18 +449,19 @@ fn analyze_assign(
 // Postfix operations
 
 fn analyze_func_call(
-    scope_stack: &mut ScopeStack<ScopeEntry>,
+    value_scope_stack: &mut ScopeStack<ScopeEntry>,
+    type_scope: &mut Scope<Type>,
     call: FuncCall,
 ) -> Result<TypedExpr, TypeError> {
-    let callee = analyze_expr(scope_stack, *call.func)?;
+    let callee = analyze_expr(value_scope_stack, type_scope, *call.func)?;
 
     let args = call
         .args
         .into_iter()
-        .map(|arg| analyze_expr(scope_stack, arg))
+        .map(|arg| analyze_expr(value_scope_stack, type_scope, arg))
         .collect::<Result<Vec<_>, _>>()?;
 
-    if let Type::Function(inner_types) = callee.ty() {
+    if let Type::Func(inner_types) = callee.ty() {
         let mut inner_types = inner_types.clone();
 
         let return_type = inner_types.pop().unwrap();
@@ -499,27 +530,30 @@ fn analyze_identifier(
 }
 
 fn analyze_func_declare(
-    scope_stack: &mut ScopeStack<ScopeEntry>,
+    value_scope_stack: &mut ScopeStack<ScopeEntry>,
+    type_scope: &mut Scope<Type>,
     func: FuncDeclare,
 ) -> Result<TypedExpr, TypeError> {
+    println!("Analyze func declare");
+
     if func.is_closure {
-        scope_stack.push_scope();
+        value_scope_stack.push_scope();
     } else {
-        scope_stack.create_new_stack();
+        value_scope_stack.create_new_stack();
     }
 
     for param in &func.params {
         let ident = param.0.clone();
         let ty = Type::from_str(&param.1)?;
-        scope_stack.insert(ident, ty);
+        value_scope_stack.insert(ident, ty);
     }
 
-    let block = analyze_block(scope_stack, *func.block)?;
+    let block = analyze_block(value_scope_stack, type_scope, *func.block)?;
 
     if func.is_closure {
-        scope_stack.pop_scope();
+        value_scope_stack.pop_scope();
     } else {
-        scope_stack.restore_previous_stack();
+        value_scope_stack.restore_previous_stack();
     }
 
     let params: Vec<(String, Type)> = func
@@ -528,14 +562,7 @@ fn analyze_func_declare(
         .map(|(ident, ty)| (ident.clone(), Type::from_str(ty).unwrap()))
         .collect();
 
-    let declared_return_type = if let Ok(return_type) = Type::from_str(&func.return_type) {
-        return_type
-    } else {
-        return Err(TypeError {
-            message: format!("Unknown return type: {}", func.return_type),
-        });
-    };
-
+    let declared_return_type = analyze_proto_type(type_scope, *func.return_type)?;
     let actual_return_type = block.ty();
 
     if declared_return_type != actual_return_type {
@@ -558,16 +585,19 @@ fn analyze_func_declare(
     let mut inner_types: Vec<Type> = params.into_iter().map(|p| p.1).collect();
     inner_types.push(declared_return_type);
 
-    Ok(TypedExpr::FuncDeclare(func, Type::Function(inner_types)))
+    println!("Function Type: {}", Type::Func(inner_types.clone()));
+
+    Ok(TypedExpr::FuncDeclare(func, Type::Func(inner_types)))
 }
 
 fn analyze_if_else(
-    scope_stack: &mut ScopeStack<ScopeEntry>,
+    value_scope_stack: &mut ScopeStack<ScopeEntry>,
+    type_scope: &mut Scope<Type>,
     cond: Expr,
     then_block: Expr,
     else_block: Expr,
 ) -> Result<TypedExpr, TypeError> {
-    let cond = analyze_expr(scope_stack, cond)?;
+    let cond = analyze_expr(value_scope_stack, type_scope, cond)?;
 
     if cond.ty() != Type::Bool {
         return Err(TypeError {
@@ -575,8 +605,8 @@ fn analyze_if_else(
         });
     }
 
-    let then_block = analyze_block(scope_stack, then_block)?;
-    let else_block = analyze_block(scope_stack, else_block)?;
+    let then_block = analyze_block(value_scope_stack, type_scope, then_block)?;
+    let else_block = analyze_block(value_scope_stack, type_scope, else_block)?;
 
     if then_block.ty() != else_block.ty() {
         return Err(TypeError {
@@ -599,12 +629,13 @@ fn analyze_if_else(
 }
 
 fn analyze_loop(
-    scope_stack: &mut ScopeStack<ScopeEntry>,
+    value_scope_stack: &mut ScopeStack<ScopeEntry>,
+    type_scope: &mut Scope<Type>,
     block: Expr,
 ) -> Result<TypedExpr, TypeError> {
     // TODO: Currently just using this as a wrapper to analyze the block, there may be more we can
     // do here later though.
-    let block = analyze_block(scope_stack, block)?;
+    let block = analyze_block(value_scope_stack, type_scope, block)?;
 
     Ok(TypedExpr::Loop(Box::new(block)))
 }
@@ -617,18 +648,19 @@ fn analyze_break(_scope_stack: &mut ScopeStack<ScopeEntry>) -> Result<TypedExpr,
 }
 
 fn analyze_block(
-    scope_stack: &mut ScopeStack<ScopeEntry>,
+    value_scope_stack: &mut ScopeStack<ScopeEntry>,
+    type_scope: &mut Scope<Type>,
     block: Expr,
 ) -> Result<TypedExpr, TypeError> {
-    scope_stack.push_scope();
+    value_scope_stack.push_scope();
 
     let stmts = if let Expr::Block(stmts) = block {
-        analyze_stmts(scope_stack, stmts)?
+        analyze_stmts(value_scope_stack, type_scope, stmts)?
     } else {
         unreachable!();
     };
 
-    scope_stack.pop_scope();
+    value_scope_stack.pop_scope();
 
     let ty = stmts
         .iter()
@@ -637,4 +669,16 @@ fn analyze_block(
         .unwrap_or(Type::Void);
 
     Ok(TypedExpr::Block(TypedBlock::Interpreted(stmts, ty)))
+}
+
+fn analyze_proto_type(type_scope: &mut Scope<Type>, proto: ProtoType) -> Result<Type, TypeError> {
+    match proto {
+        ProtoType::Atomic(ident) => type_scope
+            .get(&ident)
+            .ok_or(TypeError {
+                message: format!("TODO"),
+            })
+            .cloned(),
+        ProtoType::Applied(_outer, _inners) => todo!(),
+    }
 }

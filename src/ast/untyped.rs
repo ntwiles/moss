@@ -1,3 +1,5 @@
+use crate::typing::ProtoType;
+
 #[derive(Clone, Debug)]
 pub enum Expr {
     // Binary operations
@@ -52,7 +54,7 @@ pub struct FuncCall {
 #[derive(Clone, Debug)]
 pub struct FuncDeclare {
     pub params: Vec<(String, String)>,
-    pub return_type: String,
+    pub return_type: Box<ProtoType>,
     pub block: Box<Expr>,
     pub is_closure: bool,
 }

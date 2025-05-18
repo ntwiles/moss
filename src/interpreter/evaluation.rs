@@ -5,7 +5,7 @@ use std::{
 
 use crate::{
     ast::typed::{typed_expr::TypedExpr, TypedFunc, TypedLiteral},
-    builtins::{BuiltinFunc, BuiltinId},
+    builtins::{BuiltinFunc, BuiltinFuncId},
     errors::runtime_error::RuntimeError,
     state::{
         control_flow::ControlFlow, control_op::ControlOp, exec_context::ExecContext,
@@ -31,7 +31,7 @@ pub fn apply_stmt(exec: &mut ExecContext) -> ControlFlow {
 pub fn eval_expr<R: Read, W: Write>(
     exec: &mut ExecContext,
     io: &mut IoContext<R, W>,
-    builtins: &HashMap<BuiltinId, BuiltinFunc<R, W>>,
+    builtins: &HashMap<BuiltinFuncId, BuiltinFunc<R, W>>,
     expr: TypedExpr,
 ) -> Result<ControlFlow, RuntimeError> {
     let control_flow = match expr {
