@@ -40,7 +40,7 @@ pub fn get_builtin_type_bindings() -> Vec<(String, Type)> {
         (String::from("Int"), Type::Int),
         (String::from("Bool"), Type::Bool),
         (String::from("Float"), Type::Float),
-        (String::from("String"), Type::String),
+        (String::from("Str"), Type::Str),
         (String::from("Void"), Type::Void),
         (String::from("Bool"), Type::Bool),
     ]

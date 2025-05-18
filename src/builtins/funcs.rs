@@ -54,7 +54,7 @@ pub fn make_str() -> TypedExpr {
     let block = Box::new(TypedExpr::Block(TypedBlock::Builtin(
         vec![String::from("value")],
         BuiltinFuncId::Str,
-        Type::String,
+        Type::Str,
     )));
 
     let func = TypedFunc {
@@ -63,7 +63,7 @@ pub fn make_str() -> TypedExpr {
         block,
     };
 
-    TypedExpr::FuncDeclare(func, Type::Func(vec![Type::Any, Type::String]))
+    TypedExpr::FuncDeclare(func, Type::Func(vec![Type::Any, Type::Str]))
 }
 
 // TODO: This is a free function right now, but we might consider implementing it as a static method
@@ -129,7 +129,7 @@ pub fn make_read_line() -> TypedExpr {
     let block = Box::new(TypedExpr::Block(TypedBlock::Builtin(
         vec![],
         BuiltinFuncId::ReadLine,
-        Type::String,
+        Type::Str,
     )));
 
     let func = TypedFunc {
@@ -138,7 +138,7 @@ pub fn make_read_line() -> TypedExpr {
         block,
     };
 
-    TypedExpr::FuncDeclare(func, Type::Func(vec![Type::String]))
+    TypedExpr::FuncDeclare(func, Type::Func(vec![Type::Str]))
 }
 
 pub fn eval_read_line<R: Read, W: Write>(

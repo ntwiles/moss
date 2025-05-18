@@ -14,7 +14,7 @@ pub enum Type {
     Bool,
     Int,
     Float,
-    String,
+    Str,
     Func(Vec<Type>),
     UserDefined(String),
     Applied(Box<Type>, Vec<Type>),
@@ -28,7 +28,7 @@ impl Display for Type {
             Self::Bool => write!(f, "Bool"),
             Self::Int => write!(f, "Int"),
             Self::Float => write!(f, "Float"),
-            Self::String => write!(f, "String"),
+            Self::Str => write!(f, "String"),
             Self::Func(params) => {
                 let inner = params
                     .iter()
@@ -59,7 +59,7 @@ impl Type {
         match s {
             "Int" => Ok(Type::Int),
             "Float" => Ok(Type::Float),
-            "String" => Ok(Type::String),
+            "String" => Ok(Type::Str),
             "Bool" => Ok(Type::Bool),
             "Void" => Ok(Type::Void),
             "Func" => Ok(Type::Func(vec![])), // TODO: Whatever from_str is used for, it probably needs to support the full function type.

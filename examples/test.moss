@@ -1,8 +1,8 @@
-let call_speaker = (func: Func<String>): String => { 
+let call_speaker = (func: Func<Str>): Str => { 
     func(); 
 };
 
-let say_hello = ||: String => {
+let say_hello = ||: Str => {
     "Hello.";
 };
 

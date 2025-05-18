@@ -262,7 +262,7 @@ fn analyze_add(
         });
     }
 
-    if left.ty() != Type::Int && left.ty() != Type::Float && left.ty() != Type::String {
+    if left.ty() != Type::Int && left.ty() != Type::Float && left.ty() != Type::Str {
         return Err(TypeError {
             message: format!(
                 "Invalid types for + operation: {:?} != {:?}",
@@ -513,7 +513,7 @@ fn analyze_literal(literal: Literal) -> Result<TypedExpr, TypeError> {
     Ok(match literal {
         Literal::Int(i) => TypedExpr::Literal(TypedLiteral::Int(i), Type::Int),
         Literal::Float(f) => TypedExpr::Literal(TypedLiteral::Float(f), Type::Float),
-        Literal::String(s) => TypedExpr::Literal(TypedLiteral::String(s), Type::String),
+        Literal::String(s) => TypedExpr::Literal(TypedLiteral::String(s), Type::Str),
         Literal::Bool(b) => TypedExpr::Literal(TypedLiteral::Bool(b), Type::Bool),
     })
 }
