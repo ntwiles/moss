@@ -6,7 +6,7 @@ pub struct RuntimeError {
 }
 
 impl Error for RuntimeError {
-    fn new(message: String) -> Self {
-        RuntimeError { message }
+    fn scope_binding_not_found(_name: &str) -> Self {
+        todo!()
     }
 }

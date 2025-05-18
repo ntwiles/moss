@@ -49,7 +49,7 @@ fn main() {
     );
 
     if let Err(error) = analyzed {
-        println!("Type Error: {}", error.message);
+        println!("Type Error: {}", error);
         return;
     }
 

@@ -1,7 +1,5 @@
 use std::fmt::Display;
 
-use crate::errors::{type_error::TypeError, Error};
-
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum ProtoType {
     Atomic(String),
@@ -49,21 +47,6 @@ impl Display for Type {
                 write!(f, "{outer}<{inner}>")
             }
             Self::Void => write!(f, "Void"),
-        }
-    }
-}
-
-impl Type {
-    // TODO: Kill this.
-    pub fn from_str(s: &str) -> Result<Type, TypeError> {
-        match s {
-            "Int" => Ok(Type::Int),
-            "Float" => Ok(Type::Float),
-            "String" => Ok(Type::Str),
-            "Bool" => Ok(Type::Bool),
-            "Void" => Ok(Type::Void),
-            "Func" => Ok(Type::Func(vec![])), // TODO: Whatever from_str is used for, it probably needs to support the full function type.
-            _ => Err(TypeError::new(format!("Unknown type: {}", s))),
         }
     }
 }

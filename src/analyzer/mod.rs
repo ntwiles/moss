@@ -99,13 +99,11 @@ fn analyze_eq(
     let right = analyze_expr(value_scope_stack, type_scope, right)?;
 
     if left.ty() != right.ty() {
-        return Err(TypeError {
-            message: format!(
-                "Invalid types for == comparison: {:?} != {:?}",
-                left.ty(),
-                right.ty()
-            ),
-        });
+        return Err(TypeError::BinaryOpWrongTypes(
+            "==".to_string(),
+            left.ty(),
+            right.ty(),
+        ));
     }
 
     Ok(TypedExpr::Eq(Box::new(left), Box::new(right), Type::Bool))
@@ -121,24 +119,20 @@ fn analyze_gt(
     let right = analyze_expr(value_scope_stack, type_scope, right)?;
 
     if left.ty() != right.ty() {
-        return Err(TypeError {
-            message: format!(
-                "Invalid types for > comparison: {:?} != {:?}",
-                left.ty(),
-                right.ty()
-            ),
-        });
+        return Err(TypeError::BinaryOpWrongTypes(
+            ">".to_string(),
+            left.ty(),
+            right.ty(),
+        ));
     }
 
     // TODO: Support gt for strings?
     if left.ty() != Type::Int && left.ty() != Type::Float {
-        return Err(TypeError {
-            message: format!(
-                "Invalid types for > comparison: {:?} != {:?}",
-                left.ty(),
-                right.ty()
-            ),
-        });
+        return Err(TypeError::BinaryOpWrongTypes(
+            ">".to_string(),
+            left.ty(),
+            right.ty(),
+        ));
     }
 
     Ok(TypedExpr::Gt(Box::new(left), Box::new(right), Type::Bool))
@@ -154,24 +148,20 @@ fn analyze_gte(
     let right = analyze_expr(value_scope_stack, type_scope, right)?;
 
     if left.ty() != right.ty() {
-        return Err(TypeError {
-            message: format!(
-                "Invalid types for >= comparison: {:?} != {:?}",
-                left.ty(),
-                right.ty()
-            ),
-        });
+        return Err(TypeError::BinaryOpWrongTypes(
+            ">=".to_string(),
+            left.ty(),
+            right.ty(),
+        ));
     }
 
     // TODO: Support gt for strings?
     if left.ty() != Type::Int && left.ty() != Type::Float {
-        return Err(TypeError {
-            message: format!(
-                "Invalid types for >= comparison: {:?} != {:?}",
-                left.ty(),
-                right.ty()
-            ),
-        });
+        return Err(TypeError::BinaryOpWrongTypes(
+            ">=".to_string(),
+            left.ty(),
+            right.ty(),
+        ));
     }
 
     Ok(TypedExpr::Gte(Box::new(left), Box::new(right), Type::Bool))
@@ -187,24 +177,20 @@ fn analyze_lt(
     let right = analyze_expr(value_scope_stack, type_scope, right)?;
 
     if left.ty() != right.ty() {
-        return Err(TypeError {
-            message: format!(
-                "Invalid types for < comparison: {:?} != {:?}",
-                left.ty(),
-                right.ty()
-            ),
-        });
+        return Err(TypeError::BinaryOpWrongTypes(
+            "<".to_string(),
+            left.ty(),
+            right.ty(),
+        ));
     }
 
     // TODO: Support lt for strings?
     if left.ty() != Type::Int && left.ty() != Type::Float {
-        return Err(TypeError {
-            message: format!(
-                "Invalid types for < comparison: {:?} != {:?}",
-                left.ty(),
-                right.ty()
-            ),
-        });
+        return Err(TypeError::BinaryOpWrongTypes(
+            "<".to_string(),
+            left.ty(),
+            right.ty(),
+        ));
     }
 
     Ok(TypedExpr::Lt(Box::new(left), Box::new(right), Type::Bool))
@@ -220,24 +206,20 @@ fn analyze_lte(
     let right = analyze_expr(value_scope_stack, type_scope, right)?;
 
     if left.ty() != right.ty() {
-        return Err(TypeError {
-            message: format!(
-                "Invalid types for <= comparison: {:?} != {:?}",
-                left.ty(),
-                right.ty()
-            ),
-        });
+        return Err(TypeError::BinaryOpWrongTypes(
+            "<=".to_string(),
+            left.ty(),
+            right.ty(),
+        ));
     }
 
     // TODO: Support lt for strings?
     if left.ty() != Type::Int && left.ty() != Type::Float {
-        return Err(TypeError {
-            message: format!(
-                "Invalid types for <= comparison: {:?} != {:?}",
-                left.ty(),
-                right.ty()
-            ),
-        });
+        return Err(TypeError::BinaryOpWrongTypes(
+            "<=".to_string(),
+            left.ty(),
+            right.ty(),
+        ));
     }
 
     Ok(TypedExpr::Lte(Box::new(left), Box::new(right), Type::Bool))
@@ -253,23 +235,19 @@ fn analyze_add(
     let right = analyze_expr(value_scope_stack, type_scope, right)?;
 
     if left.ty() != right.ty() {
-        return Err(TypeError {
-            message: format!(
-                "Invalid types for + operation: {:?} != {:?}",
-                left.ty(),
-                right.ty()
-            ),
-        });
+        return Err(TypeError::BinaryOpWrongTypes(
+            "+".to_string(),
+            left.ty(),
+            right.ty(),
+        ));
     }
 
     if left.ty() != Type::Int && left.ty() != Type::Float && left.ty() != Type::Str {
-        return Err(TypeError {
-            message: format!(
-                "Invalid types for + operation: {:?} != {:?}",
-                left.ty(),
-                right.ty()
-            ),
-        });
+        return Err(TypeError::BinaryOpWrongTypes(
+            "+".to_string(),
+            left.ty(),
+            right.ty(),
+        ));
     }
 
     let ty = left.ty();
@@ -286,23 +264,19 @@ fn analyze_sub(
     let right = analyze_expr(value_scope_stack, type_scope, right)?;
 
     if left.ty() != right.ty() {
-        return Err(TypeError {
-            message: format!(
-                "Invalid types for - operation: {:?} != {:?}",
-                left.ty(),
-                right.ty()
-            ),
-        });
+        return Err(TypeError::BinaryOpWrongTypes(
+            "-".to_string(),
+            left.ty(),
+            right.ty(),
+        ));
     }
 
     if left.ty() != Type::Int && left.ty() != Type::Float {
-        return Err(TypeError {
-            message: format!(
-                "Invalid types for - operation: {:?} != {:?}",
-                left.ty(),
-                right.ty()
-            ),
-        });
+        return Err(TypeError::BinaryOpWrongTypes(
+            "-".to_string(),
+            left.ty(),
+            right.ty(),
+        ));
     }
 
     let ty = left.ty();
@@ -319,23 +293,19 @@ fn analyze_mult(
     let right = analyze_expr(value_scope_stack, type_scope, right)?;
 
     if left.ty() != right.ty() {
-        return Err(TypeError {
-            message: format!(
-                "Invalid types for * operation: {:?} != {:?}",
-                left.ty(),
-                right.ty()
-            ),
-        });
+        return Err(TypeError::BinaryOpWrongTypes(
+            "*".to_string(),
+            left.ty(),
+            right.ty(),
+        ));
     }
 
     if left.ty() != Type::Int && left.ty() != Type::Float {
-        return Err(TypeError {
-            message: format!(
-                "Invalid types for * operation: {:?} != {:?}",
-                left.ty(),
-                right.ty()
-            ),
-        });
+        return Err(TypeError::BinaryOpWrongTypes(
+            "*".to_string(),
+            left.ty(),
+            right.ty(),
+        ));
     }
 
     let ty = left.ty();
@@ -352,29 +322,23 @@ fn analyze_div(
     let right = analyze_expr(value_scope_stack, type_scope, right)?;
 
     if left.ty() != right.ty() {
-        return Err(TypeError {
-            message: format!(
-                "Invalid types for / operation: {:?} != {:?}",
-                left.ty(),
-                right.ty()
-            ),
-        });
+        return Err(TypeError::BinaryOpWrongTypes(
+            "/".to_string(),
+            left.ty(),
+            right.ty(),
+        ));
     }
 
     if left.ty() != Type::Int && left.ty() != Type::Float {
-        return Err(TypeError {
-            message: format!(
-                "Invalid types for / operation: {:?} != {:?}",
-                left.ty(),
-                right.ty()
-            ),
-        });
+        return Err(TypeError::BinaryOpWrongTypes(
+            "/".to_string(),
+            left.ty(),
+            right.ty(),
+        ));
     }
 
     if let TypedExpr::Literal(TypedLiteral::Int(0), _) = right {
-        return Err(TypeError {
-            message: "Division by zero".to_string(),
-        });
+        return Err(TypeError::DivisionZero);
     }
 
     let ty = left.ty();
@@ -391,9 +355,7 @@ fn analyze_negate(
     let inner = analyze_expr(value_scope_stack, type_scope, inner)?;
 
     if inner.ty() != Type::Int && inner.ty() != Type::Float {
-        return Err(TypeError {
-            message: format!("Invalid type for negation (-) operation: {:?}", inner.ty()),
-        });
+        return Err(TypeError::UnaryOpWrongType("-".to_string(), inner.ty()));
     }
 
     let ty = inner.ty();
@@ -432,9 +394,7 @@ fn analyze_assign(
     let inner = analyze_expr(value_scope_stack, type_scope, value)?;
 
     if inner.ty() == Type::Void {
-        return Err(TypeError {
-            message: "Cannot assign void value".to_string(),
-        });
+        return Err(TypeError::AssignVoid);
     }
 
     if !predeclared {
@@ -465,25 +425,13 @@ fn analyze_func_call(
         let return_type = inner_types.pop().unwrap();
         let param_types = inner_types;
 
-        let param_types_list = param_types
-            .iter()
-            .map(|t| t.to_string())
-            .collect::<Vec<_>>()
-            .join(", ");
-
-        let arg_types_list = args
-            .iter()
-            .map(|t| t.ty().to_string())
-            .collect::<Vec<_>>()
-            .join(", ");
-
         if param_types.len() != args.len() {
-            return Err(make_wrong_signature_error(param_types_list, arg_types_list));
+            return Err(TypeError::InvokeWrongSignature(param_types, args));
         }
 
         for (param_type, arg) in param_types.clone().into_iter().zip(args.clone()) {
             if arg.ty() != param_type && param_type != Type::Any {
-                return Err(make_wrong_signature_error(param_types_list, arg_types_list));
+                return Err(TypeError::InvokeWrongSignature(param_types, args));
             }
         }
 
@@ -494,18 +442,7 @@ fn analyze_func_call(
 
         Ok(TypedExpr::FuncCall(func_call, return_type))
     } else {
-        return Err(TypeError {
-            message: format!("Cannot call non-function: {:?}", callee.ty()),
-        });
-    }
-}
-
-fn make_wrong_signature_error(param_types_list: String, arg_types_list: String) -> TypeError {
-    TypeError {
-        message: format!(
-            "Called function with wrong argument signature.\n\tExpected: ({})\n\tReceived: ({})",
-            param_types_list, arg_types_list
-        ),
+        return Err(TypeError::InvokeNonFunc(callee.ty()));
     }
 }
 
@@ -567,14 +504,10 @@ fn analyze_func_declare(
     let actual_return_type = block.ty();
 
     if declared_return_type != actual_return_type {
-        // TODO: Impl Display so we don't have to use debug output here.
-        return Err(TypeError {
-            message: format!(
-                "Return type does not match declared return type in function signature.\n\tDeclared: {:?}\n\tActual: {:?}",
-                declared_return_type,
-                actual_return_type,
-            ),
-        });
+        return Err(TypeError::FuncWrongReturnType(
+            declared_return_type,
+            actual_return_type,
+        ));
     };
 
     let func = TypedFunc {
@@ -599,22 +532,17 @@ fn analyze_if_else(
     let cond = analyze_expr(value_scope_stack, type_scope, cond)?;
 
     if cond.ty() != Type::Bool {
-        return Err(TypeError {
-            message: format!("Invalid type for if condition: {:?}", cond.ty()),
-        });
+        return Err(TypeError::IfElseConditionNonBool(cond.ty()));
     }
 
     let then_block = analyze_block(value_scope_stack, type_scope, then_block)?;
     let else_block = analyze_block(value_scope_stack, type_scope, else_block)?;
 
     if then_block.ty() != else_block.ty() {
-        return Err(TypeError {
-            message: format!(
-                "Invalid types for if-else blocks: {:?} != {:?}",
-                then_block.ty(),
-                else_block.ty()
-            ),
-        });
+        return Err(TypeError::IfElseBlockTypeMismatch(
+            then_block.ty(),
+            else_block.ty(),
+        ));
     }
 
     let ty = then_block.ty();
@@ -674,9 +602,7 @@ fn analyze_proto_type(type_scope: &mut Scope<Type>, proto: ProtoType) -> Result<
     match proto {
         ProtoType::Atomic(ident) => type_scope
             .get(&ident)
-            .ok_or(TypeError {
-                message: format!("TODO"),
-            })
+            .ok_or(TypeError::ScopeBindingNotFound(ident))
             .cloned(),
         ProtoType::Applied(outer, inners) => {
             if outer == "Func" {

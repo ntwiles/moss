@@ -2,5 +2,5 @@ pub mod runtime_error;
 pub mod type_error;
 
 pub trait Error {
-    fn new(message: String) -> Self;
+    fn scope_binding_not_found(name: &str) -> Self;
 }

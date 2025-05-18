@@ -2,10 +2,10 @@ let call_speaker = (func: Func<Str>): Str => {
     func(); 
 };
 
-let bad_speaker = ||: Int => {
-    7;
+let say_hello = ||: Str => {
+    "Hello.";
 };
 
-let response = call_speaker(bad_speaker);
+let response = call_speaker(say_hello);
 
 print_line(response);
