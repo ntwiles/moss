@@ -1,4 +1,7 @@
-use crate::{ast::typed::typed_expr::TypedExpr, typing::Type};
+use crate::{
+    ast::{typed::typed_expr::TypedExpr, Span},
+    typing::Type,
+};
 
 use super::Error;
 
@@ -11,9 +14,19 @@ pub enum TypeError {
     DivisionZero,
     FuncWrongReturnType(Type, Type),
     InvokeNonFunc(Type),
-    InvokeWrongSignature(Vec<Type>, Vec<TypedExpr>),
+    InvokeWrongSignature(Vec<Type>, Vec<TypedExpr>, Span),
     UnaryOpWrongType(String, Type),
     ScopeBindingNotFound(String),
+}
+
+impl TypeError {
+    pub fn display(self, file_name: String, source: String) -> TypeErrorDisplay {
+        TypeErrorDisplay {
+            error: self,
+            file_name,
+            source,
+        }
+    }
 }
 
 impl Error for TypeError {
@@ -22,9 +35,15 @@ impl Error for TypeError {
     }
 }
 
-impl std::fmt::Display for TypeError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
+pub struct TypeErrorDisplay {
+    error: TypeError,
+    file_name: String,
+    source: String,
+}
+
+impl std::fmt::Display for TypeErrorDisplay {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match &self.error {
             TypeError::AssignVoid => write!(f, "Cannot assign a value of type Void."),
             TypeError::BinaryOpWrongTypes(op, a, b) => {
                 write!(f, "Types {a} and {b} do not support binary operation {op}.")
@@ -43,7 +62,9 @@ impl std::fmt::Display for TypeError {
                 "Expected conditional statement, but received expression of type {ty}"
             ),
             TypeError::InvokeNonFunc(ty) => write!(f, "Cannot invoke non-function of type {ty}"),
-            TypeError::InvokeWrongSignature(param_types, args) => {
+            TypeError::InvokeWrongSignature(param_types, args, span) => {
+                let snippet = &self.source[span.start..span.end]; // you may want safe helpers
+
                 let param_types_list = param_types
                     .iter()
                     .map(|t| t.to_string())
@@ -56,9 +77,16 @@ impl std::fmt::Display for TypeError {
                     .collect::<Vec<_>>()
                     .join(", ");
 
-                write!(
+                let line_num = get_line_number(&self.source, span.start);
+                let header = format!("{}:{line_num}", &self.file_name);
+
+                writeln!(f, "Invoked function with the wrong signature.")?;
+                writeln!(f, "{:-^width$}", header, width = 80)?;
+                writeln!(f, "{snippet}")?;
+                writeln!(f, "{:-<width$}", "", width = 80)?;
+                writeln!(
                     f,
-                    "Invoked function with the wrong signature.\n\tExpected: ({param_types_list})\n\tReceived: ({arg_types_list})"
+                    "Expected: ({param_types_list})\nReceived: ({arg_types_list})"
                 )
             }
             TypeError::UnaryOpWrongType(op, ty) => {
@@ -66,7 +94,11 @@ impl std::fmt::Display for TypeError {
             }
             TypeError::ScopeBindingNotFound(ident) => {
                 write!(f, "Binding \"{ident}\" not found in scope.")
-            }
+            } // fall back to the plain Display you already wrote
         }
     }
+}
+
+fn get_line_number(source: &str, byte_offset: usize) -> usize {
+    source[..byte_offset].lines().count()
 }

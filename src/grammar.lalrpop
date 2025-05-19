@@ -1,4 +1,5 @@
 use crate::ast::untyped::{Expr, Stmt, FuncCall, FuncDeclare, Literal};
+use crate::ast::Span;
 use crate::typing::{ProtoType};
 
 grammar;
@@ -106,7 +107,7 @@ Unary: Expr = {
 };
 
 PostfixExpression: Expr = {
-    <primary:Primary> "(" <args:ExprList> ")" => Expr::FuncCall(FuncCall { func: Box::new(primary), args }),
+    <start: @L> <primary:Primary> "(" <args:ExprList> ")" <end: @R> => Expr::FuncCall(FuncCall { func: Box::new(primary), args }, Span { start, end }),
     Primary,
 };
 

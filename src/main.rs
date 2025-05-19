@@ -49,7 +49,7 @@ fn main() {
     );
 
     if let Err(error) = analyzed {
-        println!("Type Error: {}", error);
+        println!("Type Error: {}", error.display(path.clone(), code));
         return;
     }
 

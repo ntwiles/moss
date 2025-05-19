@@ -4,6 +4,7 @@ use crate::ast::typed::typed_block::TypedBlock;
 use crate::ast::typed::typed_expr::TypedExpr;
 use crate::ast::typed::{TypedFunc, TypedFuncCall, TypedLiteral, TypedStmt};
 use crate::ast::untyped::{Expr, FuncCall, FuncDeclare, Literal, Stmt};
+use crate::ast::Span;
 use crate::errors::type_error::TypeError;
 use crate::scopes::scope::Scope;
 use crate::scopes::scope_stack::ScopeStack;
@@ -77,7 +78,7 @@ fn analyze_expr(
             analyze_assign(value_scope_stack, type_scope, ident, *expr)
         }
         Expr::FuncDeclare(func) => analyze_func_declare(value_scope_stack, type_scope, func),
-        Expr::FuncCall(call) => analyze_func_call(value_scope_stack, type_scope, call),
+        Expr::FuncCall(call, span) => analyze_func_call(value_scope_stack, type_scope, call, span),
 
         Expr::IfElse(expr, then, els) => {
             analyze_if_else(value_scope_stack, type_scope, *expr, *then, *els)
@@ -410,6 +411,7 @@ fn analyze_func_call(
     value_scope_stack: &mut ScopeStack<ScopeEntry>,
     type_scope: &mut Scope<Type>,
     call: FuncCall,
+    span: Span,
 ) -> Result<TypedExpr, TypeError> {
     let callee = analyze_expr(value_scope_stack, type_scope, *call.func)?;
 
@@ -426,12 +428,12 @@ fn analyze_func_call(
         let param_types = inner_types;
 
         if param_types.len() != args.len() {
-            return Err(TypeError::InvokeWrongSignature(param_types, args));
+            return Err(TypeError::InvokeWrongSignature(param_types, args, span));
         }
 
         for (param_type, arg) in param_types.clone().into_iter().zip(args.clone()) {
             if arg.ty() != param_type && param_type != Type::Any {
-                return Err(TypeError::InvokeWrongSignature(param_types, args));
+                return Err(TypeError::InvokeWrongSignature(param_types, args, span));
             }
         }
 

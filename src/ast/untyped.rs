@@ -1,5 +1,7 @@
 use crate::typing::ProtoType;
 
+use super::Span;
+
 #[derive(Clone, Debug)]
 pub enum Expr {
     // Binary operations
@@ -18,7 +20,7 @@ pub enum Expr {
     Assignment(String, Box<Expr>),
 
     // Postfix operations
-    FuncCall(FuncCall),
+    FuncCall(FuncCall, Span),
 
     // Control flow
     IfElse(Box<Expr>, Box<Expr>, Box<Expr>),
