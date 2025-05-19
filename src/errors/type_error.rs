@@ -63,8 +63,19 @@ impl std::fmt::Display for TypeErrorDisplay {
             ),
             TypeError::InvokeNonFunc(ty) => write!(f, "Cannot invoke non-function of type {ty}"),
             TypeError::InvokeWrongSignature(param_types, args, span) => {
-                let snippet = &self.source[span.start..span.end]; // you may want safe helpers
+                // 1. Header
+                writeln!(f, "Invoked function with the wrong signature.")?;
 
+                // 2. Location Frame
+                let line_num = get_line_number(&self.source, span.start);
+                let file_label = format!("{}:{line_num}", &self.file_name);
+                let snippet = &self.source[span.start..span.end];
+
+                writeln!(f, "{:-^width$}", file_label, width = 80)?;
+                writeln!(f, "{snippet}")?;
+                writeln!(f, "{:-<width$}", "", width = 80)?;
+
+                // 3. Diagnostic Detail
                 let param_types_list = param_types
                     .iter()
                     .map(|t| t.to_string())
@@ -77,13 +88,6 @@ impl std::fmt::Display for TypeErrorDisplay {
                     .collect::<Vec<_>>()
                     .join(", ");
 
-                let line_num = get_line_number(&self.source, span.start);
-                let header = format!("{}:{line_num}", &self.file_name);
-
-                writeln!(f, "Invoked function with the wrong signature.")?;
-                writeln!(f, "{:-^width$}", header, width = 80)?;
-                writeln!(f, "{snippet}")?;
-                writeln!(f, "{:-<width$}", "", width = 80)?;
                 writeln!(
                     f,
                     "Expected: ({param_types_list})\nReceived: ({arg_types_list})"
