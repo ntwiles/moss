@@ -1,11 +1,6 @@
-let call_speaker = (func: Func<Str>): Str => { 
-    func(); 
+
+let say_message = |message: Str|: Void => {
+    print_line(message);
 };
 
-let bad_speaker = ||: Int => {
-    7;
-};
-
-let response = call_speaker(bad_speaker);
-
-print_line(response);
+say_message("Hello.");

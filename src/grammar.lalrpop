@@ -15,7 +15,7 @@ match {
     "=", "==", ">", "<", "<=", ">=", "+", "-", "*", "/",
 
     // syntax constructs
-    "=>", "if", "else", "loop", "break",
+    "=>", "if", "elif", "else", "loop", "break",
 
     // literals
     "true", "false",
@@ -54,14 +54,28 @@ TypeExpr: ProtoType = {
     <base:Identifier> "<" <args:Comma<TypeExpr>> ">" => ProtoType::Applied(base, args),
 };
 
-// TODO: Support just if without else, and else elif chains.
 IfElse: Expr = {
-    "if" <cond:Expr> "{" <then_block:StmtList> "}" "else" "{" <else_block:StmtList> "}" => {
-        Expr::IfElse(Box::new(cond), Box::new(Expr::Block(then_block)), Box::new(Expr::Block(else_block)))
-    }
-    // "if" <cond:Expr> "{" <then_block:StmtList> "}" => {
-    //     Expr::IfElse(Box::new(cond), then_block, None)
-    // },
+    "if" <cond:Expr> "{" <then_block:StmtList> "}" <tail:ElifOrElse> => {
+        Expr::IfElse(Box::new(cond), Box::new(Expr::Block(then_block)), Box::new(tail))
+    },
+
+    "if" <cond:Expr> "{" <then_block:StmtList> "}" => {
+        Expr::If(Box::new(cond), Box::new(Expr::Block(then_block)))
+    },
+};
+
+ElifOrElse: Expr = {
+    "elif" <cond:Expr> "{" <then_block:StmtList> "}" <tail:ElifOrElse> => {
+        Expr::IfElse(Box::new(cond), Box::new(Expr::Block(then_block)), Box::new(tail))
+    },
+
+    "elif" <cond:Expr> "{" <then_block:StmtList> "}" => {
+        Expr::If(Box::new(cond), Box::new(Expr::Block(then_block)))
+    },
+
+    "else" "{" <else_block:StmtList> "}" => {
+        Expr::Block(else_block)
+    },
 };
 
 Loop: Expr = {

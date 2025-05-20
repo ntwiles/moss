@@ -73,6 +73,7 @@ pub fn interpret_program<R: Read, W: Write>(
             ControlOp::ApplyNonClosureFuncCall => apply_non_closure_func_call(&mut exec),
             ControlOp::ApplyBinding(ident) => apply_binding(&mut exec, ident),
             ControlOp::PushScope(func) => apply_push_scope(&mut exec, func),
+            ControlOp::ApplyIf(then) => apply_if(&mut exec, then),
             ControlOp::ApplyIfElse(then, els) => apply_if_else(&mut exec, then, els),
             ControlOp::PushLoop(block) => push_loop(&mut exec, block),
 
@@ -135,6 +136,13 @@ fn push_func_call(exec: &mut ExecContext, call: TypedFuncCall) -> ControlFlow {
     exec.control_stack.push(ControlOp::ApplyFuncCall(call.args));
     exec.control_stack
         .push(ControlOp::EvalExpr(*call.func_expr));
+
+    ControlFlow::Continue
+}
+
+fn push_if(exec: &mut ExecContext, cond: TypedExpr, then: Box<TypedExpr>) -> ControlFlow {
+    exec.control_stack.push(ControlOp::ApplyIf(*then));
+    exec.control_stack.push(ControlOp::EvalExpr(cond));
 
     ControlFlow::Continue
 }
@@ -240,10 +248,32 @@ pub fn apply_binding(exec: &mut ExecContext, ident: String) -> ControlFlow {
     ControlFlow::Continue
 }
 
+fn apply_if(exec: &mut ExecContext, then_block: TypedExpr) -> ControlFlow {
+    let cond = exec.value_stack.pop().unwrap();
+
+    let cond_bool = match cond {
+        ResolvedValue::Bool(b) => b,
+        _ => unreachable!(),
+    };
+
+    if cond_bool {
+        let stmts = match then_block {
+            TypedExpr::Block(TypedBlock::Interpreted(stmts, _ty)) => stmts,
+            _ => unreachable!(),
+        };
+
+        for stmt in stmts.into_iter().rev() {
+            exec.control_stack.push(ControlOp::EvalStmt(stmt));
+        }
+    }
+
+    ControlFlow::Continue
+}
+
 fn apply_if_else(
     exec: &mut ExecContext,
     then_block: TypedExpr,
-    else_block: TypedExpr,
+    else_expr: TypedExpr,
 ) -> ControlFlow {
     let cond = exec.value_stack.pop().unwrap();
 
@@ -252,16 +282,17 @@ fn apply_if_else(
         _ => unreachable!(),
     };
 
-    let block = if cond_bool { then_block } else { else_block };
+    let branch = if cond_bool { then_block } else { else_expr };
 
-    let stmts = match block {
-        TypedExpr::Block(TypedBlock::Interpreted(stmts, _ty)) => stmts,
-        _ => unreachable!(),
-    };
+    match branch {
+        TypedExpr::Block(TypedBlock::Interpreted(stmts, _ty)) => {
+            for stmt in stmts.into_iter().rev() {
+                exec.control_stack.push(ControlOp::EvalStmt(stmt));
+            }
 
-    for stmt in stmts.into_iter().rev() {
-        exec.control_stack.push(ControlOp::EvalStmt(stmt));
+            ControlFlow::Continue
+        }
+        TypedExpr::IfElse(cond, then, els, _ty) => push_if_else(exec, *cond, then, els),
+        u => panic!("{:?}", u),
     }
-
-    ControlFlow::Continue
 }

@@ -24,6 +24,7 @@ pub enum TypedExpr {
     FuncCall(TypedFuncCall, Type),
 
     // Control flow
+    If(Box<TypedExpr>, Box<TypedExpr>, Type),
     IfElse(Box<TypedExpr>, Box<TypedExpr>, Box<TypedExpr>, Type),
     Block(TypedBlock),
     Loop(Box<TypedExpr>),
@@ -53,6 +54,7 @@ impl TypedExpr {
             TypedExpr::Identifier(_, ty) => ty.clone(),
             TypedExpr::FuncCall(_, ty) => ty.clone(),
             TypedExpr::FuncDeclare(_, ty) => ty.clone(),
+            TypedExpr::If(_, _, ty) => ty.clone(),
             TypedExpr::IfElse(_, _, _, ty) => ty.clone(),
             TypedExpr::Loop(block) => block.ty(), // TODO: Is this correct? Maybe loops are always Void?
             TypedExpr::Break => Type::Void,

@@ -7,13 +7,11 @@ loop {
 
     if guess > secret_number {
         print_line("Too high!");
+    } elif guess < secret_number {
+        print_line("Too Low!");
     } else {
-        if guess < secret_number {
-            print_line("Too Low!");
-        } else {
-            print_line("You got it!");
-            break;
-        };
+        print_line("You got it!");
+        break;
     };
 };
 

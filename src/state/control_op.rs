@@ -24,6 +24,7 @@ pub enum ControlOp {
     ApplyNonClosureFuncCall,
 
     // Control flow
+    ApplyIf(TypedExpr),
     ApplyIfElse(TypedExpr, TypedExpr),
     PushLoop(TypedExpr),
 

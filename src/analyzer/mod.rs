@@ -80,6 +80,7 @@ fn analyze_expr(
         Expr::FuncDeclare(func) => analyze_func_declare(value_scope_stack, type_scope, func),
         Expr::FuncCall(call, span) => analyze_func_call(value_scope_stack, type_scope, call, span),
 
+        Expr::If(expr, then) => analyze_if(value_scope_stack, type_scope, *expr, *then),
         Expr::IfElse(expr, then, els) => {
             analyze_if_else(value_scope_stack, type_scope, *expr, *then, *els)
         }
@@ -524,12 +525,11 @@ fn analyze_func_declare(
     Ok(TypedExpr::FuncDeclare(func, Type::Func(inner_types)))
 }
 
-fn analyze_if_else(
+fn analyze_if(
     value_scope_stack: &mut ScopeStack<ScopeEntry>,
     type_scope: &mut Scope<Type>,
     cond: Expr,
     then_block: Expr,
-    else_block: Expr,
 ) -> Result<TypedExpr, TypeError> {
     let cond = analyze_expr(value_scope_stack, type_scope, cond)?;
 
@@ -538,12 +538,32 @@ fn analyze_if_else(
     }
 
     let then_block = analyze_block(value_scope_stack, type_scope, then_block)?;
-    let else_block = analyze_block(value_scope_stack, type_scope, else_block)?;
 
-    if then_block.ty() != else_block.ty() {
+    let ty = then_block.ty();
+
+    Ok(TypedExpr::If(Box::new(cond), Box::new(then_block), ty))
+}
+
+fn analyze_if_else(
+    value_scope_stack: &mut ScopeStack<ScopeEntry>,
+    type_scope: &mut Scope<Type>,
+    cond: Expr,
+    then_block: Expr,
+    else_expr: Expr,
+) -> Result<TypedExpr, TypeError> {
+    let cond = analyze_expr(value_scope_stack, type_scope, cond)?;
+
+    if cond.ty() != Type::Bool {
+        return Err(TypeError::IfElseConditionNonBool(cond.ty()));
+    }
+
+    let then_block = analyze_block(value_scope_stack, type_scope, then_block)?;
+    let else_expr = analyze_expr(value_scope_stack, type_scope, else_expr)?;
+
+    if then_block.ty() != else_expr.ty() {
         return Err(TypeError::IfElseBlockTypeMismatch(
             then_block.ty(),
-            else_block.ty(),
+            else_expr.ty(),
         ));
     }
 
@@ -552,7 +572,7 @@ fn analyze_if_else(
     Ok(TypedExpr::IfElse(
         Box::new(cond),
         Box::new(then_block),
-        Box::new(else_block),
+        Box::new(else_expr),
         ty,
     ))
 }

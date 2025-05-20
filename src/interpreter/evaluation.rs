@@ -15,7 +15,7 @@ use crate::{
 
 use super::{
     apply_binary_op, apply_unary_op, mark_loop, push_binary_op, push_block, push_func_call,
-    push_if_else, push_unary_op, resolved_value::ResolvedValue,
+    push_if, push_if_else, push_unary_op, resolved_value::ResolvedValue,
 };
 
 pub fn apply_stmt(exec: &mut ExecContext) -> ControlFlow {
@@ -54,6 +54,7 @@ pub fn eval_expr<R: Read, W: Write>(
         TypedExpr::FuncCall(func, _ty) => push_func_call(exec, func),
 
         // Control flow
+        TypedExpr::If(cond, then, _ty) => push_if(exec, *cond, then),
         TypedExpr::IfElse(cond, then, els, _ty) => push_if_else(exec, *cond, then, els),
         TypedExpr::Block(block) => push_block(exec, io, builtins, TypedExpr::Block(block))?,
         TypedExpr::Loop(block) => mark_loop(exec, *block),

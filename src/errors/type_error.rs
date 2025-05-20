@@ -1,3 +1,5 @@
+use std::fmt::Formatter;
+
 use crate::{
     ast::{typed::typed_expr::TypedExpr, Span},
     typing::Type,
@@ -67,13 +69,7 @@ impl std::fmt::Display for TypeErrorDisplay {
                 writeln!(f, "Invoked function with the wrong signature.")?;
 
                 // 2. Location Frame
-                let line_num = get_line_number(&self.source, span.start);
-                let file_label = format!("{}:{line_num}", &self.file_name);
-                let snippet = &self.source[span.start..span.end];
-
-                writeln!(f, "{:-^width$}", file_label, width = 80)?;
-                writeln!(f, "{snippet}")?;
-                writeln!(f, "{:-<width$}", "", width = 80)?;
+                write_location_frame(f, &self.file_name, &self.source, span.start, span.end)?;
 
                 // 3. Diagnostic Detail
                 let param_types_list = param_types
@@ -98,9 +94,25 @@ impl std::fmt::Display for TypeErrorDisplay {
             }
             TypeError::ScopeBindingNotFound(ident) => {
                 write!(f, "Binding \"{ident}\" not found in scope.")
-            } // fall back to the plain Display you already wrote
+            }
         }
     }
+}
+
+fn write_location_frame(
+    f: &mut Formatter,
+    file_name: &str,
+    source: &str,
+    start: usize,
+    end: usize,
+) -> std::fmt::Result {
+    let line_num = get_line_number(source, start);
+    let file_label = format!("{}:{line_num}", file_name);
+    let snippet = &source[start..end];
+
+    writeln!(f, "{:-^width$}", file_label, width = 80)?;
+    writeln!(f, "{snippet}")?;
+    writeln!(f, "{:-<width$}", "", width = 80)
 }
 
 fn get_line_number(source: &str, byte_offset: usize) -> usize {
