@@ -29,7 +29,7 @@ match {
 }
 
 pub Program: Expr = {
-    <exprs:StmtList> => Expr::Block(exprs)
+    <start: @L> <exprs:StmtList> <end: @R> => Expr::Block(exprs, Span { start, end })
 };
 
 StmtList: Vec<Stmt> = {
@@ -55,31 +55,31 @@ TypeExpr: ProtoType = {
 };
 
 IfElse: Expr = {
-    "if" <cond:Expr> "{" <then_block:StmtList> "}" <tail:ElifOrElse> => {
-        Expr::IfElse(Box::new(cond), Box::new(Expr::Block(then_block)), Box::new(tail))
+    "if" <cond:Expr> "{" <start: @L> <then_block:StmtList> <end: @R> "}" <tail:ElifOrElse> => {
+        Expr::IfElse(Box::new(cond), Box::new(Expr::Block(then_block, Span { start, end })), Box::new(tail))
     },
 
-    "if" <cond:Expr> "{" <then_block:StmtList> "}" => {
-        Expr::If(Box::new(cond), Box::new(Expr::Block(then_block)))
+    "if" <cond:Expr> "{" <start: @L> <then_block:StmtList> <end: @R>"}" => {
+        Expr::If(Box::new(cond), Box::new(Expr::Block(then_block, Span { start, end })))
     },
 };
 
 ElifOrElse: Expr = {
-    "elif" <cond:Expr> "{" <then_block:StmtList> "}" <tail:ElifOrElse> => {
-        Expr::IfElse(Box::new(cond), Box::new(Expr::Block(then_block)), Box::new(tail))
+    "elif" <cond:Expr> "{" <start: @L> <then_block:StmtList> <end: @R>"}" <tail:ElifOrElse> => {
+        Expr::IfElse(Box::new(cond), Box::new(Expr::Block(then_block, Span { start, end })), Box::new(tail))
     },
 
-    "elif" <cond:Expr> "{" <then_block:StmtList> "}" => {
-        Expr::If(Box::new(cond), Box::new(Expr::Block(then_block)))
+    "elif" <cond:Expr> "{" <start:@L> <then_block:StmtList> <end:@R> "}" => {
+        Expr::If(Box::new(cond), Box::new(Expr::Block(then_block, Span { start, end })))
     },
 
-    "else" "{" <else_block:StmtList> "}" => {
-        Expr::Block(else_block)
+    "else" "{" <start: @L> <else_block:StmtList> <end: @R>"}" => {
+        Expr::Block(else_block, Span { start, end })
     },
 };
 
 Loop: Expr = {
-    "loop" "{" <body:StmtList> "}" => Expr::Loop(Box::new(Expr::Block(body))),
+    "loop" "{" <start: @L> <body:StmtList> <end: @R>"}" => Expr::Loop(Box::new(Expr::Block(body, Span { start, end }))),
 };
 
 Break: Expr = {
@@ -146,8 +146,8 @@ Identifier: String = {
 };
 
 FuncDeclare: Expr = {
-    "(" <params:ParameterList> ")" ":" <return_type:TypeExpr> "=>" "{" <stmts:StmtList> "}" => Expr::FuncDeclare(FuncDeclare{ params, return_type: Box::new(return_type), block: Box::new(Expr::Block(stmts)), is_closure: false }),
-    "|" <params:ParameterList> "|" ":" <return_type:TypeExpr> "=>" "{" <stmts:StmtList> "}" => Expr::FuncDeclare(FuncDeclare{ params, return_type: Box::new(return_type), block: Box::new(Expr::Block(stmts)), is_closure: true }),
+    "(" <params:ParameterList> ")" ":" <return_type:TypeExpr> "=>" "{" <start: @L> <stmts:StmtList> <end: @R>"}" => Expr::FuncDeclare(FuncDeclare{ params, return_type: Box::new(return_type), block: Box::new(Expr::Block(stmts, Span { start, end })), is_closure: false }),
+    "|" <params:ParameterList> "|" ":" <return_type:TypeExpr> "=>" "{" <start: @L> <stmts:StmtList> <end: @R>"}" => Expr::FuncDeclare(FuncDeclare{ params, return_type: Box::new(return_type), block: Box::new(Expr::Block(stmts, Span { start, end })), is_closure: true }),
 };
 
 ParameterList: Vec<(String, ProtoType)> = Comma<Parameter>;

@@ -1,5 +1,10 @@
 use std::fmt::Display;
 
+pub enum TypeBinding {
+    Atomic(Type),
+    Applied { arity: usize },
+}
+
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum ProtoType {
     Atomic(String),
@@ -12,11 +17,12 @@ pub enum Type {
     Bool,
     Int,
     Float,
-    Str,
     Func(Vec<Type>),
+    List(Box<Type>),
+    Str,
     UserDefined(String),
-    Applied(Box<Type>, Vec<Type>),
     Void,
+    Applied(Box<Type>, Vec<Type>),
 }
 
 impl Display for Type {
@@ -27,6 +33,7 @@ impl Display for Type {
             Self::Int => write!(f, "Int"),
             Self::Float => write!(f, "Float"),
             Self::Str => write!(f, "String"),
+            Self::List(ty) => write!(f, "List<{}>", ty),
             Self::Func(params) => {
                 let inner = params
                     .iter()

@@ -22,8 +22,12 @@ pub type BuiltinFunc<R, W> =
     fn(&mut IoContext<R, W>, Vec<ResolvedValue>) -> Result<ResolvedValue, RuntimeError>;
 
 use crate::{
-    ast::typed::typed_expr::TypedExpr, errors::runtime_error::RuntimeError, hashmap,
-    interpreter::resolved_value::ResolvedValue, state::io_context::IoContext, typing::Type,
+    ast::typed::typed_expr::TypedExpr,
+    errors::runtime_error::RuntimeError,
+    hashmap,
+    interpreter::resolved_value::ResolvedValue,
+    state::io_context::IoContext,
+    typing::{Type, TypeBinding},
 };
 
 pub fn get_builtin_func_bindings() -> Vec<(String, TypedExpr)> {
@@ -35,14 +39,15 @@ pub fn get_builtin_func_bindings() -> Vec<(String, TypedExpr)> {
     ]
 }
 
-pub fn get_builtin_type_bindings() -> Vec<(String, Type)> {
+pub fn get_builtin_type_bindings() -> Vec<(String, TypeBinding)> {
     vec![
-        (String::from("Int"), Type::Int),
-        (String::from("Bool"), Type::Bool),
-        (String::from("Float"), Type::Float),
-        (String::from("Str"), Type::Str),
-        (String::from("Void"), Type::Void),
-        (String::from("Bool"), Type::Bool),
+        (String::from("Int"), TypeBinding::Atomic(Type::Int)),
+        (String::from("Bool"), TypeBinding::Atomic(Type::Bool)),
+        (String::from("Float"), TypeBinding::Atomic(Type::Float)),
+        (String::from("Str"), TypeBinding::Atomic(Type::Str)),
+        (String::from("Void"), TypeBinding::Atomic(Type::Void)),
+        (String::from("Bool"), TypeBinding::Atomic(Type::Bool)),
+        (String::from("List"), TypeBinding::Applied { arity: 1 }),
     ]
 }
 

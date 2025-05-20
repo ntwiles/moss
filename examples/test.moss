@@ -1,6 +1,12 @@
-let say_message = |message: Str|: Void => {
-    print_line(message);
+let fizz_buzz = |n: Int|: List<Str> => {
+    let count = 0;
+    let fizz_buzz_list = [];
+
+    loop {
+        let count = count + 1;
+    };
+
+    fizz_buzz_list;
 };
 
-say_message("Hello.");
-print_line(say_message);
+fizz_buzz(10);

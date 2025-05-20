@@ -8,14 +8,14 @@ use crate::ast::Span;
 use crate::errors::type_error::TypeError;
 use crate::scopes::scope::Scope;
 use crate::scopes::scope_stack::ScopeStack;
-use crate::typing::{ProtoType, Type};
+use crate::typing::{ProtoType, Type, TypeBinding};
 
 use scope_entry::ScopeEntry;
 
 pub fn analyze_program(
     stmts: Expr,
     builtin_funcs: Vec<(String, TypedExpr)>,
-    builtin_types: Vec<(String, Type)>,
+    builtin_types: Vec<(String, TypeBinding)>,
 ) -> Result<TypedExpr, TypeError> {
     let mut value_scope_stack = ScopeStack::<ScopeEntry>::new();
 
@@ -34,7 +34,7 @@ pub fn analyze_program(
 
 fn analyze_stmts(
     value_scope_stack: &mut ScopeStack<ScopeEntry>,
-    type_scope: &mut Scope<Type>,
+    type_scope: &mut Scope<TypeBinding>,
     stmts: Vec<Stmt>,
 ) -> Result<Vec<TypedStmt>, TypeError> {
     stmts
@@ -45,7 +45,7 @@ fn analyze_stmts(
 
 fn analyze_stmt(
     value_scope_stack: &mut ScopeStack<ScopeEntry>,
-    type_scope: &mut Scope<Type>,
+    type_scope: &mut Scope<TypeBinding>,
     stmt: Stmt,
 ) -> Result<TypedStmt, TypeError> {
     let expr = analyze_expr(value_scope_stack, type_scope, stmt.expr)?;
@@ -55,11 +55,13 @@ fn analyze_stmt(
 
 fn analyze_expr(
     value_scope_stack: &mut ScopeStack<ScopeEntry>,
-    type_scope: &mut Scope<Type>,
+    type_scope: &mut Scope<TypeBinding>,
     expr: Expr,
 ) -> Result<TypedExpr, TypeError> {
     match expr {
-        Expr::Block(stmts) => analyze_block(value_scope_stack, type_scope, Expr::Block(stmts)),
+        Expr::Block(stmts, span) => {
+            analyze_block(value_scope_stack, type_scope, Expr::Block(stmts, span))
+        }
         Expr::Literal(literal) => analyze_literal(literal),
         Expr::Identifier(ident) => analyze_identifier(value_scope_stack, ident),
 
@@ -93,7 +95,7 @@ fn analyze_expr(
 
 fn analyze_eq(
     value_scope_stack: &mut ScopeStack<ScopeEntry>,
-    type_scope: &mut Scope<Type>,
+    type_scope: &mut Scope<TypeBinding>,
     left: Expr,
     right: Expr,
 ) -> Result<TypedExpr, TypeError> {
@@ -113,7 +115,7 @@ fn analyze_eq(
 
 fn analyze_gt(
     value_scope_stack: &mut ScopeStack<ScopeEntry>,
-    type_scope: &mut Scope<Type>,
+    type_scope: &mut Scope<TypeBinding>,
     left: Expr,
     right: Expr,
 ) -> Result<TypedExpr, TypeError> {
@@ -142,7 +144,7 @@ fn analyze_gt(
 
 fn analyze_gte(
     value_scope_stack: &mut ScopeStack<ScopeEntry>,
-    type_scope: &mut Scope<Type>,
+    type_scope: &mut Scope<TypeBinding>,
     left: Expr,
     right: Expr,
 ) -> Result<TypedExpr, TypeError> {
@@ -171,7 +173,7 @@ fn analyze_gte(
 
 fn analyze_lt(
     value_scope_stack: &mut ScopeStack<ScopeEntry>,
-    type_scope: &mut Scope<Type>,
+    type_scope: &mut Scope<TypeBinding>,
     left: Expr,
     right: Expr,
 ) -> Result<TypedExpr, TypeError> {
@@ -200,7 +202,7 @@ fn analyze_lt(
 
 fn analyze_lte(
     value_scope_stack: &mut ScopeStack<ScopeEntry>,
-    type_scope: &mut Scope<Type>,
+    type_scope: &mut Scope<TypeBinding>,
     left: Expr,
     right: Expr,
 ) -> Result<TypedExpr, TypeError> {
@@ -229,7 +231,7 @@ fn analyze_lte(
 
 fn analyze_add(
     value_scope_stack: &mut ScopeStack<ScopeEntry>,
-    type_scope: &mut Scope<Type>,
+    type_scope: &mut Scope<TypeBinding>,
     left: Expr,
     right: Expr,
 ) -> Result<TypedExpr, TypeError> {
@@ -258,7 +260,7 @@ fn analyze_add(
 
 fn analyze_sub(
     value_scope_stack: &mut ScopeStack<ScopeEntry>,
-    type_scope: &mut Scope<Type>,
+    type_scope: &mut Scope<TypeBinding>,
     left: Expr,
     right: Expr,
 ) -> Result<TypedExpr, TypeError> {
@@ -287,7 +289,7 @@ fn analyze_sub(
 
 fn analyze_mult(
     value_scope_stack: &mut ScopeStack<ScopeEntry>,
-    type_scope: &mut Scope<Type>,
+    type_scope: &mut Scope<TypeBinding>,
     left: Expr,
     right: Expr,
 ) -> Result<TypedExpr, TypeError> {
@@ -316,7 +318,7 @@ fn analyze_mult(
 
 fn analyze_div(
     value_scope_stack: &mut ScopeStack<ScopeEntry>,
-    type_scope: &mut Scope<Type>,
+    type_scope: &mut Scope<TypeBinding>,
     left: Expr,
     right: Expr,
 ) -> Result<TypedExpr, TypeError> {
@@ -351,7 +353,7 @@ fn analyze_div(
 
 fn analyze_negate(
     value_scope_stack: &mut ScopeStack<ScopeEntry>,
-    type_scope: &mut Scope<Type>,
+    type_scope: &mut Scope<TypeBinding>,
     inner: Expr,
 ) -> Result<TypedExpr, TypeError> {
     let inner = analyze_expr(value_scope_stack, type_scope, inner)?;
@@ -366,7 +368,7 @@ fn analyze_negate(
 
 fn analyze_assign(
     value_scope_stack: &mut ScopeStack<ScopeEntry>,
-    type_scope: &mut Scope<Type>,
+    type_scope: &mut Scope<TypeBinding>,
     ident: String,
     value: Expr,
 ) -> Result<TypedExpr, TypeError> {
@@ -410,7 +412,7 @@ fn analyze_assign(
 
 fn analyze_func_call(
     value_scope_stack: &mut ScopeStack<ScopeEntry>,
-    type_scope: &mut Scope<Type>,
+    type_scope: &mut Scope<TypeBinding>,
     call: FuncCall,
     span: Span,
 ) -> Result<TypedExpr, TypeError> {
@@ -471,7 +473,7 @@ fn analyze_identifier(
 
 fn analyze_func_declare(
     value_scope_stack: &mut ScopeStack<ScopeEntry>,
-    type_scope: &mut Scope<Type>,
+    type_scope: &mut Scope<TypeBinding>,
     func: FuncDeclare,
 ) -> Result<TypedExpr, TypeError> {
     if func.is_closure {
@@ -486,7 +488,15 @@ fn analyze_func_declare(
         value_scope_stack.insert(ident, ty);
     }
 
-    let block = analyze_block(value_scope_stack, type_scope, *func.block)?;
+    let block = *func.block;
+
+    let span = if let Expr::Block(_, span) = &block {
+        span.clone()
+    } else {
+        todo!();
+    };
+
+    let block = analyze_block(value_scope_stack, type_scope, block)?;
 
     if func.is_closure {
         value_scope_stack.pop_scope();
@@ -510,6 +520,7 @@ fn analyze_func_declare(
         return Err(TypeError::FuncWrongReturnType(
             declared_return_type,
             actual_return_type,
+            span,
         ));
     };
 
@@ -527,7 +538,7 @@ fn analyze_func_declare(
 
 fn analyze_if(
     value_scope_stack: &mut ScopeStack<ScopeEntry>,
-    type_scope: &mut Scope<Type>,
+    type_scope: &mut Scope<TypeBinding>,
     cond: Expr,
     then_block: Expr,
 ) -> Result<TypedExpr, TypeError> {
@@ -546,7 +557,7 @@ fn analyze_if(
 
 fn analyze_if_else(
     value_scope_stack: &mut ScopeStack<ScopeEntry>,
-    type_scope: &mut Scope<Type>,
+    type_scope: &mut Scope<TypeBinding>,
     cond: Expr,
     then_block: Expr,
     else_expr: Expr,
@@ -579,7 +590,7 @@ fn analyze_if_else(
 
 fn analyze_loop(
     value_scope_stack: &mut ScopeStack<ScopeEntry>,
-    type_scope: &mut Scope<Type>,
+    type_scope: &mut Scope<TypeBinding>,
     block: Expr,
 ) -> Result<TypedExpr, TypeError> {
     // TODO: Currently just using this as a wrapper to analyze the block, there may be more we can
@@ -598,12 +609,12 @@ fn analyze_break(_scope_stack: &mut ScopeStack<ScopeEntry>) -> Result<TypedExpr,
 
 fn analyze_block(
     value_scope_stack: &mut ScopeStack<ScopeEntry>,
-    type_scope: &mut Scope<Type>,
+    type_scope: &mut Scope<TypeBinding>,
     block: Expr,
 ) -> Result<TypedExpr, TypeError> {
     value_scope_stack.push_scope();
 
-    let stmts = if let Expr::Block(stmts) = block {
+    let stmts = if let Expr::Block(stmts, _) = block {
         analyze_stmts(value_scope_stack, type_scope, stmts)?
     } else {
         unreachable!();
@@ -620,22 +631,55 @@ fn analyze_block(
     Ok(TypedExpr::Block(TypedBlock::Interpreted(stmts, ty)))
 }
 
-fn analyze_proto_type(type_scope: &mut Scope<Type>, proto: ProtoType) -> Result<Type, TypeError> {
+fn analyze_proto_type(
+    type_scope: &mut Scope<TypeBinding>,
+    proto: ProtoType,
+) -> Result<Type, TypeError> {
     match proto {
-        ProtoType::Atomic(ident) => type_scope
-            .get(&ident)
-            .ok_or(TypeError::ScopeBindingNotFound(ident))
-            .cloned(),
-        ProtoType::Applied(outer, inners) => {
-            if outer == "Func" {
-                Ok(Type::Func(
-                    inners
-                        .iter()
-                        .map(|proto| analyze_proto_type(type_scope, proto.clone()))
-                        .collect::<Result<_, _>>()?,
-                ))
+        ProtoType::Atomic(ident) => {
+            let binding = type_scope
+                .get(&ident)
+                .ok_or(TypeError::ScopeBindingNotFound(ident))?;
+
+            if let TypeBinding::Atomic(ty) = binding {
+                Ok(ty.clone())
             } else {
                 todo!();
+            }
+        }
+        ProtoType::Applied(ident, inners) => {
+            let binding = type_scope
+                .get(&ident)
+                .ok_or(TypeError::ScopeBindingNotFound(ident.clone()))?;
+
+            if let TypeBinding::Applied { arity } = binding {
+                if inners.len() != *arity {
+                    todo!("Wrong number of type args.");
+                }
+
+                // This is probably best done with type constructors bound to the scope instead of
+                // being hardcoded here.
+                match ident.as_str() {
+                    "Func" => Ok(Type::Func(
+                        inners
+                            .iter()
+                            .map(|proto| analyze_proto_type(type_scope, proto.clone()))
+                            .collect::<Result<_, _>>()?,
+                    )),
+                    "List" => {
+                        if inners.len() != 1 {
+                            todo!("Correct error handling.");
+                        }
+
+                        let inner =
+                            analyze_proto_type(type_scope, inners.first().unwrap().clone())?;
+
+                        Ok(Type::List(Box::new(inner)))
+                    }
+                    _ => todo!(),
+                }
+            } else {
+                todo!()
             }
         }
     }

@@ -14,7 +14,7 @@ pub enum TypeError {
     IfElseBlockTypeMismatch(Type, Type),
     IfElseConditionNonBool(Type),
     DivisionZero,
-    FuncWrongReturnType(Type, Type),
+    FuncWrongReturnType(Type, Type, Span),
     InvokeNonFunc(Type),
     InvokeWrongSignature(Vec<Type>, Vec<TypedExpr>, Span),
     UnaryOpWrongType(String, Type),
@@ -51,8 +51,18 @@ impl std::fmt::Display for TypeErrorDisplay {
                 write!(f, "Types {a} and {b} do not support binary operation {op}.")
             }
             TypeError::DivisionZero => write!(f, "Cannot divide by 0."),
-            TypeError::FuncWrongReturnType(expected, received) => {
-                write!(f, "Return type does not match declared return type in function signature.\n\tExpected: {}\n\tReceived: {}", expected, received)
+            TypeError::FuncWrongReturnType(expected, received, span) => {
+                // 1. Header
+                writeln!(
+                    f,
+                    "Return type does not match declared return type in function signature."
+                )?;
+
+                // 2. Location Frame
+                write_location_frame(f, &self.file_name, &self.source, span.start, span.end)?;
+
+                // 3. Diagnostic Detail
+                writeln!(f, "Expected: {}\nReceived: {}", expected, received)
             }
             TypeError::IfElseBlockTypeMismatch(expected, received) => write!(
                 f,

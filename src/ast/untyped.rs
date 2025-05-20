@@ -25,7 +25,7 @@ pub enum Expr {
     // Control flow
     If(Box<Expr>, Box<Expr>),
     IfElse(Box<Expr>, Box<Expr>, Box<Expr>),
-    Block(Vec<Stmt>),
+    Block(Vec<Stmt>, Span),
     Loop(Box<Expr>),
     Break,
 
