@@ -590,8 +590,8 @@ fn analyze_loop(
 }
 
 fn analyze_break(_scope_stack: &mut ScopeStack<ScopeEntry>) -> Result<TypedExpr, TypeError> {
-    // TODO: Check if break makes sense. This might be a new type of error like ContextError or it
-    // might make sense to treat as a TypeError.
+    // TODO: Check if break is used in the right context. This might be a new type of error like
+    // ContextError or it might make sense to treat as a TypeError.
 
     Ok(TypedExpr::Break)
 }

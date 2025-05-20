@@ -9,7 +9,7 @@ pub enum ResolvedValue {
     String(String),
     Bool(bool),
     Void,
-    Function(TypedFunc),
+    Func(TypedFunc),
 }
 
 impl ResolvedValue {
@@ -57,7 +57,7 @@ impl Display for ResolvedValue {
             ResolvedValue::String(string) => write!(f, "{}", string),
             ResolvedValue::Bool(bool) => write!(f, "{}", bool),
             ResolvedValue::Void => write!(f, "Void"),
-            ResolvedValue::Function(_) => write!(f, "Function"), // TODO: Give a better display
+            ResolvedValue::Func(func) => write!(f, "{func}"),
         }
     }
 }

@@ -114,7 +114,7 @@ pub fn eval_print_line<R: Read, W: Write>(
     let message = match message {
         ResolvedValue::Bool(bool) => bool.to_string(),
         ResolvedValue::Float(float) => float.to_string(),
-        ResolvedValue::Function(_func) => todo!(),
+        ResolvedValue::Func(func) => func.to_string(),
         ResolvedValue::Int(int) => int.to_string(),
         ResolvedValue::String(message) => message,
         ResolvedValue::Void => String::from("Void"),

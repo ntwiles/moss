@@ -44,7 +44,7 @@ pub fn interpret_program<R: Read, W: Write>(
     // Evaluate builtins
     for (ident, expr) in builtin_bindings {
         if let TypedExpr::FuncDeclare(func, _) = expr {
-            let resolved = ResolvedValue::Function(func);
+            let resolved = ResolvedValue::Func(func);
             exec.scope_stack.insert(ident, resolved);
         } else {
             unreachable!();

@@ -1,6 +1,6 @@
-
 let say_message = |message: Str|: Void => {
     print_line(message);
 };
 
 say_message("Hello.");
+print_line(say_message);

@@ -187,7 +187,7 @@ pub fn apply_assign(exec: &mut ExecContext, ident: String) -> ControlFlow {
 // Postfix operations
 pub fn apply_func_call(exec: &mut ExecContext, args: Vec<TypedExpr>) -> ControlFlow {
     let func = match exec.value_stack.pop().unwrap() {
-        ResolvedValue::Function(func) => func,
+        ResolvedValue::Func(func) => func,
         _ => unreachable!(),
     };
 
@@ -248,7 +248,7 @@ pub fn eval_identifier(exec: &mut ExecContext, ident: String) -> Result<ControlF
 }
 
 pub fn eval_func_declare(exec: &mut ExecContext, func: TypedFunc) -> ControlFlow {
-    exec.value_stack.push(ResolvedValue::Function(func));
+    exec.value_stack.push(ResolvedValue::Func(func));
 
     ControlFlow::Continue
 }
