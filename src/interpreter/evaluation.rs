@@ -64,6 +64,7 @@ pub fn eval_expr<R: Read, W: Write>(
         TypedExpr::Literal(literal, _ty) => eval_literal(exec, literal),
         TypedExpr::Identifier(ident, _ty) => eval_identifier(exec, ident)?,
         TypedExpr::FuncDeclare(func, _ty) => eval_func_declare(exec, func),
+        TypedExpr::List(items, _ty) => eval_list(exec, items),
     };
 
     Ok(control_flow)
@@ -251,4 +252,8 @@ pub fn eval_func_declare(exec: &mut ExecContext, func: TypedFunc) -> ControlFlow
     exec.value_stack.push(ResolvedValue::Func(func));
 
     ControlFlow::Continue
+}
+
+pub fn eval_list(exec: &mut ExecContext, items: Vec<TypedExpr>) -> ControlFlow {
+    todo!();
 }

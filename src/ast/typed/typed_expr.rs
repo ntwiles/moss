@@ -34,6 +34,7 @@ pub enum TypedExpr {
     Literal(TypedLiteral, Type),
     Identifier(String, Type),
     FuncDeclare(TypedFunc, Type),
+    List(Vec<TypedExpr>, Type),
 }
 
 impl TypedExpr {
@@ -60,6 +61,7 @@ impl TypedExpr {
             TypedExpr::Break => Type::Void,
             TypedExpr::Block(TypedBlock::Builtin(_, _, ty)) => ty.clone(),
             TypedExpr::Block(TypedBlock::Interpreted(_, ty)) => ty.clone(),
+            TypedExpr::List(_, ty) => ty.clone(),
         }
     }
 

@@ -10,7 +10,7 @@ pub struct ScopeStack<T> {
     previous: Option<Vec<Scope<T>>>,
 }
 
-impl<T> ScopeStack<T> {
+impl<T: Debug> ScopeStack<T> {
     pub fn new() -> Self {
         Self {
             current: vec![Scope::new()],
@@ -37,14 +37,14 @@ impl<T> ScopeStack<T> {
         }
     }
 
-    pub fn lookup<E: Error>(&self, name: &str) -> Result<&T, E> {
+    pub fn lookup<E: Error>(&self, ident: &str) -> Result<&T, E> {
         for scope in self.current.iter().rev() {
-            if let Some(value) = scope.get(name) {
+            if let Some(value) = scope.get(ident) {
                 return Ok(value);
             }
         }
 
-        Err(E::scope_binding_not_found(name))
+        Err(E::scope_binding_not_found(ident))
     }
 
     pub fn insert(&mut self, name: String, value: T) {

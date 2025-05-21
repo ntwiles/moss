@@ -33,6 +33,7 @@ pub enum Expr {
     Literal(Literal),
     Identifier(String),
     FuncDeclare(FuncDeclare),
+    List(Vec<Expr>),
 }
 
 #[derive(Clone, Debug)]

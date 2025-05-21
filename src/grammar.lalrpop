@@ -122,6 +122,7 @@ Unary: Expr = {
 
 PostfixExpression: Expr = {
     <start: @L> <primary:Primary> "(" <args:ExprList> ")" <end: @R> => Expr::FuncCall(FuncCall { func: Box::new(primary), args }, Span { start, end }),
+    <start: @L> <primary:Primary> "(" ")" <end: @R> => Expr::FuncCall(FuncCall { func: Box::new(primary), args: vec![] }, Span { start, end }),
     Primary,
 };
 
@@ -132,6 +133,7 @@ Primary: Expr = {
     Literal => Expr::Literal(<>),
     Identifier => Expr::Identifier(<>),
     FuncDeclare,
+    ListLiteral,
 };
 
 Literal: Literal = {
@@ -146,8 +148,16 @@ Identifier: String = {
 };
 
 FuncDeclare: Expr = {
-    "(" <params:ParameterList> ")" ":" <return_type:TypeExpr> "=>" "{" <start: @L> <stmts:StmtList> <end: @R>"}" => Expr::FuncDeclare(FuncDeclare{ params, return_type: Box::new(return_type), block: Box::new(Expr::Block(stmts, Span { start, end })), is_closure: false }),
-    "|" <params:ParameterList> "|" ":" <return_type:TypeExpr> "=>" "{" <start: @L> <stmts:StmtList> <end: @R>"}" => Expr::FuncDeclare(FuncDeclare{ params, return_type: Box::new(return_type), block: Box::new(Expr::Block(stmts, Span { start, end })), is_closure: true }),
+    "(" <params:ParameterList> ")" ":" <return_type:TypeExpr> "=>" "{" <start: @L> <stmts:StmtList> <end: @R> "}" => Expr::FuncDeclare(FuncDeclare{ params, return_type: Box::new(return_type), block: Box::new(Expr::Block(stmts, Span { start, end })), is_closure: false }),
+    "(" ")" ":" <return_type:TypeExpr> "=>" "{" <start: @L> <stmts:StmtList> <end: @R> "}" => Expr::FuncDeclare(FuncDeclare{ params: vec![], return_type: Box::new(return_type), block: Box::new(Expr::Block(stmts, Span { start, end })), is_closure: false }),
+    "|" <params:ParameterList> "|" ":" <return_type:TypeExpr> "=>" "{" <start: @L> <stmts:StmtList> <end: @R> "}" => Expr::FuncDeclare(FuncDeclare{ params, return_type: Box::new(return_type), block: Box::new(Expr::Block(stmts, Span { start, end })), is_closure: true }),
+    "|" "|" ":" <return_type:TypeExpr> "=>" "{" <start: @L> <stmts:StmtList> <end: @R> "}" => Expr::FuncDeclare(FuncDeclare{ params: vec![], return_type: Box::new(return_type), block: Box::new(Expr::Block(stmts, Span { start, end })), is_closure: true }),
+
+};
+
+ListLiteral: Expr = {
+    "[" <items:ExprList> "]" => Expr::List(items),
+    "[" "]" => Expr::List(vec![]),
 };
 
 ParameterList: Vec<(String, ProtoType)> = Comma<Parameter>;
@@ -183,5 +193,4 @@ Comma<T>: Vec<T> = {
         list
     },
     <item:T> => vec![item],
-    => vec![],
 };

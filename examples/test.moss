@@ -1,12 +1,3 @@
-let fizz_buzz = |n: Int|: List<Str> => {
-    let count = 0;
-    let fizz_buzz_list = [];
-
-    loop {
-        let count = count + 1;
-    };
-
-    fizz_buzz_list;
-};
-
-fizz_buzz(10);
+let foo = 2 + 5;
+let bar = ||: Int => { foo; };
+bar();

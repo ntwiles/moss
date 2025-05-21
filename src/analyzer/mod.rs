@@ -88,6 +88,7 @@ fn analyze_expr(
         }
         Expr::Loop(block) => analyze_loop(value_scope_stack, type_scope, *block),
         Expr::Break => analyze_break(value_scope_stack),
+        Expr::List(values) => analyze_list(value_scope_stack, type_scope, values),
     }
 }
 
@@ -683,4 +684,23 @@ fn analyze_proto_type(
             }
         }
     }
+}
+
+fn analyze_list(
+    value_scope_stack: &mut ScopeStack<ScopeEntry>,
+    type_scope: &mut Scope<TypeBinding>,
+    values: Vec<Expr>,
+) -> Result<TypedExpr, TypeError> {
+    let mut typed_values = Vec::with_capacity(values.len());
+
+    for v in values {
+        typed_values.push(analyze_expr(value_scope_stack, type_scope, v)?);
+    }
+
+    let list_type = typed_values.first().map(|t| t.ty()).unwrap_or(Type::Any);
+
+    Ok(TypedExpr::List(
+        typed_values,
+        Type::List(Box::new(list_type)),
+    ))
 }
