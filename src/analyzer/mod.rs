@@ -76,8 +76,8 @@ fn analyze_expr(
         Expr::Div(left, right) => analyze_div(value_scope_stack, type_scope, *left, *right),
 
         Expr::Negate(inner) => analyze_negate(value_scope_stack, type_scope, *inner),
-        Expr::Assignment(ident, expr) => {
-            analyze_assign(value_scope_stack, type_scope, ident, *expr)
+        Expr::Assignment(ident, ty, expr) => {
+            analyze_assign(value_scope_stack, type_scope, ident, ty, *expr)
         }
         Expr::FuncDeclare(func) => analyze_func_declare(value_scope_stack, type_scope, func),
         Expr::FuncCall(call, span) => analyze_func_call(value_scope_stack, type_scope, call, span),
@@ -371,42 +371,65 @@ fn analyze_assign(
     value_scope_stack: &mut ScopeStack<ScopeEntry>,
     type_scope: &mut Scope<TypeBinding>,
     ident: String,
+    annotation: Option<ProtoType>,
     value: Expr,
 ) -> Result<TypedExpr, TypeError> {
-    let mut predeclared = false;
-
-    if let Expr::FuncDeclare(FuncDeclare {
-        params,
-        return_type,
-        ..
-    }) = &value
-    {
-        let mut type_args: Vec<_> = params
-            .iter()
-            .map(|(_, proto)| analyze_proto_type(type_scope, proto.clone()))
-            .collect::<Result<_, _>>()?;
-
-        let return_type = analyze_proto_type(type_scope, *return_type.clone())?;
-
-        type_args.push(return_type);
-
-        let func_type = Type::Func(type_args);
-
-        value_scope_stack.insert(ident.clone(), func_type);
-        predeclared = true;
+    // TODO: There's a lot of code duplication between these two. They're separate now because in the
+    // case of type checking function assignments, the function has to be bound to scope prior to
+    // analyzing the funciton body, to allow for recursion. In all other cases, the value expression
+    // is analyzed before binding the identifier.
+    if value.is_func_declare() {
+        analyze_func_assign(value_scope_stack, type_scope, ident, annotation, value)
+    } else {
+        analyze_non_func_assign(value_scope_stack, type_scope, ident, annotation, value)
     }
+}
 
-    let inner = analyze_expr(value_scope_stack, type_scope, value)?;
+fn analyze_non_func_assign(
+    value_scope_stack: &mut ScopeStack<ScopeEntry>,
+    type_scope: &mut Scope<TypeBinding>,
+    ident: String,
+    annotation: Option<ProtoType>,
+    value: Expr,
+) -> Result<TypedExpr, TypeError> {
+    let value = analyze_expr(value_scope_stack, type_scope, value)?;
 
-    if inner.ty() == Type::Void {
+    if value.ty() == Type::Void {
         return Err(TypeError::AssignVoid);
     }
 
-    if !predeclared {
-        value_scope_stack.insert(ident.clone(), inner.ty());
+    value_scope_stack.insert(ident.clone(), value.ty());
+
+    Ok(TypedExpr::Assign(ident, Box::new(value), Type::Void))
+}
+
+fn analyze_func_assign(
+    value_scope_stack: &mut ScopeStack<ScopeEntry>,
+    type_scope: &mut Scope<TypeBinding>,
+    ident: String,
+    annotation: Option<ProtoType>,
+    value: Expr,
+) -> Result<TypedExpr, TypeError> {
+    let func = value.as_func_declare();
+
+    let return_type = analyze_proto_type(type_scope, *func.return_type.clone())?;
+    let mut type_args: Vec<_> = func
+        .params
+        .iter()
+        .map(|(_, proto)| analyze_proto_type(type_scope, proto.clone()))
+        .collect::<Result<_, _>>()?;
+
+    type_args.push(return_type);
+
+    value_scope_stack.insert(ident.clone(), Type::Func(type_args));
+
+    let value = analyze_expr(value_scope_stack, type_scope, value)?;
+
+    if value.ty() == Type::Void {
+        return Err(TypeError::AssignVoid);
     }
 
-    Ok(TypedExpr::Assign(ident, Box::new(inner), Type::Void))
+    Ok(TypedExpr::Assign(ident, Box::new(value), Type::Void))
 }
 
 // Postfix operations

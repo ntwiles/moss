@@ -254,6 +254,6 @@ pub fn eval_func_declare(exec: &mut ExecContext, func: TypedFunc) -> ControlFlow
     ControlFlow::Continue
 }
 
-pub fn eval_list(exec: &mut ExecContext, items: Vec<TypedExpr>) -> ControlFlow {
+pub fn eval_list(_exec: &mut ExecContext, _items: Vec<TypedExpr>) -> ControlFlow {
     todo!();
 }

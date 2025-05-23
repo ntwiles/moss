@@ -87,7 +87,8 @@ Break: Expr = {
 };
 
 Assignment: Expr = {
-    "let" <i:Identifier> "=" <v:Expr> => Expr::Assignment(i, Box::new(v)),
+    "let" <i:Identifier> ":" <ty:TypeExpr> "=" <v:Expr> => Expr::Assignment(i, Some(ty), Box::new(v)),
+    "let" <i:Identifier> "=" <v:Expr> => Expr::Assignment(i, None, Box::new(v)),
 };
 
 Equality: Expr = {

@@ -1,6 +1,6 @@
 let fizz_buzz = |n: Int|: List<Str> => {
     let count = 0;
-    let fizz_buzz_list = [];
+    let fizz_buzz_list: List<Str> = [];
 
     loop {
         let count = count + 1;

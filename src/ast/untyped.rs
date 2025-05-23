@@ -17,7 +17,7 @@ pub enum Expr {
 
     // Unary operations
     Negate(Box<Expr>),
-    Assignment(String, Box<Expr>),
+    Assignment(String, Option<ProtoType>, Box<Expr>),
 
     // Postfix operations
     FuncCall(FuncCall, Span),
@@ -34,6 +34,20 @@ pub enum Expr {
     Identifier(String),
     FuncDeclare(FuncDeclare),
     List(Vec<Expr>),
+}
+
+impl Expr {
+    pub fn is_func_declare(&self) -> bool {
+        return matches!(self, Expr::FuncDeclare(_));
+    }
+
+    pub fn as_func_declare(&self) -> &FuncDeclare {
+        if let Expr::FuncDeclare(func) = self {
+            &func
+        } else {
+            unreachable!()
+        }
+    }
 }
 
 #[derive(Clone, Debug)]

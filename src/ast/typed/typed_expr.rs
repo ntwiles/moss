@@ -18,7 +18,7 @@ pub enum TypedExpr {
 
     // Unary operations
     Negate(Box<TypedExpr>, Type),
-    Assign(String, Box<TypedExpr>, Type),
+    Assign(String, Box<TypedExpr>, Type), // TODO: This doesn't need type; always void.
 
     // Postfix operations
     FuncCall(TypedFuncCall, Type),
