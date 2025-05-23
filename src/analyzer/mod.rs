@@ -48,7 +48,7 @@ fn analyze_stmt(
     type_scope: &mut Scope<TypeBinding>,
     stmt: Stmt,
 ) -> Result<TypedStmt, TypeError> {
-    let expr = analyze_expr(value_scope_stack, type_scope, stmt.expr)?;
+    let expr = analyze_expr(value_scope_stack, type_scope, &None, stmt.expr)?;
 
     Ok(TypedStmt { expr })
 }
@@ -56,6 +56,7 @@ fn analyze_stmt(
 fn analyze_expr(
     value_scope_stack: &mut ScopeStack<ScopeEntry>,
     type_scope: &mut Scope<TypeBinding>,
+    type_hint: &Option<Type>,
     expr: Expr,
 ) -> Result<TypedExpr, TypeError> {
     match expr {
@@ -88,7 +89,7 @@ fn analyze_expr(
         }
         Expr::Loop(block) => analyze_loop(value_scope_stack, type_scope, *block),
         Expr::Break => analyze_break(value_scope_stack),
-        Expr::List(values) => analyze_list(value_scope_stack, type_scope, values),
+        Expr::List(values) => analyze_list(value_scope_stack, type_scope, type_hint, values),
     }
 }
 
@@ -100,8 +101,8 @@ fn analyze_eq(
     left: Expr,
     right: Expr,
 ) -> Result<TypedExpr, TypeError> {
-    let left = analyze_expr(value_scope_stack, type_scope, left)?;
-    let right = analyze_expr(value_scope_stack, type_scope, right)?;
+    let left = analyze_expr(value_scope_stack, type_scope, &None, left)?;
+    let right = analyze_expr(value_scope_stack, type_scope, &None, right)?;
 
     if left.ty() != right.ty() {
         return Err(TypeError::BinaryOpWrongTypes(
@@ -120,8 +121,8 @@ fn analyze_gt(
     left: Expr,
     right: Expr,
 ) -> Result<TypedExpr, TypeError> {
-    let left = analyze_expr(value_scope_stack, type_scope, left)?;
-    let right = analyze_expr(value_scope_stack, type_scope, right)?;
+    let left = analyze_expr(value_scope_stack, type_scope, &None, left)?;
+    let right = analyze_expr(value_scope_stack, type_scope, &None, right)?;
 
     if left.ty() != right.ty() {
         return Err(TypeError::BinaryOpWrongTypes(
@@ -149,8 +150,8 @@ fn analyze_gte(
     left: Expr,
     right: Expr,
 ) -> Result<TypedExpr, TypeError> {
-    let left = analyze_expr(value_scope_stack, type_scope, left)?;
-    let right = analyze_expr(value_scope_stack, type_scope, right)?;
+    let left = analyze_expr(value_scope_stack, type_scope, &None, left)?;
+    let right = analyze_expr(value_scope_stack, type_scope, &None, right)?;
 
     if left.ty() != right.ty() {
         return Err(TypeError::BinaryOpWrongTypes(
@@ -178,8 +179,8 @@ fn analyze_lt(
     left: Expr,
     right: Expr,
 ) -> Result<TypedExpr, TypeError> {
-    let left = analyze_expr(value_scope_stack, type_scope, left)?;
-    let right = analyze_expr(value_scope_stack, type_scope, right)?;
+    let left = analyze_expr(value_scope_stack, type_scope, &None, left)?;
+    let right = analyze_expr(value_scope_stack, type_scope, &None, right)?;
 
     if left.ty() != right.ty() {
         return Err(TypeError::BinaryOpWrongTypes(
@@ -207,8 +208,8 @@ fn analyze_lte(
     left: Expr,
     right: Expr,
 ) -> Result<TypedExpr, TypeError> {
-    let left = analyze_expr(value_scope_stack, type_scope, left)?;
-    let right = analyze_expr(value_scope_stack, type_scope, right)?;
+    let left = analyze_expr(value_scope_stack, type_scope, &None, left)?;
+    let right = analyze_expr(value_scope_stack, type_scope, &None, right)?;
 
     if left.ty() != right.ty() {
         return Err(TypeError::BinaryOpWrongTypes(
@@ -236,8 +237,8 @@ fn analyze_add(
     left: Expr,
     right: Expr,
 ) -> Result<TypedExpr, TypeError> {
-    let left = analyze_expr(value_scope_stack, type_scope, left)?;
-    let right = analyze_expr(value_scope_stack, type_scope, right)?;
+    let left = analyze_expr(value_scope_stack, type_scope, &None, left)?;
+    let right = analyze_expr(value_scope_stack, type_scope, &None, right)?;
 
     if left.ty() != right.ty() {
         return Err(TypeError::BinaryOpWrongTypes(
@@ -265,8 +266,8 @@ fn analyze_sub(
     left: Expr,
     right: Expr,
 ) -> Result<TypedExpr, TypeError> {
-    let left = analyze_expr(value_scope_stack, type_scope, left)?;
-    let right = analyze_expr(value_scope_stack, type_scope, right)?;
+    let left = analyze_expr(value_scope_stack, type_scope, &None, left)?;
+    let right = analyze_expr(value_scope_stack, type_scope, &None, right)?;
 
     if left.ty() != right.ty() {
         return Err(TypeError::BinaryOpWrongTypes(
@@ -294,8 +295,8 @@ fn analyze_mult(
     left: Expr,
     right: Expr,
 ) -> Result<TypedExpr, TypeError> {
-    let left = analyze_expr(value_scope_stack, type_scope, left)?;
-    let right = analyze_expr(value_scope_stack, type_scope, right)?;
+    let left = analyze_expr(value_scope_stack, type_scope, &None, left)?;
+    let right = analyze_expr(value_scope_stack, type_scope, &None, right)?;
 
     if left.ty() != right.ty() {
         return Err(TypeError::BinaryOpWrongTypes(
@@ -323,8 +324,8 @@ fn analyze_div(
     left: Expr,
     right: Expr,
 ) -> Result<TypedExpr, TypeError> {
-    let left = analyze_expr(value_scope_stack, type_scope, left)?;
-    let right = analyze_expr(value_scope_stack, type_scope, right)?;
+    let left = analyze_expr(value_scope_stack, type_scope, &None, left)?;
+    let right = analyze_expr(value_scope_stack, type_scope, &None, right)?;
 
     if left.ty() != right.ty() {
         return Err(TypeError::BinaryOpWrongTypes(
@@ -357,7 +358,7 @@ fn analyze_negate(
     type_scope: &mut Scope<TypeBinding>,
     inner: Expr,
 ) -> Result<TypedExpr, TypeError> {
-    let inner = analyze_expr(value_scope_stack, type_scope, inner)?;
+    let inner = analyze_expr(value_scope_stack, type_scope, &None, inner)?;
 
     if inner.ty() != Type::Int && inner.ty() != Type::Float {
         return Err(TypeError::UnaryOpWrongType("-".to_string(), inner.ty()));
@@ -371,7 +372,7 @@ fn analyze_assign(
     value_scope_stack: &mut ScopeStack<ScopeEntry>,
     type_scope: &mut Scope<TypeBinding>,
     ident: String,
-    annotation: Option<ProtoType>,
+    type_annotation: Option<ProtoType>,
     value: Expr,
 ) -> Result<TypedExpr, TypeError> {
     // TODO: There's a lot of code duplication between these two. They're separate now because in the
@@ -379,9 +380,9 @@ fn analyze_assign(
     // analyzing the funciton body, to allow for recursion. In all other cases, the value expression
     // is analyzed before binding the identifier.
     if value.is_func_declare() {
-        analyze_func_assign(value_scope_stack, type_scope, ident, annotation, value)
+        analyze_func_assign(value_scope_stack, type_scope, ident, value)
     } else {
-        analyze_non_func_assign(value_scope_stack, type_scope, ident, annotation, value)
+        analyze_non_func_assign(value_scope_stack, type_scope, ident, type_annotation, value)
     }
 }
 
@@ -389,16 +390,27 @@ fn analyze_non_func_assign(
     value_scope_stack: &mut ScopeStack<ScopeEntry>,
     type_scope: &mut Scope<TypeBinding>,
     ident: String,
-    annotation: Option<ProtoType>,
+    type_annotation: Option<ProtoType>,
     value: Expr,
 ) -> Result<TypedExpr, TypeError> {
-    let value = analyze_expr(value_scope_stack, type_scope, value)?;
+    let type_annotation = type_annotation
+        .map(|a| analyze_proto_type(type_scope, a))
+        .transpose()?;
 
-    if value.ty() == Type::Void {
+    let value = analyze_expr(value_scope_stack, type_scope, &type_annotation, value)?;
+    let value_type = value.ty();
+
+    if value_type == Type::Void {
         return Err(TypeError::AssignVoid);
     }
 
-    value_scope_stack.insert(ident.clone(), value.ty());
+    if let Some(annotation) = type_annotation {
+        if value_type != annotation {
+            return Err(TypeError::AssignWrongType(annotation, value_type));
+        }
+    }
+
+    value_scope_stack.insert(ident.clone(), value_type);
 
     Ok(TypedExpr::Assign(ident, Box::new(value), Type::Void))
 }
@@ -407,7 +419,6 @@ fn analyze_func_assign(
     value_scope_stack: &mut ScopeStack<ScopeEntry>,
     type_scope: &mut Scope<TypeBinding>,
     ident: String,
-    annotation: Option<ProtoType>,
     value: Expr,
 ) -> Result<TypedExpr, TypeError> {
     let func = value.as_func_declare();
@@ -423,7 +434,7 @@ fn analyze_func_assign(
 
     value_scope_stack.insert(ident.clone(), Type::Func(type_args));
 
-    let value = analyze_expr(value_scope_stack, type_scope, value)?;
+    let value = analyze_expr(value_scope_stack, type_scope, &None, value)?;
 
     if value.ty() == Type::Void {
         return Err(TypeError::AssignVoid);
@@ -440,12 +451,12 @@ fn analyze_func_call(
     call: FuncCall,
     span: Span,
 ) -> Result<TypedExpr, TypeError> {
-    let callee = analyze_expr(value_scope_stack, type_scope, *call.func)?;
+    let callee = analyze_expr(value_scope_stack, type_scope, &None, *call.func)?;
 
     let args = call
         .args
         .into_iter()
-        .map(|arg| analyze_expr(value_scope_stack, type_scope, arg))
+        .map(|arg| analyze_expr(value_scope_stack, type_scope, &None, arg))
         .collect::<Result<Vec<_>, _>>()?;
 
     if let Type::Func(inner_types) = callee.ty() {
@@ -566,7 +577,7 @@ fn analyze_if(
     cond: Expr,
     then_block: Expr,
 ) -> Result<TypedExpr, TypeError> {
-    let cond = analyze_expr(value_scope_stack, type_scope, cond)?;
+    let cond = analyze_expr(value_scope_stack, type_scope, &None, cond)?;
 
     if cond.ty() != Type::Bool {
         return Err(TypeError::IfElseConditionNonBool(cond.ty()));
@@ -586,14 +597,14 @@ fn analyze_if_else(
     then_block: Expr,
     else_expr: Expr,
 ) -> Result<TypedExpr, TypeError> {
-    let cond = analyze_expr(value_scope_stack, type_scope, cond)?;
+    let cond = analyze_expr(value_scope_stack, type_scope, &None, cond)?;
 
     if cond.ty() != Type::Bool {
         return Err(TypeError::IfElseConditionNonBool(cond.ty()));
     }
 
     let then_block = analyze_block(value_scope_stack, type_scope, then_block)?;
-    let else_expr = analyze_expr(value_scope_stack, type_scope, else_expr)?;
+    let else_expr = analyze_expr(value_scope_stack, type_scope, &None, else_expr)?;
 
     if then_block.ty() != else_expr.ty() {
         return Err(TypeError::IfElseBlockTypeMismatch(
@@ -712,15 +723,32 @@ fn analyze_proto_type(
 fn analyze_list(
     value_scope_stack: &mut ScopeStack<ScopeEntry>,
     type_scope: &mut Scope<TypeBinding>,
+    type_hint: &Option<Type>,
     values: Vec<Expr>,
 ) -> Result<TypedExpr, TypeError> {
+    let element_hint = match type_hint {
+        Some(Type::List(inner)) => Some(inner.as_ref().clone()),
+        Some(type_hint) => return Err(TypeError::ExpectedTypeReceivedList(type_hint.clone())),
+        None => None,
+    };
+
     let mut typed_values = Vec::with_capacity(values.len());
 
     for v in values {
-        typed_values.push(analyze_expr(value_scope_stack, type_scope, v)?);
+        typed_values.push(analyze_expr(value_scope_stack, type_scope, &None, v)?);
     }
 
-    let list_type = typed_values.first().map(|t| t.ty()).unwrap_or(Type::Any);
+    let list_type = typed_values.first().map(|t| t.ty());
+
+    let list_type = if let Some(list_type) = list_type {
+        list_type
+    } else {
+        if let Some(element_hint) = element_hint {
+            Ok(element_hint)?
+        } else {
+            Err(TypeError::AmbiguousListType)?
+        }
+    };
 
     Ok(TypedExpr::List(
         typed_values,

@@ -20,6 +20,7 @@ pub enum Type {
     Func(Vec<Type>),
     List(Box<Type>),
     Str,
+    Unknown,
     UserDefined(String),
     Void,
     Applied(Box<Type>, Vec<Type>),
@@ -53,6 +54,7 @@ impl Display for Type {
 
                 write!(f, "{outer}<{inner}>")
             }
+            Self::Unknown => write!(f, "Unknown"),
             Self::Void => write!(f, "Void"),
         }
     }

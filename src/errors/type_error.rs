@@ -9,12 +9,15 @@ use super::Error;
 
 #[derive(Debug)]
 pub enum TypeError {
+    AmbiguousListType,
+    AssignWrongType(Type, Type),
     AssignVoid,
     BinaryOpWrongTypes(String, Type, Type),
+    DivisionZero,
+    ExpectedTypeReceivedList(Type),
+    FuncWrongReturnType(Type, Type, Span),
     IfElseBlockTypeMismatch(Type, Type),
     IfElseConditionNonBool(Type),
-    DivisionZero,
-    FuncWrongReturnType(Type, Type, Span),
     InvokeNonFunc(Type),
     InvokeWrongSignature(Vec<Type>, Vec<TypedExpr>, Span),
     UnaryOpWrongType(String, Type),
@@ -46,11 +49,20 @@ pub struct TypeErrorDisplay {
 impl std::fmt::Display for TypeErrorDisplay {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match &self.error {
+            TypeError::AmbiguousListType => write!(f, "Cannot resolve list element type."),
+            TypeError::AssignWrongType(expected, received) => write!(
+                f,
+                "Cannot assign a value of type {received} where type {expected} is expected"
+            ),
             TypeError::AssignVoid => write!(f, "Cannot assign a value of type Void."),
             TypeError::BinaryOpWrongTypes(op, a, b) => {
                 write!(f, "Types {a} and {b} do not support binary operation {op}.")
             }
             TypeError::DivisionZero => write!(f, "Cannot divide by 0."),
+            TypeError::ExpectedTypeReceivedList(expected) => write!(
+                f,
+                "Expected a value of type {expected}, but received a list of unknown type."
+            ),
             TypeError::FuncWrongReturnType(expected, received, span) => {
                 // 1. Header
                 writeln!(
