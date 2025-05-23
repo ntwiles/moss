@@ -229,6 +229,21 @@ pub fn apply_non_closure_func_call(exec: &mut ExecContext) -> ControlFlow {
     ControlFlow::Continue
 }
 
+// Post-evaluation construction
+
+pub fn apply_list(exec: &mut ExecContext, size: usize) -> ControlFlow {
+    let mut values = Vec::new();
+
+    for _ in 0..size {
+        let item = exec.value_stack.pop().unwrap();
+        values.push(item);
+    }
+
+    exec.value_stack.push(ResolvedValue::List(values));
+
+    ControlFlow::Continue
+}
+
 // Primaries
 pub fn eval_literal(exec: &mut ExecContext, literal: TypedLiteral) -> ControlFlow {
     match literal {
@@ -254,6 +269,14 @@ pub fn eval_func_declare(exec: &mut ExecContext, func: TypedFunc) -> ControlFlow
     ControlFlow::Continue
 }
 
-pub fn eval_list(_exec: &mut ExecContext, _items: Vec<TypedExpr>) -> ControlFlow {
-    todo!();
+pub fn eval_list(exec: &mut ExecContext, items: Vec<TypedExpr>) -> ControlFlow {
+    let len = items.len();
+
+    exec.control_stack.push(ControlOp::ApplyList(len));
+
+    for item in items.into_iter().rev() {
+        exec.control_stack.push(ControlOp::EvalExpr(item));
+    }
+
+    ControlFlow::Continue
 }

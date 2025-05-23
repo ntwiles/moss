@@ -16,7 +16,7 @@ use crate::state::{
 
 use evaluation::{
     apply_add, apply_assign, apply_closure_func_call, apply_div, apply_eq, apply_func_call,
-    apply_gt, apply_gte, apply_lt, apply_lte, apply_mult, apply_negate,
+    apply_gt, apply_gte, apply_list, apply_lt, apply_lte, apply_mult, apply_negate,
     apply_non_closure_func_call, apply_stmt, apply_sub, eval_expr,
 };
 use resolved_value::ResolvedValue;
@@ -53,6 +53,7 @@ pub fn interpret_program<R: Read, W: Write>(
 
     while let Some(current_op) = exec.control_stack.pop() {
         let control_flow = match current_op {
+            ControlOp::ApplyList(size) => apply_list(&mut exec, size),
             ControlOp::EvalBlock(block) => push_block(&mut exec, &mut io, &builtins, block)?,
             ControlOp::EvalStmt(stmt) => push_stmt(&mut exec, stmt)?,
             ControlOp::EvalExpr(expr) => eval_expr(&mut exec, &mut io, &builtins, expr)?,

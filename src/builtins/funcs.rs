@@ -110,12 +110,16 @@ pub fn eval_print_line<R: Read, W: Write>(
 ) -> Result<ResolvedValue, RuntimeError> {
     let message = args.pop().unwrap();
 
-    // TODO: This isn't the place to handle string coercion.
+    // TODO: This isn't the place to handle string coercion. Probably it should accept only values
+    // which are known to be able to be converted to a string, though some type of polymorphism.
+    // TODO: Even though this function is typed to support any input, it will error at runtime when
+    // lists are passed. Will likely be resolved by the above fix.
     let message = match message {
         ResolvedValue::Bool(bool) => bool.to_string(),
         ResolvedValue::Float(float) => float.to_string(),
         ResolvedValue::Func(func) => func.to_string(),
         ResolvedValue::Int(int) => int.to_string(),
+        ResolvedValue::List(_) => todo!(),
         ResolvedValue::String(message) => message,
         ResolvedValue::Void => String::from("Void"),
     };

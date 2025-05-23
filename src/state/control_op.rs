@@ -39,4 +39,7 @@ pub enum ControlOp {
     // Markers
     MarkLoopStart,
     MarkBlockStart,
+
+    // Post-evaluation construction
+    ApplyList(usize),
 }

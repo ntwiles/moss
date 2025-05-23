@@ -6,6 +6,7 @@ use crate::ast::typed::TypedFunc;
 pub enum ResolvedValue {
     Int(i32),
     Float(f64),
+    List(Vec<ResolvedValue>),
     String(String),
     Bool(bool),
     Void,
@@ -54,6 +55,7 @@ impl Display for ResolvedValue {
         match self {
             ResolvedValue::Int(int) => write!(f, "{}", int),
             ResolvedValue::Float(float) => write!(f, "{:.1}", float),
+            ResolvedValue::List(_items) => todo!(),
             ResolvedValue::String(string) => write!(f, "{}", string),
             ResolvedValue::Bool(bool) => write!(f, "{}", bool),
             ResolvedValue::Void => write!(f, "Void"),
