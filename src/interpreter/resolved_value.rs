@@ -28,6 +28,13 @@ impl ResolvedValue {
         }
     }
 
+    pub fn unwrap_list(self) -> Vec<ResolvedValue> {
+        match self {
+            ResolvedValue::List(items) => items,
+            _ => panic!(),
+        }
+    }
+
     pub fn unwrap_string(&self) -> String {
         match self {
             ResolvedValue::String(string) => string.clone(),

@@ -7,6 +7,7 @@ use std::{
 
 use funcs::{
     casting::{eval_int, eval_str, make_int, make_str},
+    collections::{eval_push, make_push},
     io::{eval_print_line, eval_read_line, make_print_line, make_read_line},
 };
 
@@ -14,6 +15,7 @@ use funcs::{
 pub enum BuiltinFuncId {
     Int,
     PrintLine,
+    Push,
     ReadLine,
     Str,
 }
@@ -34,6 +36,7 @@ pub fn get_builtin_func_bindings() -> Vec<(String, TypedExpr)> {
     vec![
         (String::from("int"), make_int()),
         (String::from("print_line"), make_print_line()),
+        (String::from("push"), make_push()),
         (String::from("read_line"), make_read_line()),
         (String::from("str"), make_str()),
     ]
@@ -42,6 +45,7 @@ pub fn get_builtin_funcs<R: Read, W: Write>() -> HashMap<BuiltinFuncId, BuiltinF
     hashmap! {
         BuiltinFuncId::Int => eval_int as BuiltinFunc<R, W>,
         BuiltinFuncId::PrintLine => eval_print_line as BuiltinFunc<R, W>,
+        BuiltinFuncId::Push => eval_push as BuiltinFunc<R, W>,
         BuiltinFuncId::ReadLine => eval_read_line as BuiltinFunc<R, W>,
         BuiltinFuncId::Str => eval_str as BuiltinFunc<R, W>
     }

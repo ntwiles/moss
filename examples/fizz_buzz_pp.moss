@@ -1,11 +1,11 @@
 let fizz_buzz = |n: Int|: List<Str> => {
     mut count = 0;
-    let fizz_buzz_list: List<Str> = [];
+    mut fizz_buzz_list: List<Str> = [];
 
     loop {
         let item = count;
 
-        push(fizz_buzz_list, item);
+        fizz_buzz_list = push(fizz_buzz_list, str(item));
 
         count = count + 1;
 
