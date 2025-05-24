@@ -15,9 +15,9 @@ use crate::state::{
 };
 
 use evaluation::{
-    apply_add, apply_assignment, apply_closure_func_call, apply_declaration, apply_div, apply_eq,
-    apply_func_call, apply_gt, apply_gte, apply_list, apply_lt, apply_lte, apply_mult,
-    apply_negate, apply_non_closure_func_call, apply_stmt, apply_sub, eval_expr,
+    apply_add, apply_assignment, apply_declaration, apply_div, apply_eq, apply_func_call, apply_gt,
+    apply_gte, apply_list, apply_lt, apply_lte, apply_mult, apply_negate, apply_pop_scope,
+    apply_stmt, apply_sub, eval_expr,
 };
 use resolved_value::ResolvedValue;
 
@@ -73,10 +73,11 @@ pub fn interpret_program<R: Read, W: Write>(
                 apply_declaration(&mut exec, is_mutable, ident)?
             }
             ControlOp::ApplyFuncCall(args) => apply_func_call(&mut exec, args),
-            ControlOp::ApplyClosureFuncCall => apply_closure_func_call(&mut exec),
-            ControlOp::ApplyNonClosureFuncCall => apply_non_closure_func_call(&mut exec),
             ControlOp::ApplyBinding(ident) => apply_binding(&mut exec, ident)?,
             ControlOp::PushScope(func) => apply_push_scope(&mut exec, func),
+            ControlOp::PopScope(restore_previous_stack) => {
+                apply_pop_scope(&mut exec, restore_previous_stack)
+            }
             ControlOp::ApplyIf(then) => apply_if(&mut exec, then),
             ControlOp::ApplyIfElse(then, els) => apply_if_else(&mut exec, then, els),
             ControlOp::PushLoop(block) => push_loop(&mut exec, block),

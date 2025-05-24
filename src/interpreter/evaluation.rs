@@ -212,17 +212,15 @@ pub fn apply_declaration(
 }
 
 // Postfix operations
+
 pub fn apply_func_call(exec: &mut ExecContext, args: Vec<TypedExpr>) -> ControlFlow {
     let func = match exec.value_stack.pop().unwrap() {
         ResolvedValue::Func(func) => func,
         _ => unreachable!(),
     };
 
-    if func.is_closure {
-        exec.control_stack.push(ControlOp::ApplyClosureFuncCall);
-    } else {
-        exec.control_stack.push(ControlOp::ApplyNonClosureFuncCall);
-    }
+    exec.control_stack
+        .push(ControlOp::PopScope(func.is_closure));
 
     exec.control_stack
         .push(ControlOp::EvalBlock(*func.block.clone()));
@@ -243,14 +241,12 @@ pub fn apply_func_call(exec: &mut ExecContext, args: Vec<TypedExpr>) -> ControlF
     ControlFlow::Continue
 }
 
-pub fn apply_closure_func_call(exec: &mut ExecContext) -> ControlFlow {
-    exec.scope_stack.pop_scope();
-
-    ControlFlow::Continue
-}
-
-pub fn apply_non_closure_func_call(exec: &mut ExecContext) -> ControlFlow {
-    exec.scope_stack.restore_previous_stack();
+pub fn apply_pop_scope(exec: &mut ExecContext, restore_previous_stack: bool) -> ControlFlow {
+    if restore_previous_stack {
+        exec.scope_stack.restore_previous_stack();
+    } else {
+        exec.scope_stack.pop_scope();
+    }
 
     ControlFlow::Continue
 }

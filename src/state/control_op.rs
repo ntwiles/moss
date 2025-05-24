@@ -20,8 +20,6 @@ pub enum ControlOp {
 
     // Postfix operations
     ApplyFuncCall(Vec<TypedExpr>),
-    ApplyClosureFuncCall,
-    ApplyNonClosureFuncCall,
 
     // Control flow
     ApplyIf(TypedExpr),
@@ -36,6 +34,7 @@ pub enum ControlOp {
     // Scope
     ApplyBinding(String),
     PushScope(TypedFunc),
+    PopScope(bool),
 
     // Markers
     MarkLoopStart,
