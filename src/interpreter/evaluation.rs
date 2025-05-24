@@ -166,23 +166,27 @@ pub fn apply_lte(exec: &mut ExecContext) -> ControlFlow {
 }
 
 // Unary operations
-pub fn apply_negate(exec: &mut ExecContext) -> ControlFlow {
+pub fn apply_negate(exec: &mut ExecContext) -> Result<ControlFlow, RuntimeError> {
     apply_unary_op(exec, |_scope_stack, v| match v {
-        ResolvedValue::Int(int) => ResolvedValue::Int(-int),
-        ResolvedValue::Float(float) => ResolvedValue::Float(-float),
+        ResolvedValue::Int(int) => Ok(ResolvedValue::Int(-int)),
+        ResolvedValue::Float(float) => Ok(ResolvedValue::Float(-float)),
         _ => unreachable!(),
-    });
+    })?;
 
-    ControlFlow::Continue
+    Ok(ControlFlow::Continue)
 }
 
-pub fn apply_declaration(exec: &mut ExecContext, ident: String) -> ControlFlow {
+pub fn apply_declaration(
+    exec: &mut ExecContext,
+    ident: String,
+) -> Result<ControlFlow, RuntimeError> {
     apply_unary_op(exec, |exec, v| {
-        exec.scope_stack.insert(ident.clone(), v.clone());
-        ResolvedValue::Void
-    });
+        exec.scope_stack
+            .insert(ident.clone(), v.clone())
+            .map(|_| ResolvedValue::Void)
+    })?;
 
-    ControlFlow::Continue
+    Ok(ControlFlow::Continue)
 }
 
 // Postfix operations

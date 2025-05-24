@@ -1,5 +1,6 @@
 use core::fmt;
 use core::fmt::Debug;
+use std::collections::hash_map::Entry;
 use std::fmt::Formatter;
 
 use super::scope::Scope;
@@ -47,8 +48,15 @@ impl<T: Debug> ScopeStack<T> {
         Err(E::scope_binding_not_found(ident))
     }
 
-    pub fn insert(&mut self, name: String, value: T) {
-        self.current.last_mut().unwrap().insert(name, value);
+    pub fn insert<E: Error>(&mut self, ident: String, value: T) -> Result<(), E> {
+        let curr_scope = self.current.last_mut().unwrap();
+        match curr_scope.entry(ident.clone()) {
+            Entry::Vacant(v) => {
+                v.insert(value);
+                Ok(())
+            }
+            Entry::Occupied(_) => Err(E::scope_binding_already_exists(&ident)),
+        }
     }
 }
 

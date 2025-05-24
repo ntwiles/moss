@@ -45,7 +45,7 @@ pub fn interpret_program<R: Read, W: Write>(
     for (ident, expr) in builtin_bindings {
         if let TypedExpr::FuncDeclare(func, _) = expr {
             let resolved = ResolvedValue::Func(func);
-            exec.scope_stack.insert(ident, resolved);
+            exec.scope_stack.insert(ident, resolved)?;
         } else {
             unreachable!();
         }
@@ -67,12 +67,12 @@ pub fn interpret_program<R: Read, W: Write>(
             ControlOp::ApplyLt => apply_lt(&mut exec),
             ControlOp::ApplyGte => apply_gte(&mut exec),
             ControlOp::ApplyLte => apply_lte(&mut exec),
-            ControlOp::ApplyNegate => apply_negate(&mut exec),
-            ControlOp::ApplyAssign(ident) => apply_declaration(&mut exec, ident),
+            ControlOp::ApplyNegate => apply_negate(&mut exec)?,
+            ControlOp::ApplyAssign(ident) => apply_declaration(&mut exec, ident)?,
             ControlOp::ApplyFuncCall(args) => apply_func_call(&mut exec, args),
             ControlOp::ApplyClosureFuncCall => apply_closure_func_call(&mut exec),
             ControlOp::ApplyNonClosureFuncCall => apply_non_closure_func_call(&mut exec),
-            ControlOp::ApplyBinding(ident) => apply_binding(&mut exec, ident),
+            ControlOp::ApplyBinding(ident) => apply_binding(&mut exec, ident)?,
             ControlOp::PushScope(func) => apply_push_scope(&mut exec, func),
             ControlOp::ApplyIf(then) => apply_if(&mut exec, then),
             ControlOp::ApplyIfElse(then, els) => apply_if_else(&mut exec, then, els),
@@ -222,13 +222,14 @@ where
     exec.value_stack.push(op(left, right));
 }
 
-fn apply_unary_op<F>(exec: &mut ExecContext, op: F)
+fn apply_unary_op<F>(exec: &mut ExecContext, op: F) -> Result<(), RuntimeError>
 where
-    F: Fn(&mut ExecContext, ResolvedValue) -> ResolvedValue,
+    F: Fn(&mut ExecContext, ResolvedValue) -> Result<ResolvedValue, RuntimeError>,
 {
     let value = exec.value_stack.pop().unwrap();
-    let result = op(exec, value);
+    let result = op(exec, value)?;
     exec.value_stack.push(result);
+    Ok(())
 }
 
 fn apply_push_scope(exec: &mut ExecContext, func: TypedFunc) -> ControlFlow {
@@ -242,11 +243,11 @@ fn apply_push_scope(exec: &mut ExecContext, func: TypedFunc) -> ControlFlow {
 }
 
 // This is not used by the assignment or declaration operations, but instead for things like func call args.
-pub fn apply_binding(exec: &mut ExecContext, ident: String) -> ControlFlow {
+pub fn apply_binding(exec: &mut ExecContext, ident: String) -> Result<ControlFlow, RuntimeError> {
     let value = exec.value_stack.pop().unwrap();
-    exec.scope_stack.insert(ident.clone(), value);
+    exec.scope_stack.insert(ident.clone(), value)?;
 
-    ControlFlow::Continue
+    Ok(ControlFlow::Continue)
 }
 
 fn apply_if(exec: &mut ExecContext, then_block: TypedExpr) -> ControlFlow {

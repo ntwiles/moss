@@ -20,7 +20,7 @@ pub fn analyze_program(
     let mut value_scope_stack = ScopeStack::<ScopeEntry>::new();
 
     for (ident, binding) in builtin_funcs {
-        value_scope_stack.insert(ident, binding.ty());
+        value_scope_stack.insert(ident, binding.ty())?;
     }
 
     let mut type_scope = Scope::new();
@@ -77,9 +77,19 @@ fn analyze_expr(
         Expr::Div(left, right) => analyze_div(value_scope_stack, type_scope, *left, *right),
 
         Expr::Negate(inner) => analyze_negate(value_scope_stack, type_scope, *inner),
-        Expr::Declaration(ident, ty, expr) => {
-            analyze_declaration(value_scope_stack, type_scope, ident, ty, *expr)
-        }
+        Expr::Declaration {
+            ident,
+            type_annotation,
+            expr,
+            is_mutable,
+        } => analyze_declaration(
+            value_scope_stack,
+            type_scope,
+            ident,
+            type_annotation,
+            is_mutable,
+            *expr,
+        ),
         Expr::FuncDeclare(func) => analyze_func_declare(value_scope_stack, type_scope, func),
         Expr::FuncCall(call, span) => analyze_func_call(value_scope_stack, type_scope, call, span),
 
@@ -373,6 +383,7 @@ fn analyze_declaration(
     type_scope: &mut Scope<TypeBinding>,
     ident: String,
     type_annotation: Option<ProtoType>,
+    _is_mutable: bool, // TODO: Use this.
     value: Expr,
 ) -> Result<TypedExpr, TypeError> {
     // TODO: There's a lot of code duplication between these two. They're separate now because in the
@@ -410,7 +421,7 @@ fn analyze_non_func_declaration(
         }
     }
 
-    value_scope_stack.insert(ident.clone(), value_type);
+    value_scope_stack.insert(ident.clone(), value_type)?;
 
     Ok(TypedExpr::Declaration(ident, Box::new(value), Type::Void))
 }
@@ -432,7 +443,7 @@ fn analyze_func_declaration(
 
     type_args.push(return_type);
 
-    value_scope_stack.insert(ident.clone(), Type::Func(type_args));
+    value_scope_stack.insert(ident.clone(), Type::Func(type_args))?;
 
     let value = analyze_expr(value_scope_stack, type_scope, &None, value)?;
 
@@ -520,7 +531,7 @@ fn analyze_func_declare(
     for param in &func.params {
         let ident = param.0.clone();
         let ty = analyze_proto_type(type_scope, param.1.clone())?;
-        value_scope_stack.insert(ident, ty);
+        value_scope_stack.insert(ident, ty)?;
     }
 
     let block = *func.block;

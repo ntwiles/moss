@@ -17,7 +17,12 @@ pub enum Expr {
 
     // Unary operations
     Negate(Box<Expr>),
-    Declaration(String, Option<ProtoType>, Box<Expr>),
+    Declaration {
+        ident: String,
+        type_annotation: Option<ProtoType>,
+        expr: Box<Expr>,
+        is_mutable: bool,
+    },
 
     // Postfix operations
     FuncCall(FuncCall, Span),

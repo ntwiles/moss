@@ -9,7 +9,7 @@ match {
     "{", "}", "(", ")", "[", "]", ";", ":", ".", ",", "|",
 
     // declaration
-    "let",
+    "let", "mut",
 
     // operators
     "=", "==", ">", "<", "<=", ">=", "+", "-", "*", "/",
@@ -87,7 +87,10 @@ Break: Expr = {
 };
 
 Declaration: Expr = {
-    "let" <i:Identifier> <ta:OptTypeAnnotation> "=" <v:Expr> => Expr::Declaration(i, ta, Box::new(v)),
+    "let" <ident:Identifier> <type_annotation:OptTypeAnnotation> "=" <e:Expr> => 
+        Expr::Declaration{ ident, type_annotation, expr: Box::new(e), is_mutable: false },
+    "mut" <ident:Identifier> <type_annotation:OptTypeAnnotation> "=" <e:Expr> => 
+        Expr::Declaration{ ident, type_annotation, expr: Box::new(e), is_mutable: true },
 };
 
 

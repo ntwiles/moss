@@ -21,6 +21,7 @@ pub enum TypeError {
     InvokeNonFunc(Type),
     InvokeWrongSignature(Vec<Type>, Vec<TypedExpr>, Span),
     UnaryOpWrongType(String, Type),
+    ScopeBindingAlreadyExists(String),
     ScopeBindingNotFound(String),
 }
 
@@ -35,7 +36,10 @@ impl TypeError {
 }
 
 impl Error for TypeError {
-    fn scope_binding_not_found(name: &str) -> TypeError {
+    fn scope_binding_already_exists(ident: &str) -> Self {
+        TypeError::ScopeBindingAlreadyExists(ident.to_string())
+    }
+    fn scope_binding_not_found(name: &str) -> Self {
         TypeError::ScopeBindingNotFound(name.to_string())
     }
 }
@@ -113,6 +117,9 @@ impl std::fmt::Display for TypeErrorDisplay {
             }
             TypeError::UnaryOpWrongType(op, ty) => {
                 write!(f, "Type {ty} does not support unary operation {op}.")
+            }
+            TypeError::ScopeBindingAlreadyExists(ident) => {
+                write!(f, "Binding \"{ident}\" already exists in local scope.")
             }
             TypeError::ScopeBindingNotFound(ident) => {
                 write!(f, "Binding \"{ident}\" not found in scope.")

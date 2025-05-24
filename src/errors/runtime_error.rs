@@ -6,7 +6,11 @@ pub struct RuntimeError {
 }
 
 impl Error for RuntimeError {
-    fn scope_binding_not_found(_name: &str) -> Self {
+    fn scope_binding_not_found(_ident: &str) -> Self {
+        todo!()
+    }
+
+    fn scope_binding_already_exists(_ident: &str) -> Self {
         todo!()
     }
 }
