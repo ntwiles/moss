@@ -681,8 +681,7 @@ fn analyze_loop(
 ) -> Result<TypedExpr, TypeError> {
     // TODO: Currently just using this as a wrapper to analyze the block, there may be more we can
     // do here later though.
-    let block = analyze_block(value_scope_stack, type_scope, block)?;
-
+    let block = analyze_block(value_scope_stack, type_scope, block.clone())?;
     Ok(TypedExpr::Loop(Box::new(block)))
 }
 

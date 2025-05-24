@@ -219,33 +219,24 @@ pub fn apply_func_call(exec: &mut ExecContext, args: Vec<TypedExpr>) -> ControlF
         _ => unreachable!(),
     };
 
-    exec.control_stack
-        .push(ControlOp::PopScope(func.is_closure));
+    exec.control_stack.push(ControlOp::PopScope {
+        restore_previous_stack: !func.is_closure,
+    });
 
     exec.control_stack
         .push(ControlOp::EvalBlock(*func.block.clone()));
-
-    let func_copy = func.clone();
 
     for param in func.params.into_iter() {
         let (param, _ty) = param;
         exec.control_stack.push(ControlOp::ApplyBinding(param));
     }
 
-    exec.control_stack.push(ControlOp::PushScope(func_copy));
+    exec.control_stack.push(ControlOp::PushScope {
+        create_new_stack: !func.is_closure,
+    });
 
     for arg in args.into_iter().rev() {
         exec.control_stack.push(ControlOp::EvalExpr(arg));
-    }
-
-    ControlFlow::Continue
-}
-
-pub fn apply_pop_scope(exec: &mut ExecContext, restore_previous_stack: bool) -> ControlFlow {
-    if restore_previous_stack {
-        exec.scope_stack.restore_previous_stack();
-    } else {
-        exec.scope_stack.pop_scope();
     }
 
     ControlFlow::Continue

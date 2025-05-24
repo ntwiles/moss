@@ -6,13 +6,15 @@ pub struct RuntimeError {
 }
 
 impl Error for RuntimeError {
-    fn scope_binding_not_found(_ident: &str) -> Self {
-        todo!()
+    fn scope_binding_not_found(ident: &str) -> Self {
+        RuntimeError {
+            message: format!("Binding for identifier \"{ident}\" not found in scope."),
+        }
     }
 
     fn scope_binding_already_exists(ident: &str) -> Self {
         RuntimeError {
-            message: format!("Scope binding alrady exists for identifier \"{ident}\"."),
+            message: format!("Scope binding already exists for identifier \"{ident}\"."),
         }
     }
 }

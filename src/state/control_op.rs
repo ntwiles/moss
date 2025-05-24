@@ -1,4 +1,4 @@
-use crate::ast::typed::{typed_expr::TypedExpr, TypedFunc, TypedStmt};
+use crate::ast::typed::{typed_expr::TypedExpr, TypedStmt};
 
 #[derive(Clone, Debug)]
 pub enum ControlOp {
@@ -33,8 +33,8 @@ pub enum ControlOp {
 
     // Scope
     ApplyBinding(String),
-    PushScope(TypedFunc),
-    PopScope(bool),
+    PushScope { create_new_stack: bool },
+    PopScope { restore_previous_stack: bool },
 
     // Markers
     MarkLoopStart,

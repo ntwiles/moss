@@ -4,9 +4,7 @@ pub mod resolved_value;
 use std::collections::HashMap;
 use std::io::{Read, Write};
 
-use crate::ast::typed::{
-    typed_block::TypedBlock, typed_expr::TypedExpr, TypedFunc, TypedFuncCall, TypedStmt,
-};
+use crate::ast::typed::{typed_block::TypedBlock, typed_expr::TypedExpr, TypedFuncCall, TypedStmt};
 use crate::builtins::{BuiltinFunc, BuiltinFuncId};
 use crate::errors::runtime_error::RuntimeError;
 use crate::state::{
@@ -16,8 +14,8 @@ use crate::state::{
 
 use evaluation::{
     apply_add, apply_assignment, apply_declaration, apply_div, apply_eq, apply_func_call, apply_gt,
-    apply_gte, apply_list, apply_lt, apply_lte, apply_mult, apply_negate, apply_pop_scope,
-    apply_stmt, apply_sub, eval_expr,
+    apply_gte, apply_list, apply_lt, apply_lte, apply_mult, apply_negate, apply_stmt, apply_sub,
+    eval_expr,
 };
 use resolved_value::ResolvedValue;
 
@@ -74,10 +72,12 @@ pub fn interpret_program<R: Read, W: Write>(
             }
             ControlOp::ApplyFuncCall(args) => apply_func_call(&mut exec, args),
             ControlOp::ApplyBinding(ident) => apply_binding(&mut exec, ident)?,
-            ControlOp::PushScope(func) => apply_push_scope(&mut exec, func),
-            ControlOp::PopScope(restore_previous_stack) => {
-                apply_pop_scope(&mut exec, restore_previous_stack)
+            ControlOp::PushScope { create_new_stack } => {
+                apply_push_scope(&mut exec, create_new_stack)
             }
+            ControlOp::PopScope {
+                restore_previous_stack,
+            } => apply_pop_scope(&mut exec, restore_previous_stack),
             ControlOp::ApplyIf(then) => apply_if(&mut exec, then),
             ControlOp::ApplyIfElse(then, els) => apply_if_else(&mut exec, then, els),
             ControlOp::PushLoop(block) => push_loop(&mut exec, block),
@@ -212,6 +212,9 @@ fn mark_loop(exec: &mut ExecContext, block: TypedExpr) -> ControlFlow {
 
 fn push_loop(exec: &mut ExecContext, block: TypedExpr) -> ControlFlow {
     exec.control_stack.push(ControlOp::PushLoop(block.clone()));
+    exec.control_stack.push(ControlOp::PopScope {
+        restore_previous_stack: false,
+    });
     exec.control_stack.push(ControlOp::EvalBlock(block));
 
     ControlFlow::Continue
@@ -237,11 +240,21 @@ where
     Ok(())
 }
 
-fn apply_push_scope(exec: &mut ExecContext, func: TypedFunc) -> ControlFlow {
-    if func.is_closure {
-        exec.scope_stack.push_scope()
+fn apply_push_scope(exec: &mut ExecContext, create_new_stack: bool) -> ControlFlow {
+    if create_new_stack {
+        exec.scope_stack.create_new_stack();
     } else {
-        exec.scope_stack.create_new_stack()
+        exec.scope_stack.push_scope()
+    }
+
+    ControlFlow::Continue
+}
+
+pub fn apply_pop_scope(exec: &mut ExecContext, restore_previous_stack: bool) -> ControlFlow {
+    if restore_previous_stack {
+        exec.scope_stack.restore_previous_stack();
+    } else {
+        exec.scope_stack.pop_scope();
     }
 
     ControlFlow::Continue
