@@ -18,7 +18,12 @@ pub enum TypedExpr {
 
     // Unary operations
     Negate(Box<TypedExpr>, Type),
-    Declaration(String, Box<TypedExpr>, Type), // TODO: This doesn't need type; always void.
+    Declaration {
+        ident: String,
+        is_mutable: bool,
+        expr: Box<TypedExpr>,
+        ty: Type,
+    }, // TODO: This doesn't need type; always void.
 
     // Postfix operations
     FuncCall(TypedFuncCall, Type),
@@ -51,7 +56,7 @@ impl TypedExpr {
             TypedExpr::Div(_, _, ty) => ty.clone(),
             TypedExpr::Literal(_, ty) => ty.clone(),
             TypedExpr::Negate(_, ty) => ty.clone(),
-            TypedExpr::Declaration(_, _, ty) => ty.clone(),
+            TypedExpr::Declaration { ty, .. } => ty.clone(),
             TypedExpr::Identifier(_, ty) => ty.clone(),
             TypedExpr::FuncCall(_, ty) => ty.clone(),
             TypedExpr::FuncDeclare(_, ty) => ty.clone(),

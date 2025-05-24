@@ -30,7 +30,7 @@ pub enum ControlOp {
 
     // Unary operations
     ApplyNegate,
-    ApplyAssign(String),
+    ApplyDeclaration(String, bool),
 
     // Scope
     ApplyBinding(String),

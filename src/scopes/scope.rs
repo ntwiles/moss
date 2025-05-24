@@ -36,6 +36,7 @@ impl<T: Debug> Debug for Scope<T> {
         let len = self.len();
         for (i, (k, v)) in self.iter().enumerate() {
             // Optional: abbreviate known verbose variants like function definitions
+            // TODO: what is this? Functions don't even use this syntax anymore.
             let v_display = match format!("{:?}", v) {
                 s if s.starts_with("TypedFunc") => "Function(...)".to_string(),
                 s => s,

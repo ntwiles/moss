@@ -10,17 +10,17 @@ use crate::scopes::scope::Scope;
 use crate::scopes::scope_stack::ScopeStack;
 use crate::typing::{ProtoType, Type, TypeBinding};
 
-use scope_entry::ScopeEntry;
+use scope_entry::AnalyzerScopeEntry;
 
 pub fn analyze_program(
     stmts: Expr,
     builtin_funcs: Vec<(String, TypedExpr)>,
     builtin_types: Vec<(String, TypeBinding)>,
 ) -> Result<TypedExpr, TypeError> {
-    let mut value_scope_stack = ScopeStack::<ScopeEntry>::new();
+    let mut value_scope_stack = ScopeStack::<AnalyzerScopeEntry>::new();
 
     for (ident, binding) in builtin_funcs {
-        value_scope_stack.insert(ident, binding.ty())?;
+        value_scope_stack.insert(ident, false, binding.ty())?;
     }
 
     let mut type_scope = Scope::new();
@@ -33,7 +33,7 @@ pub fn analyze_program(
 }
 
 fn analyze_stmts(
-    value_scope_stack: &mut ScopeStack<ScopeEntry>,
+    value_scope_stack: &mut ScopeStack<AnalyzerScopeEntry>,
     type_scope: &mut Scope<TypeBinding>,
     stmts: Vec<Stmt>,
 ) -> Result<Vec<TypedStmt>, TypeError> {
@@ -44,7 +44,7 @@ fn analyze_stmts(
 }
 
 fn analyze_stmt(
-    value_scope_stack: &mut ScopeStack<ScopeEntry>,
+    value_scope_stack: &mut ScopeStack<AnalyzerScopeEntry>,
     type_scope: &mut Scope<TypeBinding>,
     stmt: Stmt,
 ) -> Result<TypedStmt, TypeError> {
@@ -54,7 +54,7 @@ fn analyze_stmt(
 }
 
 fn analyze_expr(
-    value_scope_stack: &mut ScopeStack<ScopeEntry>,
+    value_scope_stack: &mut ScopeStack<AnalyzerScopeEntry>,
     type_scope: &mut Scope<TypeBinding>,
     type_hint: &Option<Type>,
     expr: Expr,
@@ -109,7 +109,7 @@ fn analyze_expr(
 // Binary operations
 
 fn analyze_eq(
-    value_scope_stack: &mut ScopeStack<ScopeEntry>,
+    value_scope_stack: &mut ScopeStack<AnalyzerScopeEntry>,
     type_scope: &mut Scope<TypeBinding>,
     left: Expr,
     right: Expr,
@@ -129,7 +129,7 @@ fn analyze_eq(
 }
 
 fn analyze_gt(
-    value_scope_stack: &mut ScopeStack<ScopeEntry>,
+    value_scope_stack: &mut ScopeStack<AnalyzerScopeEntry>,
     type_scope: &mut Scope<TypeBinding>,
     left: Expr,
     right: Expr,
@@ -158,7 +158,7 @@ fn analyze_gt(
 }
 
 fn analyze_gte(
-    value_scope_stack: &mut ScopeStack<ScopeEntry>,
+    value_scope_stack: &mut ScopeStack<AnalyzerScopeEntry>,
     type_scope: &mut Scope<TypeBinding>,
     left: Expr,
     right: Expr,
@@ -187,7 +187,7 @@ fn analyze_gte(
 }
 
 fn analyze_lt(
-    value_scope_stack: &mut ScopeStack<ScopeEntry>,
+    value_scope_stack: &mut ScopeStack<AnalyzerScopeEntry>,
     type_scope: &mut Scope<TypeBinding>,
     left: Expr,
     right: Expr,
@@ -216,7 +216,7 @@ fn analyze_lt(
 }
 
 fn analyze_lte(
-    value_scope_stack: &mut ScopeStack<ScopeEntry>,
+    value_scope_stack: &mut ScopeStack<AnalyzerScopeEntry>,
     type_scope: &mut Scope<TypeBinding>,
     left: Expr,
     right: Expr,
@@ -245,7 +245,7 @@ fn analyze_lte(
 }
 
 fn analyze_add(
-    value_scope_stack: &mut ScopeStack<ScopeEntry>,
+    value_scope_stack: &mut ScopeStack<AnalyzerScopeEntry>,
     type_scope: &mut Scope<TypeBinding>,
     left: Expr,
     right: Expr,
@@ -274,7 +274,7 @@ fn analyze_add(
 }
 
 fn analyze_sub(
-    value_scope_stack: &mut ScopeStack<ScopeEntry>,
+    value_scope_stack: &mut ScopeStack<AnalyzerScopeEntry>,
     type_scope: &mut Scope<TypeBinding>,
     left: Expr,
     right: Expr,
@@ -303,7 +303,7 @@ fn analyze_sub(
 }
 
 fn analyze_mult(
-    value_scope_stack: &mut ScopeStack<ScopeEntry>,
+    value_scope_stack: &mut ScopeStack<AnalyzerScopeEntry>,
     type_scope: &mut Scope<TypeBinding>,
     left: Expr,
     right: Expr,
@@ -332,7 +332,7 @@ fn analyze_mult(
 }
 
 fn analyze_div(
-    value_scope_stack: &mut ScopeStack<ScopeEntry>,
+    value_scope_stack: &mut ScopeStack<AnalyzerScopeEntry>,
     type_scope: &mut Scope<TypeBinding>,
     left: Expr,
     right: Expr,
@@ -367,7 +367,7 @@ fn analyze_div(
 // Unary operations
 
 fn analyze_negate(
-    value_scope_stack: &mut ScopeStack<ScopeEntry>,
+    value_scope_stack: &mut ScopeStack<AnalyzerScopeEntry>,
     type_scope: &mut Scope<TypeBinding>,
     inner: Expr,
 ) -> Result<TypedExpr, TypeError> {
@@ -382,7 +382,7 @@ fn analyze_negate(
 }
 
 fn analyze_assignment(
-    value_scope_stack: &mut ScopeStack<ScopeEntry>,
+    value_scope_stack: &mut ScopeStack<AnalyzerScopeEntry>,
     type_scope: &mut Scope<TypeBinding>,
     ident: String,
     value: Expr,
@@ -391,11 +391,11 @@ fn analyze_assignment(
 }
 
 fn analyze_declaration(
-    value_scope_stack: &mut ScopeStack<ScopeEntry>,
+    value_scope_stack: &mut ScopeStack<AnalyzerScopeEntry>,
     type_scope: &mut Scope<TypeBinding>,
     ident: String,
     type_annotation: Option<ProtoType>,
-    _is_mutable: bool, // TODO: Use this.
+    is_mutable: bool,
     value: Expr,
 ) -> Result<TypedExpr, TypeError> {
     // TODO: There's a lot of code duplication between these two. They're separate now because in the
@@ -403,16 +403,24 @@ fn analyze_declaration(
     // analyzing the funciton body, to allow for recursion. In all other cases, the value expression
     // is analyzed before binding the identifier.
     if value.is_func_declare() {
-        analyze_func_declaration(value_scope_stack, type_scope, ident, value)
+        analyze_func_declaration(value_scope_stack, type_scope, ident, is_mutable, value)
     } else {
-        analyze_non_func_declaration(value_scope_stack, type_scope, ident, type_annotation, value)
+        analyze_non_func_declaration(
+            value_scope_stack,
+            type_scope,
+            ident,
+            is_mutable,
+            type_annotation,
+            value,
+        )
     }
 }
 
 fn analyze_non_func_declaration(
-    value_scope_stack: &mut ScopeStack<ScopeEntry>,
+    value_scope_stack: &mut ScopeStack<AnalyzerScopeEntry>,
     type_scope: &mut Scope<TypeBinding>,
     ident: String,
+    is_mutable: bool,
     type_annotation: Option<ProtoType>,
     value: Expr,
 ) -> Result<TypedExpr, TypeError> {
@@ -433,15 +441,21 @@ fn analyze_non_func_declaration(
         }
     }
 
-    value_scope_stack.insert(ident.clone(), value_type)?;
+    value_scope_stack.insert(ident.clone(), is_mutable, value_type)?;
 
-    Ok(TypedExpr::Declaration(ident, Box::new(value), Type::Void))
+    Ok(TypedExpr::Declaration {
+        ident,
+        is_mutable,
+        expr: Box::new(value),
+        ty: Type::Void,
+    })
 }
 
 fn analyze_func_declaration(
-    value_scope_stack: &mut ScopeStack<ScopeEntry>,
+    value_scope_stack: &mut ScopeStack<AnalyzerScopeEntry>,
     type_scope: &mut Scope<TypeBinding>,
     ident: String,
+    is_mutable: bool,
     value: Expr,
 ) -> Result<TypedExpr, TypeError> {
     let func = value.as_func_declare();
@@ -455,7 +469,7 @@ fn analyze_func_declaration(
 
     type_args.push(return_type);
 
-    value_scope_stack.insert(ident.clone(), Type::Func(type_args))?;
+    value_scope_stack.insert(ident.clone(), is_mutable, Type::Func(type_args))?;
 
     let value = analyze_expr(value_scope_stack, type_scope, &None, value)?;
 
@@ -463,13 +477,18 @@ fn analyze_func_declaration(
         return Err(TypeError::AssignVoid);
     }
 
-    Ok(TypedExpr::Declaration(ident, Box::new(value), Type::Void))
+    Ok(TypedExpr::Declaration {
+        ident,
+        is_mutable,
+        expr: Box::new(value),
+        ty: Type::Void,
+    })
 }
 
 // Postfix operations
 
 fn analyze_func_call(
-    value_scope_stack: &mut ScopeStack<ScopeEntry>,
+    value_scope_stack: &mut ScopeStack<AnalyzerScopeEntry>,
     type_scope: &mut Scope<TypeBinding>,
     call: FuncCall,
     span: Span,
@@ -522,7 +541,7 @@ fn analyze_literal(literal: Literal) -> Result<TypedExpr, TypeError> {
 
 // TODO: Should this resolve the identifier from the scope and error of it's just a Type?
 fn analyze_identifier(
-    scope_stack: &mut ScopeStack<ScopeEntry>,
+    scope_stack: &mut ScopeStack<AnalyzerScopeEntry>,
     ident: String,
 ) -> Result<TypedExpr, TypeError> {
     let ty = scope_stack.lookup(&ident)?;
@@ -530,7 +549,7 @@ fn analyze_identifier(
 }
 
 fn analyze_func_declare(
-    value_scope_stack: &mut ScopeStack<ScopeEntry>,
+    value_scope_stack: &mut ScopeStack<AnalyzerScopeEntry>,
     type_scope: &mut Scope<TypeBinding>,
     func: FuncDeclare,
 ) -> Result<TypedExpr, TypeError> {
@@ -543,7 +562,7 @@ fn analyze_func_declare(
     for param in &func.params {
         let ident = param.0.clone();
         let ty = analyze_proto_type(type_scope, param.1.clone())?;
-        value_scope_stack.insert(ident, ty)?;
+        value_scope_stack.insert(ident, false, ty)?;
     }
 
     let block = *func.block;
@@ -595,7 +614,7 @@ fn analyze_func_declare(
 }
 
 fn analyze_if(
-    value_scope_stack: &mut ScopeStack<ScopeEntry>,
+    value_scope_stack: &mut ScopeStack<AnalyzerScopeEntry>,
     type_scope: &mut Scope<TypeBinding>,
     cond: Expr,
     then_block: Expr,
@@ -614,7 +633,7 @@ fn analyze_if(
 }
 
 fn analyze_if_else(
-    value_scope_stack: &mut ScopeStack<ScopeEntry>,
+    value_scope_stack: &mut ScopeStack<AnalyzerScopeEntry>,
     type_scope: &mut Scope<TypeBinding>,
     cond: Expr,
     then_block: Expr,
@@ -647,7 +666,7 @@ fn analyze_if_else(
 }
 
 fn analyze_loop(
-    value_scope_stack: &mut ScopeStack<ScopeEntry>,
+    value_scope_stack: &mut ScopeStack<AnalyzerScopeEntry>,
     type_scope: &mut Scope<TypeBinding>,
     block: Expr,
 ) -> Result<TypedExpr, TypeError> {
@@ -658,7 +677,9 @@ fn analyze_loop(
     Ok(TypedExpr::Loop(Box::new(block)))
 }
 
-fn analyze_break(_scope_stack: &mut ScopeStack<ScopeEntry>) -> Result<TypedExpr, TypeError> {
+fn analyze_break(
+    _scope_stack: &mut ScopeStack<AnalyzerScopeEntry>,
+) -> Result<TypedExpr, TypeError> {
     // TODO: Check if break is used in the right context. This might be a new type of error like
     // ContextError or it might make sense to treat as a TypeError.
 
@@ -666,7 +687,7 @@ fn analyze_break(_scope_stack: &mut ScopeStack<ScopeEntry>) -> Result<TypedExpr,
 }
 
 fn analyze_block(
-    value_scope_stack: &mut ScopeStack<ScopeEntry>,
+    value_scope_stack: &mut ScopeStack<AnalyzerScopeEntry>,
     type_scope: &mut Scope<TypeBinding>,
     block: Expr,
 ) -> Result<TypedExpr, TypeError> {
@@ -744,7 +765,7 @@ fn analyze_proto_type(
 }
 
 fn analyze_list(
-    value_scope_stack: &mut ScopeStack<ScopeEntry>,
+    value_scope_stack: &mut ScopeStack<AnalyzerScopeEntry>,
     type_scope: &mut Scope<TypeBinding>,
     type_hint: &Option<Type>,
     values: Vec<Expr>,

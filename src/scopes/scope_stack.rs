@@ -6,9 +6,15 @@ use std::fmt::Formatter;
 use super::scope::Scope;
 use crate::errors::Error;
 
+#[derive(Debug)]
+struct ScopeEntry<T> {
+    is_mutable: bool,
+    value: T,
+}
+
 pub struct ScopeStack<T> {
-    current: Vec<Scope<T>>,
-    previous: Option<Vec<Scope<T>>>,
+    current: Vec<Scope<ScopeEntry<T>>>,
+    previous: Option<Vec<Scope<ScopeEntry<T>>>>,
 }
 
 impl<T: Debug> ScopeStack<T> {
@@ -40,7 +46,7 @@ impl<T: Debug> ScopeStack<T> {
 
     pub fn lookup<E: Error>(&self, ident: &str) -> Result<&T, E> {
         for scope in self.current.iter().rev() {
-            if let Some(value) = scope.get(ident) {
+            if let Some(ScopeEntry { value, .. }) = scope.get(ident) {
                 return Ok(value);
             }
         }
@@ -48,11 +54,11 @@ impl<T: Debug> ScopeStack<T> {
         Err(E::scope_binding_not_found(ident))
     }
 
-    pub fn insert<E: Error>(&mut self, ident: String, value: T) -> Result<(), E> {
+    pub fn insert<E: Error>(&mut self, ident: String, is_mutable: bool, value: T) -> Result<(), E> {
         let curr_scope = self.current.last_mut().unwrap();
         match curr_scope.entry(ident.clone()) {
             Entry::Vacant(v) => {
-                v.insert(value);
+                v.insert(ScopeEntry { value, is_mutable });
                 Ok(())
             }
             Entry::Occupied(_) => Err(E::scope_binding_already_exists(&ident)),

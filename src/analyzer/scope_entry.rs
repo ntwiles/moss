@@ -1,3 +1,3 @@
 use crate::typing::Type;
 
-pub type ScopeEntry = Type;
+pub type AnalyzerScopeEntry = Type;

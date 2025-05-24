@@ -45,7 +45,7 @@ pub fn interpret_program<R: Read, W: Write>(
     for (ident, expr) in builtin_bindings {
         if let TypedExpr::FuncDeclare(func, _) = expr {
             let resolved = ResolvedValue::Func(func);
-            exec.scope_stack.insert(ident, resolved)?;
+            exec.scope_stack.insert(ident, false, resolved)?;
         } else {
             unreachable!();
         }
@@ -68,7 +68,9 @@ pub fn interpret_program<R: Read, W: Write>(
             ControlOp::ApplyGte => apply_gte(&mut exec),
             ControlOp::ApplyLte => apply_lte(&mut exec),
             ControlOp::ApplyNegate => apply_negate(&mut exec)?,
-            ControlOp::ApplyAssign(ident) => apply_declaration(&mut exec, ident)?,
+            ControlOp::ApplyDeclaration(ident, is_mutable) => {
+                apply_declaration(&mut exec, is_mutable, ident)?
+            }
             ControlOp::ApplyFuncCall(args) => apply_func_call(&mut exec, args),
             ControlOp::ApplyClosureFuncCall => apply_closure_func_call(&mut exec),
             ControlOp::ApplyNonClosureFuncCall => apply_non_closure_func_call(&mut exec),
@@ -245,7 +247,7 @@ fn apply_push_scope(exec: &mut ExecContext, func: TypedFunc) -> ControlFlow {
 // This is not used by the assignment or declaration operations, but instead for things like func call args.
 pub fn apply_binding(exec: &mut ExecContext, ident: String) -> Result<ControlFlow, RuntimeError> {
     let value = exec.value_stack.pop().unwrap();
-    exec.scope_stack.insert(ident.clone(), value)?;
+    exec.scope_stack.insert(ident.clone(), false, value)?;
 
     Ok(ControlFlow::Continue)
 }
