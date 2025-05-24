@@ -17,7 +17,7 @@ pub enum Expr {
 
     // Unary operations
     Negate(Box<Expr>),
-    Assignment(String, Option<ProtoType>, Box<Expr>),
+    Declaration(String, Option<ProtoType>, Box<Expr>),
 
     // Postfix operations
     FuncCall(FuncCall, Span),

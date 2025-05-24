@@ -15,7 +15,7 @@ use crate::state::{
 };
 
 use evaluation::{
-    apply_add, apply_assign, apply_closure_func_call, apply_div, apply_eq, apply_func_call,
+    apply_add, apply_closure_func_call, apply_declaration, apply_div, apply_eq, apply_func_call,
     apply_gt, apply_gte, apply_list, apply_lt, apply_lte, apply_mult, apply_negate,
     apply_non_closure_func_call, apply_stmt, apply_sub, eval_expr,
 };
@@ -68,7 +68,7 @@ pub fn interpret_program<R: Read, W: Write>(
             ControlOp::ApplyGte => apply_gte(&mut exec),
             ControlOp::ApplyLte => apply_lte(&mut exec),
             ControlOp::ApplyNegate => apply_negate(&mut exec),
-            ControlOp::ApplyAssign(ident) => apply_assign(&mut exec, ident),
+            ControlOp::ApplyAssign(ident) => apply_declaration(&mut exec, ident),
             ControlOp::ApplyFuncCall(args) => apply_func_call(&mut exec, args),
             ControlOp::ApplyClosureFuncCall => apply_closure_func_call(&mut exec),
             ControlOp::ApplyNonClosureFuncCall => apply_non_closure_func_call(&mut exec),
@@ -241,7 +241,7 @@ fn apply_push_scope(exec: &mut ExecContext, func: TypedFunc) -> ControlFlow {
     ControlFlow::Continue
 }
 
-// This is not used by the assignment operation, but instead for things like func call args.
+// This is not used by the assignment or declaration operations, but instead for things like func call args.
 pub fn apply_binding(exec: &mut ExecContext, ident: String) -> ControlFlow {
     let value = exec.value_stack.pop().unwrap();
     exec.scope_stack.insert(ident.clone(), value);

@@ -48,7 +48,7 @@ pub fn eval_expr<R: Read, W: Write>(
 
         // Unary operations
         TypedExpr::Negate(l, _ty) => push_unary_op(exec, ControlOp::ApplyNegate, *l),
-        TypedExpr::Assign(i, v, _ty) => push_unary_op(exec, ControlOp::ApplyAssign(i), *v),
+        TypedExpr::Declaration(i, v, _ty) => push_unary_op(exec, ControlOp::ApplyAssign(i), *v),
 
         // Postfix operations
         TypedExpr::FuncCall(func, _ty) => push_func_call(exec, func),
@@ -176,7 +176,7 @@ pub fn apply_negate(exec: &mut ExecContext) -> ControlFlow {
     ControlFlow::Continue
 }
 
-pub fn apply_assign(exec: &mut ExecContext, ident: String) -> ControlFlow {
+pub fn apply_declaration(exec: &mut ExecContext, ident: String) -> ControlFlow {
     apply_unary_op(exec, |exec, v| {
         exec.scope_stack.insert(ident.clone(), v.clone());
         ResolvedValue::Void

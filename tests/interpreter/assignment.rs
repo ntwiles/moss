@@ -2,7 +2,7 @@ use moss::grammar::ProgramParser;
 use moss::test_util;
 
 #[test]
-fn assignment_basic() {
+fn declaration_basic() {
     let parsed = ProgramParser::new().parse("let foo = 2 + 5; foo;").unwrap();
 
     let analyzed = test_util::analyze_program(parsed).unwrap();
@@ -12,7 +12,7 @@ fn assignment_basic() {
 }
 
 #[test]
-fn assignment_operated_on() {
+fn declaration_operated_on() {
     let parsed = ProgramParser::new()
         .parse("let foo = 2 + 5; foo + 3;")
         .unwrap();
@@ -24,7 +24,7 @@ fn assignment_operated_on() {
 }
 
 #[test]
-fn assignment_function() {
+fn declaration_function() {
     let parsed = ProgramParser::new()
         .parse("let foo = ||: Int => { 5; };")
         .unwrap();

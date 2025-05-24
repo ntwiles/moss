@@ -26,7 +26,7 @@ fn if_else_basic_false() {
 }
 
 #[test]
-fn if_else_assign() {
+fn if_else_declare() {
     let parsed = ProgramParser::new()
         .parse("let foo = if true { 7; } else { 8; }; foo;")
         .unwrap();

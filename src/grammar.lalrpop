@@ -42,7 +42,7 @@ StmtList: Vec<Stmt> = {
 };
 
 Expr: Expr = {
-    Assignment,
+    Declaration,
     Equality,
     IfElse,
     Loop,
@@ -86,10 +86,10 @@ Break: Expr = {
     "break" => Expr::Break,
 };
 
-Assignment: Expr = {
-    "let" <i:Identifier> ":" <ty:TypeExpr> "=" <v:Expr> => Expr::Assignment(i, Some(ty), Box::new(v)),
-    "let" <i:Identifier> "=" <v:Expr> => Expr::Assignment(i, None, Box::new(v)),
+Declaration: Expr = {
+    "let" <i:Identifier> <ta:OptTypeAnnotation> "=" <v:Expr> => Expr::Declaration(i, ta, Box::new(v)),
 };
+
 
 Equality: Expr = {
     <l:Equality> "==" <r:Relational> => Expr::Eq(Box::new(l), Box::new(r)),
@@ -149,11 +149,10 @@ Identifier: String = {
 };
 
 FuncDeclare: Expr = {
-    "(" <params:ParameterList> ")" ":" <return_type:TypeExpr> "=>" "{" <start: @L> <stmts:StmtList> <end: @R> "}" => Expr::FuncDeclare(FuncDeclare{ params, return_type: Box::new(return_type), block: Box::new(Expr::Block(stmts, Span { start, end })), is_closure: false }),
-    "(" ")" ":" <return_type:TypeExpr> "=>" "{" <start: @L> <stmts:StmtList> <end: @R> "}" => Expr::FuncDeclare(FuncDeclare{ params: vec![], return_type: Box::new(return_type), block: Box::new(Expr::Block(stmts, Span { start, end })), is_closure: false }),
-    "|" <params:ParameterList> "|" ":" <return_type:TypeExpr> "=>" "{" <start: @L> <stmts:StmtList> <end: @R> "}" => Expr::FuncDeclare(FuncDeclare{ params, return_type: Box::new(return_type), block: Box::new(Expr::Block(stmts, Span { start, end })), is_closure: true }),
-    "|" "|" ":" <return_type:TypeExpr> "=>" "{" <start: @L> <stmts:StmtList> <end: @R> "}" => Expr::FuncDeclare(FuncDeclare{ params: vec![], return_type: Box::new(return_type), block: Box::new(Expr::Block(stmts, Span { start, end })), is_closure: true }),
-
+    "(" <params:ParameterList> ")" <return_type:TypeAnnotation> "=>" "{" <start: @L> <stmts:StmtList> <end: @R> "}" => Expr::FuncDeclare(FuncDeclare{ params, return_type: Box::new(return_type), block: Box::new(Expr::Block(stmts, Span { start, end })), is_closure: false }),
+    "(" ")" <return_type:TypeAnnotation> "=>" "{" <start: @L> <stmts:StmtList> <end: @R> "}" => Expr::FuncDeclare(FuncDeclare{ params: vec![], return_type: Box::new(return_type), block: Box::new(Expr::Block(stmts, Span { start, end })), is_closure: false }),
+    "|" <params:ParameterList> "|" <return_type:TypeAnnotation> "=>" "{" <start: @L> <stmts:StmtList> <end: @R> "}" => Expr::FuncDeclare(FuncDeclare{ params, return_type: Box::new(return_type), block: Box::new(Expr::Block(stmts, Span { start, end })), is_closure: true }),
+    "|" "|" <return_type:TypeAnnotation> "=>" "{" <start: @L> <stmts:StmtList> <end: @R> "}" => Expr::FuncDeclare(FuncDeclare{ params: vec![], return_type: Box::new(return_type), block: Box::new(Expr::Block(stmts, Span { start, end })), is_closure: true }),
 };
 
 ListLiteral: Expr = {
@@ -165,7 +164,7 @@ ParameterList: Vec<(String, ProtoType)> = Comma<Parameter>;
 
 // Stubbed to support type annotations.
 Parameter: (String, ProtoType) = {
-    <ident:Identifier> ":" <ty:TypeExpr> => (ident, ty),
+    <ident:Identifier> <ty:TypeAnnotation> => (ident, ty),
 };
 
 Bool: bool = {
@@ -194,4 +193,13 @@ Comma<T>: Vec<T> = {
         list
     },
     <item:T> => vec![item],
+};
+
+OptTypeAnnotation: Option<ProtoType> = {
+    TypeAnnotation => Some(<>),
+    => None,
+};
+
+TypeAnnotation: ProtoType = {
+    ":" <t:TypeExpr> => t,
 };

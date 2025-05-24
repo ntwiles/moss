@@ -77,8 +77,8 @@ fn analyze_expr(
         Expr::Div(left, right) => analyze_div(value_scope_stack, type_scope, *left, *right),
 
         Expr::Negate(inner) => analyze_negate(value_scope_stack, type_scope, *inner),
-        Expr::Assignment(ident, ty, expr) => {
-            analyze_assign(value_scope_stack, type_scope, ident, ty, *expr)
+        Expr::Declaration(ident, ty, expr) => {
+            analyze_declaration(value_scope_stack, type_scope, ident, ty, *expr)
         }
         Expr::FuncDeclare(func) => analyze_func_declare(value_scope_stack, type_scope, func),
         Expr::FuncCall(call, span) => analyze_func_call(value_scope_stack, type_scope, call, span),
@@ -368,7 +368,7 @@ fn analyze_negate(
     Ok(TypedExpr::Negate(Box::new(inner), ty))
 }
 
-fn analyze_assign(
+fn analyze_declaration(
     value_scope_stack: &mut ScopeStack<ScopeEntry>,
     type_scope: &mut Scope<TypeBinding>,
     ident: String,
@@ -376,17 +376,17 @@ fn analyze_assign(
     value: Expr,
 ) -> Result<TypedExpr, TypeError> {
     // TODO: There's a lot of code duplication between these two. They're separate now because in the
-    // case of type checking function assignments, the function has to be bound to scope prior to
+    // case of type checking function declarations, the function has to be bound to scope prior to
     // analyzing the funciton body, to allow for recursion. In all other cases, the value expression
     // is analyzed before binding the identifier.
     if value.is_func_declare() {
-        analyze_func_assign(value_scope_stack, type_scope, ident, value)
+        analyze_func_declaration(value_scope_stack, type_scope, ident, value)
     } else {
-        analyze_non_func_assign(value_scope_stack, type_scope, ident, type_annotation, value)
+        analyze_non_func_declaration(value_scope_stack, type_scope, ident, type_annotation, value)
     }
 }
 
-fn analyze_non_func_assign(
+fn analyze_non_func_declaration(
     value_scope_stack: &mut ScopeStack<ScopeEntry>,
     type_scope: &mut Scope<TypeBinding>,
     ident: String,
@@ -412,10 +412,10 @@ fn analyze_non_func_assign(
 
     value_scope_stack.insert(ident.clone(), value_type);
 
-    Ok(TypedExpr::Assign(ident, Box::new(value), Type::Void))
+    Ok(TypedExpr::Declaration(ident, Box::new(value), Type::Void))
 }
 
-fn analyze_func_assign(
+fn analyze_func_declaration(
     value_scope_stack: &mut ScopeStack<ScopeEntry>,
     type_scope: &mut Scope<TypeBinding>,
     ident: String,
@@ -440,7 +440,7 @@ fn analyze_func_assign(
         return Err(TypeError::AssignVoid);
     }
 
-    Ok(TypedExpr::Assign(ident, Box::new(value), Type::Void))
+    Ok(TypedExpr::Declaration(ident, Box::new(value), Type::Void))
 }
 
 // Postfix operations
