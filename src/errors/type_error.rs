@@ -11,6 +11,7 @@ use super::Error;
 pub enum TypeError {
     AmbiguousListType,
     AssignWrongType(Type, Type),
+    AssignImmutable(String),
     AssignVoid,
     BinaryOpWrongTypes(String, Type, Type),
     DivisionZero,
@@ -54,6 +55,9 @@ impl std::fmt::Display for TypeErrorDisplay {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match &self.error {
             TypeError::AmbiguousListType => write!(f, "Cannot resolve list element type."),
+            TypeError::AssignImmutable(ident) => {
+                write!(f, "Cannot re-assign immutable binding \"{ident}\".")
+            }
             TypeError::AssignWrongType(expected, received) => write!(
                 f,
                 "Cannot assign a value of type {received} where type {expected} is expected"

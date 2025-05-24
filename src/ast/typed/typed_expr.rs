@@ -18,6 +18,10 @@ pub enum TypedExpr {
 
     // Unary operations
     Negate(Box<TypedExpr>, Type),
+    Assignment {
+        ident: String,
+        expr: Box<TypedExpr>,
+    },
     Declaration {
         ident: String,
         is_mutable: bool,
@@ -56,6 +60,7 @@ impl TypedExpr {
             TypedExpr::Div(_, _, ty) => ty.clone(),
             TypedExpr::Literal(_, ty) => ty.clone(),
             TypedExpr::Negate(_, ty) => ty.clone(),
+            TypedExpr::Assignment { .. } => Type::Void,
             TypedExpr::Declaration { ty, .. } => ty.clone(),
             TypedExpr::Identifier(_, ty) => ty.clone(),
             TypedExpr::FuncCall(_, ty) => ty.clone(),

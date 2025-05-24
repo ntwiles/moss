@@ -385,9 +385,18 @@ fn analyze_assignment(
     value_scope_stack: &mut ScopeStack<AnalyzerScopeEntry>,
     type_scope: &mut Scope<TypeBinding>,
     ident: String,
-    value: Expr,
+    expr: Expr,
 ) -> Result<TypedExpr, TypeError> {
-    todo!()
+    if !value_scope_stack.lookup(&ident)?.is_mutable {
+        return Err(TypeError::AssignImmutable(ident));
+    }
+
+    let expr = analyze_expr(value_scope_stack, type_scope, &None, expr)?;
+
+    Ok(TypedExpr::Assignment {
+        ident,
+        expr: Box::new(expr),
+    })
 }
 
 fn analyze_declaration(
@@ -544,7 +553,7 @@ fn analyze_identifier(
     scope_stack: &mut ScopeStack<AnalyzerScopeEntry>,
     ident: String,
 ) -> Result<TypedExpr, TypeError> {
-    let ty = scope_stack.lookup(&ident)?;
+    let ty = scope_stack.lookup(&ident)?.value.clone();
     Ok(TypedExpr::Identifier(ident, ty.clone()))
 }
 

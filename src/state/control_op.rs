@@ -29,6 +29,7 @@ pub enum ControlOp {
     PushLoop(TypedExpr),
 
     // Unary operations
+    ApplyAssignment(String),
     ApplyNegate,
     ApplyDeclaration(String, bool),
 

@@ -48,6 +48,9 @@ pub fn eval_expr<R: Read, W: Write>(
 
         // Unary operations
         TypedExpr::Negate(l, _ty) => push_unary_op(exec, ControlOp::ApplyNegate, *l),
+        TypedExpr::Assignment { ident, expr } => {
+            push_unary_op(exec, ControlOp::ApplyAssignment(ident), *expr)
+        }
         TypedExpr::Declaration {
             ident,
             is_mutable,
@@ -181,6 +184,19 @@ pub fn apply_negate(exec: &mut ExecContext) -> Result<ControlFlow, RuntimeError>
     Ok(ControlFlow::Continue)
 }
 
+pub fn apply_assignment(
+    exec: &mut ExecContext,
+    ident: String,
+) -> Result<ControlFlow, RuntimeError> {
+    apply_unary_op(exec, |exec, v| {
+        exec.scope_stack
+            .mutate(&ident, v)
+            .map(|_| ResolvedValue::Void)
+    })?;
+
+    Ok(ControlFlow::Continue)
+}
+
 pub fn apply_declaration(
     exec: &mut ExecContext,
     is_mutable: bool,
@@ -188,7 +204,7 @@ pub fn apply_declaration(
 ) -> Result<ControlFlow, RuntimeError> {
     apply_unary_op(exec, |exec, v| {
         exec.scope_stack
-            .insert(ident.clone(), is_mutable, v.clone())
+            .insert(ident.clone(), is_mutable, v)
             .map(|_| ResolvedValue::Void)
     })?;
 
@@ -267,8 +283,8 @@ pub fn eval_literal(exec: &mut ExecContext, literal: TypedLiteral) -> ControlFlo
 }
 
 pub fn eval_identifier(exec: &mut ExecContext, ident: String) -> Result<ControlFlow, RuntimeError> {
-    let value = exec.scope_stack.lookup(&ident)?;
-    exec.value_stack.push(value.clone());
+    let entry = exec.scope_stack.lookup(&ident)?;
+    exec.value_stack.push(entry.value.clone());
 
     Ok(ControlFlow::Continue)
 }

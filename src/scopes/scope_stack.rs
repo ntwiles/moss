@@ -7,9 +7,9 @@ use super::scope::Scope;
 use crate::errors::Error;
 
 #[derive(Debug)]
-struct ScopeEntry<T> {
-    is_mutable: bool,
-    value: T,
+pub struct ScopeEntry<T> {
+    pub is_mutable: bool,
+    pub value: T,
 }
 
 pub struct ScopeStack<T> {
@@ -44,10 +44,10 @@ impl<T: Debug> ScopeStack<T> {
         }
     }
 
-    pub fn lookup<E: Error>(&self, ident: &str) -> Result<&T, E> {
+    pub fn lookup<E: Error>(&self, ident: &str) -> Result<&ScopeEntry<T>, E> {
         for scope in self.current.iter().rev() {
-            if let Some(ScopeEntry { value, .. }) = scope.get(ident) {
-                return Ok(value);
+            if let Some(entry) = scope.get(ident) {
+                return Ok(entry);
             }
         }
 
@@ -63,6 +63,17 @@ impl<T: Debug> ScopeStack<T> {
             }
             Entry::Occupied(_) => Err(E::scope_binding_already_exists(&ident)),
         }
+    }
+
+    pub fn mutate<E: Error>(&mut self, ident: &str, value: T) -> Result<(), E> {
+        for scope in self.current.iter_mut().rev() {
+            if let Some(entry) = scope.get_mut(ident) {
+                entry.value = value;
+                return Ok(());
+            }
+        }
+
+        Err(E::scope_binding_not_found(ident))
     }
 }
 

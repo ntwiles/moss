@@ -15,9 +15,9 @@ use crate::state::{
 };
 
 use evaluation::{
-    apply_add, apply_closure_func_call, apply_declaration, apply_div, apply_eq, apply_func_call,
-    apply_gt, apply_gte, apply_list, apply_lt, apply_lte, apply_mult, apply_negate,
-    apply_non_closure_func_call, apply_stmt, apply_sub, eval_expr,
+    apply_add, apply_assignment, apply_closure_func_call, apply_declaration, apply_div, apply_eq,
+    apply_func_call, apply_gt, apply_gte, apply_list, apply_lt, apply_lte, apply_mult,
+    apply_negate, apply_non_closure_func_call, apply_stmt, apply_sub, eval_expr,
 };
 use resolved_value::ResolvedValue;
 
@@ -68,6 +68,7 @@ pub fn interpret_program<R: Read, W: Write>(
             ControlOp::ApplyGte => apply_gte(&mut exec),
             ControlOp::ApplyLte => apply_lte(&mut exec),
             ControlOp::ApplyNegate => apply_negate(&mut exec)?,
+            ControlOp::ApplyAssignment(ident) => apply_assignment(&mut exec, ident)?,
             ControlOp::ApplyDeclaration(ident, is_mutable) => {
                 apply_declaration(&mut exec, is_mutable, ident)?
             }
@@ -188,6 +189,7 @@ fn push_block<R: Read, W: Write>(
                     exec.scope_stack
                         .lookup::<RuntimeError>(param)
                         .unwrap()
+                        .value
                         .clone()
                 })
                 .collect();
