@@ -17,6 +17,10 @@ pub enum Expr {
 
     // Unary operations
     Negate(Box<Expr>),
+    Assignment {
+        ident: String,
+        expr: Box<Expr>,
+    },
     Declaration {
         ident: String,
         type_annotation: Option<ProtoType>,

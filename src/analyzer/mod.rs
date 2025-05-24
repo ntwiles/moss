@@ -77,6 +77,9 @@ fn analyze_expr(
         Expr::Div(left, right) => analyze_div(value_scope_stack, type_scope, *left, *right),
 
         Expr::Negate(inner) => analyze_negate(value_scope_stack, type_scope, *inner),
+        Expr::Assignment { ident, expr } => {
+            analyze_assignment(value_scope_stack, type_scope, ident, *expr)
+        }
         Expr::Declaration {
             ident,
             type_annotation,
@@ -376,6 +379,15 @@ fn analyze_negate(
 
     let ty = inner.ty();
     Ok(TypedExpr::Negate(Box::new(inner), ty))
+}
+
+fn analyze_assignment(
+    value_scope_stack: &mut ScopeStack<ScopeEntry>,
+    type_scope: &mut Scope<TypeBinding>,
+    ident: String,
+    value: Expr,
+) -> Result<TypedExpr, TypeError> {
+    todo!()
 }
 
 fn analyze_declaration(

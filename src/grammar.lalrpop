@@ -43,6 +43,7 @@ StmtList: Vec<Stmt> = {
 
 Expr: Expr = {
     Declaration,
+    Assignment,
     Equality,
     IfElse,
     Loop,
@@ -91,6 +92,10 @@ Declaration: Expr = {
         Expr::Declaration{ ident, type_annotation, expr: Box::new(e), is_mutable: false },
     "mut" <ident:Identifier> <type_annotation:OptTypeAnnotation> "=" <e:Expr> => 
         Expr::Declaration{ ident, type_annotation, expr: Box::new(e), is_mutable: true },
+};
+
+Assignment: Expr = {
+    <ident:Identifier> "=" <e:Expr> => Expr::Assignment { ident, expr: Box::new(e) }
 };
 
 
