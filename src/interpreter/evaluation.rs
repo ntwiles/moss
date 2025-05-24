@@ -45,6 +45,7 @@ pub fn eval_expr<R: Read, W: Write>(
         TypedExpr::Sub(l, r, _ty) => push_binary_op(exec, ControlOp::ApplySub, l, r),
         TypedExpr::Mult(l, r, _ty) => push_binary_op(exec, ControlOp::ApplyMult, l, r),
         TypedExpr::Div(l, r, _ty) => push_binary_op(exec, ControlOp::ApplyDiv, l, r),
+        TypedExpr::Modulo(l, r, _ty) => push_binary_op(exec, ControlOp::ApplyModulo, l, r),
 
         // Unary operations
         TypedExpr::Negate(l, _ty) => push_unary_op(exec, ControlOp::ApplyNegate, *l),
@@ -121,6 +122,15 @@ pub fn apply_div(exec: &mut ExecContext) -> ControlFlow {
     ControlFlow::Continue
 }
 
+pub fn apply_modulo(exec: &mut ExecContext) -> ControlFlow {
+    apply_binary_op(exec, |l, r| match (l, r) {
+        (ResolvedValue::Int(l), ResolvedValue::Int(r)) => ResolvedValue::Int(l % r),
+        (ResolvedValue::Float(l), ResolvedValue::Float(r)) => ResolvedValue::Float(l % r),
+        _ => unreachable!(),
+    });
+
+    ControlFlow::Continue
+}
 pub fn apply_eq(exec: &mut ExecContext) -> ControlFlow {
     apply_binary_op(exec, |l, r| match (l, r) {
         (ResolvedValue::Int(l), ResolvedValue::Int(r)) => ResolvedValue::Bool(l == r),

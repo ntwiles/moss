@@ -15,6 +15,7 @@ pub enum TypedExpr {
     Sub(Box<TypedExpr>, Box<TypedExpr>, Type),
     Mult(Box<TypedExpr>, Box<TypedExpr>, Type),
     Div(Box<TypedExpr>, Box<TypedExpr>, Type),
+    Modulo(Box<TypedExpr>, Box<TypedExpr>, Type),
 
     // Unary operations
     Negate(Box<TypedExpr>, Type),
@@ -58,6 +59,8 @@ impl TypedExpr {
             TypedExpr::Sub(_, _, ty) => ty.clone(),
             TypedExpr::Mult(_, _, ty) => ty.clone(),
             TypedExpr::Div(_, _, ty) => ty.clone(),
+            TypedExpr::Modulo(_, _, ty) => ty.clone(),
+
             TypedExpr::Literal(_, ty) => ty.clone(),
             TypedExpr::Negate(_, ty) => ty.clone(),
             TypedExpr::Assignment { .. } => Type::Void,

@@ -14,6 +14,7 @@ pub enum Expr {
     Sub(Box<Expr>, Box<Expr>),
     Mult(Box<Expr>, Box<Expr>),
     Div(Box<Expr>, Box<Expr>),
+    Modulo(Box<Expr>, Box<Expr>),
 
     // Unary operations
     Negate(Box<Expr>),

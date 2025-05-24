@@ -66,6 +66,7 @@ fn analyze_expr(
         Expr::Literal(literal) => analyze_literal(literal),
         Expr::Identifier(ident) => analyze_identifier(value_scope_stack, ident),
 
+        // Binary ops
         Expr::Eq(left, right) => analyze_eq(value_scope_stack, type_scope, *left, *right),
         Expr::Gt(left, right) => analyze_gt(value_scope_stack, type_scope, *left, *right),
         Expr::Lt(left, right) => analyze_lt(value_scope_stack, type_scope, *left, *right),
@@ -75,6 +76,7 @@ fn analyze_expr(
         Expr::Sub(left, right) => analyze_sub(value_scope_stack, type_scope, *left, *right),
         Expr::Mult(left, right) => analyze_mult(value_scope_stack, type_scope, *left, *right),
         Expr::Div(left, right) => analyze_div(value_scope_stack, type_scope, *left, *right),
+        Expr::Modulo(left, right) => analyze_modulo(value_scope_stack, type_scope, *left, *right),
 
         Expr::Negate(inner) => analyze_negate(value_scope_stack, type_scope, *inner),
         Expr::Assignment { ident, expr } => {
@@ -362,6 +364,39 @@ fn analyze_div(
 
     let ty = left.ty();
     Ok(TypedExpr::Div(Box::new(left), Box::new(right), ty))
+}
+
+fn analyze_modulo(
+    value_scope_stack: &mut ScopeStack<AnalyzerScopeEntry>,
+    type_scope: &mut Scope<TypeBinding>,
+    left: Expr,
+    right: Expr,
+) -> Result<TypedExpr, TypeError> {
+    let left = analyze_expr(value_scope_stack, type_scope, &None, left)?;
+    let right = analyze_expr(value_scope_stack, type_scope, &None, right)?;
+
+    if left.ty() != right.ty() {
+        return Err(TypeError::BinaryOpWrongTypes(
+            "%".to_string(),
+            left.ty(),
+            right.ty(),
+        ));
+    }
+
+    if left.ty() != Type::Int && left.ty() != Type::Float {
+        return Err(TypeError::BinaryOpWrongTypes(
+            "%".to_string(),
+            left.ty(),
+            right.ty(),
+        ));
+    }
+
+    if let TypedExpr::Literal(TypedLiteral::Int(0), _) = right {
+        return Err(TypeError::DivisionZero);
+    }
+
+    let ty = left.ty();
+    Ok(TypedExpr::Modulo(Box::new(left), Box::new(right), ty))
 }
 
 // Unary operations

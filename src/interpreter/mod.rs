@@ -14,8 +14,8 @@ use crate::state::{
 
 use evaluation::{
     apply_add, apply_assignment, apply_declaration, apply_div, apply_eq, apply_func_call, apply_gt,
-    apply_gte, apply_list, apply_lt, apply_lte, apply_mult, apply_negate, apply_stmt, apply_sub,
-    eval_expr,
+    apply_gte, apply_list, apply_lt, apply_lte, apply_modulo, apply_mult, apply_negate, apply_stmt,
+    apply_sub, eval_expr,
 };
 use resolved_value::ResolvedValue;
 
@@ -60,11 +60,13 @@ pub fn interpret_program<R: Read, W: Write>(
             ControlOp::ApplySub => apply_sub(&mut exec),
             ControlOp::ApplyMult => apply_mult(&mut exec),
             ControlOp::ApplyDiv => apply_div(&mut exec),
+            ControlOp::ApplyModulo => apply_modulo(&mut exec),
             ControlOp::ApplyEq => apply_eq(&mut exec),
             ControlOp::ApplyGt => apply_gt(&mut exec),
             ControlOp::ApplyLt => apply_lt(&mut exec),
             ControlOp::ApplyGte => apply_gte(&mut exec),
             ControlOp::ApplyLte => apply_lte(&mut exec),
+
             ControlOp::ApplyNegate => apply_negate(&mut exec)?,
             ControlOp::ApplyAssignment(ident) => apply_assignment(&mut exec, ident)?,
             ControlOp::ApplyDeclaration(ident, is_mutable) => {

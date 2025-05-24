@@ -12,7 +12,7 @@ match {
     "let", "mut",
 
     // operators
-    "=", "==", ">", "<", "<=", ">=", "+", "-", "*", "/",
+    "=", "==", ">", "<", "<=", ">=", "+", "-", "*", "/", "%",
 
     // syntax constructs
     "=>", "if", "elif", "else", "loop", "break",
@@ -121,6 +121,7 @@ Addition: Expr = {
 Multiplication: Expr = {
     <l:Multiplication> "*" <r:Unary> => Expr::Mult(Box::new(l), Box::new(r)),
     <l:Multiplication> "/" <r:Unary> => Expr::Div(Box::new(l), Box::new(r)),
+    <l:Multiplication> "%" <r:Unary> => Expr::Modulo(Box::new(l), Box::new(r)),
     Unary,
 };
 
