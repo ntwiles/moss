@@ -6,8 +6,8 @@ use std::{
 };
 
 use funcs::{
-    eval_int, eval_print_line, eval_read_line, eval_str, make_int, make_print_line, make_read_line,
-    make_str,
+    casting::{eval_int, eval_str, make_int, make_str},
+    io::{eval_print_line, eval_read_line, make_print_line, make_read_line},
 };
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -38,6 +38,14 @@ pub fn get_builtin_func_bindings() -> Vec<(String, TypedExpr)> {
         (String::from("str"), make_str()),
     ]
 }
+pub fn get_builtin_funcs<R: Read, W: Write>() -> HashMap<BuiltinFuncId, BuiltinFunc<R, W>> {
+    hashmap! {
+        BuiltinFuncId::Int => eval_int as BuiltinFunc<R, W>,
+        BuiltinFuncId::PrintLine => eval_print_line as BuiltinFunc<R, W>,
+        BuiltinFuncId::ReadLine => eval_read_line as BuiltinFunc<R, W>,
+        BuiltinFuncId::Str => eval_str as BuiltinFunc<R, W>
+    }
+}
 
 pub fn get_builtin_type_bindings() -> Vec<(String, TypeBinding)> {
     vec![
@@ -49,13 +57,4 @@ pub fn get_builtin_type_bindings() -> Vec<(String, TypeBinding)> {
         (String::from("Bool"), TypeBinding::Atomic(Type::Bool)),
         (String::from("List"), TypeBinding::Applied { arity: 1 }),
     ]
-}
-
-pub fn get_builtin_funcs<R: Read, W: Write>() -> HashMap<BuiltinFuncId, BuiltinFunc<R, W>> {
-    hashmap! {
-        BuiltinFuncId::Int => eval_int as BuiltinFunc<R, W>,
-        BuiltinFuncId::PrintLine => eval_print_line as BuiltinFunc<R, W>,
-        BuiltinFuncId::ReadLine => eval_read_line as BuiltinFunc<R, W>,
-        BuiltinFuncId::Str => eval_str as BuiltinFunc<R, W>
-    }
 }

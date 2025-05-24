@@ -12,6 +12,8 @@ pub struct ScopeEntry<T> {
     pub value: T,
 }
 
+// This idea of current and previous isn't enough; if you have a function call within a funciton call,
+// the originating stack will be lost.
 pub struct ScopeStack<T> {
     current: Vec<Scope<ScopeEntry<T>>>,
     previous: Option<Vec<Scope<ScopeEntry<T>>>>,
@@ -56,6 +58,7 @@ impl<T: Debug> ScopeStack<T> {
 
     pub fn insert<E: Error>(&mut self, ident: String, is_mutable: bool, value: T) -> Result<(), E> {
         let curr_scope = self.current.last_mut().unwrap();
+
         match curr_scope.entry(ident.clone()) {
             Entry::Vacant(v) => {
                 v.insert(ScopeEntry { value, is_mutable });

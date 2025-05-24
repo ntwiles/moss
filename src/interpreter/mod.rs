@@ -217,6 +217,10 @@ fn push_loop(exec: &mut ExecContext, block: TypedExpr) -> ControlFlow {
     });
     exec.control_stack.push(ControlOp::EvalBlock(block));
 
+    exec.control_stack.push(ControlOp::PushScope {
+        create_new_stack: false,
+    });
+
     ControlFlow::Continue
 }
 
