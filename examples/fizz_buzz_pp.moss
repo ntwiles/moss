@@ -18,3 +18,4 @@ let fizz_buzz = |n: Int|: List<Str> => {
 
 let result = fizz_buzz(10);
 print_line(result);
+
