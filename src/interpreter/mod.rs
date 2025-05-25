@@ -288,6 +288,8 @@ fn apply_if(exec: &mut ExecContext, then_block: TypedExpr) -> ControlFlow {
             _ => unreachable!(),
         };
 
+        exec.control_stack.push(ControlOp::MarkBlockStart);
+
         for stmt in stmts.into_iter().rev() {
             exec.control_stack.push(ControlOp::EvalStmt(stmt));
         }
@@ -312,6 +314,8 @@ fn apply_if_else(
 
     match branch {
         TypedExpr::Block(TypedBlock::Interpreted(stmts, _ty)) => {
+            exec.control_stack.push(ControlOp::MarkBlockStart);
+
             for stmt in stmts.into_iter().rev() {
                 exec.control_stack.push(ControlOp::EvalStmt(stmt));
             }

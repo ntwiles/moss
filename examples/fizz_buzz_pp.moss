@@ -2,26 +2,15 @@ let fizz_buzz = |n: Int|: List<Str> => {
     mut count = 0;
     mut fizz_buzz_list: List<Str> = [];
 
-    let item = if 0 == 0 {
-        "Fizz";
-    };
-
     loop {
-        let item = if 0 == 0 {
-            "Fizz";
-        };
-
-        print_line(item);
+        let item = if count % 3 == 0 { "Fizz"; }
+        elif count % 5 == 0 { "Buzz"; } 
+        else { str(count); };
 
         fizz_buzz_list = push(fizz_buzz_list, item);
 
-        if count == n {
-            break;
-        };
-
-
+        if count == n { break; };
         count = count + 1;
-
     };
 
     fizz_buzz_list;
