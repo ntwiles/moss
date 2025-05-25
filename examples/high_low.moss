@@ -1,18 +1,25 @@
 let secret_number = 68;
+mut guesses_remaining = 10;
 
 print_line("I've thought of a secret number. Try to guess it!");
 
 loop {
     let guess = int(read_line());
+    guesses_remaining = guesses_remaining - 1;
 
-    if guess > secret_number {
-        print_line("Too high!");
-    } elif guess < secret_number {
-        print_line("Too Low!");
-    } else {
+    if guess == secret_number {
         print_line("You got it!");
         break;
     };
-};
 
-print_line("Game over.");
+    let hint = if guess > secret_number { "Too high!"; }
+    else { "Too Low!"; };
+    
+    print_line(hint);
+    print_line(str(guesses_remaining) + " guesses left.");
+
+    if guesses_remaining == 0 {
+        print_line("The secret number was " + str(secret_number) + ". Better luck next time!");
+        break;
+    };
+};
