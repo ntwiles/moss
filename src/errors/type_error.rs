@@ -24,6 +24,7 @@ pub enum TypeError {
     UnaryOpWrongType(String, Type),
     ScopeBindingAlreadyExists(String),
     ScopeBindingNotFound(String),
+    AppliedTypeWrongNumberArgs(String, usize, usize),
 }
 
 impl TypeError {
@@ -55,6 +56,14 @@ impl std::fmt::Display for TypeErrorDisplay {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match &self.error {
             TypeError::AmbiguousListType => write!(f, "Cannot resolve list element type."),
+            TypeError::AppliedTypeWrongNumberArgs(ty, expected, received) => {
+                // 1. Header
+                writeln!(f, "Received wrong number of type arguments for type {ty}. ")?;
+
+                // 2. Dianostic Detail
+                writeln!(f, "Expected: {expected}\nReceived: {received}")
+            }
+
             TypeError::AssignImmutable(ident) => {
                 write!(f, "Cannot re-assign immutable binding \"{ident}\".")
             }

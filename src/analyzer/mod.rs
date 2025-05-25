@@ -1,3 +1,4 @@
+mod binary_ops;
 mod scope_entry;
 
 use crate::ast::typed::typed_block::TypedBlock;
@@ -10,6 +11,7 @@ use crate::scopes::scope::Scope;
 use crate::scopes::scope_stack::ScopeStack;
 use crate::typing::{ProtoType, Type, TypeBinding};
 
+use binary_ops::analyze_binary_op;
 use scope_entry::AnalyzerScopeEntry;
 
 pub fn analyze_program(
@@ -59,30 +61,28 @@ fn analyze_expr(
     type_hint: &Option<Type>,
     expr: Expr,
 ) -> Result<TypedExpr, TypeError> {
+    use Expr::*;
+
     match expr {
-        Expr::Block(stmts, span) => {
+        Block(stmts, span) => {
             analyze_block(value_scope_stack, type_scope, Expr::Block(stmts, span))
         }
-        Expr::Literal(literal) => analyze_literal(literal),
-        Expr::Identifier(ident) => analyze_identifier(value_scope_stack, ident),
+        Literal(literal) => analyze_literal(literal),
+        Identifier(ident) => analyze_identifier(value_scope_stack, ident),
 
+        // TODO: `analyze_binary_op` is an experiment, let's try this out for a while and see how it
+        // goes. I have concerns with this approach because it moves the non-exhaustive match error
+        // to runtime.
         // Binary ops
-        Expr::Eq(left, right) => analyze_eq(value_scope_stack, type_scope, *left, *right),
-        Expr::Gt(left, right) => analyze_gt(value_scope_stack, type_scope, *left, *right),
-        Expr::Lt(left, right) => analyze_lt(value_scope_stack, type_scope, *left, *right),
-        Expr::Gte(left, right) => analyze_gte(value_scope_stack, type_scope, *left, *right),
-        Expr::Lte(left, right) => analyze_lte(value_scope_stack, type_scope, *left, *right),
-        Expr::Add(left, right) => analyze_add(value_scope_stack, type_scope, *left, *right),
-        Expr::Sub(left, right) => analyze_sub(value_scope_stack, type_scope, *left, *right),
-        Expr::Mult(left, right) => analyze_mult(value_scope_stack, type_scope, *left, *right),
-        Expr::Div(left, right) => analyze_div(value_scope_stack, type_scope, *left, *right),
-        Expr::Modulo(left, right) => analyze_modulo(value_scope_stack, type_scope, *left, *right),
+        Eq(..) | Gt(..) | Lt(..) | Gte(..) | Lte(..) | Add(..) | Sub(..) | Mult(..) | Div(..)
+        | Modulo(..) => analyze_binary_op(value_scope_stack, type_scope, expr),
 
-        Expr::Negate(inner) => analyze_negate(value_scope_stack, type_scope, *inner),
-        Expr::Assignment { ident, expr } => {
+        // Unary ops
+        Negate(inner) => analyze_negate(value_scope_stack, type_scope, *inner),
+        Assignment { ident, expr } => {
             analyze_assignment(value_scope_stack, type_scope, ident, *expr)
         }
-        Expr::Declaration {
+        Declaration {
             ident,
             type_annotation,
             expr,
@@ -95,308 +95,19 @@ fn analyze_expr(
             is_mutable,
             *expr,
         ),
-        Expr::FuncDeclare(func) => analyze_func_declare(value_scope_stack, type_scope, func),
-        Expr::FuncCall(call, span) => analyze_func_call(value_scope_stack, type_scope, call, span),
 
-        Expr::If(expr, then) => analyze_if(value_scope_stack, type_scope, *expr, *then),
-        Expr::IfElse(expr, then, els) => {
+        FuncDeclare(func) => analyze_func_declare(value_scope_stack, type_scope, func),
+        FuncCall(call, span) => analyze_func_call(value_scope_stack, type_scope, call, span),
+
+        // Control flow
+        If(expr, then) => analyze_if(value_scope_stack, type_scope, *expr, *then),
+        IfElse(expr, then, els) => {
             analyze_if_else(value_scope_stack, type_scope, *expr, *then, *els)
         }
-        Expr::Loop(block) => analyze_loop(value_scope_stack, type_scope, *block),
-        Expr::Break => analyze_break(value_scope_stack),
-        Expr::List(values) => analyze_list(value_scope_stack, type_scope, type_hint, values),
+        Loop(block) => analyze_loop(value_scope_stack, type_scope, *block),
+        Break => analyze_break(value_scope_stack),
+        List(values) => analyze_list(value_scope_stack, type_scope, type_hint, values),
     }
-}
-
-// Binary operations
-
-fn analyze_eq(
-    value_scope_stack: &mut ScopeStack<AnalyzerScopeEntry>,
-    type_scope: &mut Scope<TypeBinding>,
-    left: Expr,
-    right: Expr,
-) -> Result<TypedExpr, TypeError> {
-    let left = analyze_expr(value_scope_stack, type_scope, &None, left)?;
-    let right = analyze_expr(value_scope_stack, type_scope, &None, right)?;
-
-    if left.ty() != right.ty() {
-        return Err(TypeError::BinaryOpWrongTypes(
-            "==".to_string(),
-            left.ty(),
-            right.ty(),
-        ));
-    }
-
-    Ok(TypedExpr::Eq(Box::new(left), Box::new(right), Type::Bool))
-}
-
-fn analyze_gt(
-    value_scope_stack: &mut ScopeStack<AnalyzerScopeEntry>,
-    type_scope: &mut Scope<TypeBinding>,
-    left: Expr,
-    right: Expr,
-) -> Result<TypedExpr, TypeError> {
-    let left = analyze_expr(value_scope_stack, type_scope, &None, left)?;
-    let right = analyze_expr(value_scope_stack, type_scope, &None, right)?;
-
-    if left.ty() != right.ty() {
-        return Err(TypeError::BinaryOpWrongTypes(
-            ">".to_string(),
-            left.ty(),
-            right.ty(),
-        ));
-    }
-
-    // TODO: Support gt for strings?
-    if left.ty() != Type::Int && left.ty() != Type::Float {
-        return Err(TypeError::BinaryOpWrongTypes(
-            ">".to_string(),
-            left.ty(),
-            right.ty(),
-        ));
-    }
-
-    Ok(TypedExpr::Gt(Box::new(left), Box::new(right), Type::Bool))
-}
-
-fn analyze_gte(
-    value_scope_stack: &mut ScopeStack<AnalyzerScopeEntry>,
-    type_scope: &mut Scope<TypeBinding>,
-    left: Expr,
-    right: Expr,
-) -> Result<TypedExpr, TypeError> {
-    let left = analyze_expr(value_scope_stack, type_scope, &None, left)?;
-    let right = analyze_expr(value_scope_stack, type_scope, &None, right)?;
-
-    if left.ty() != right.ty() {
-        return Err(TypeError::BinaryOpWrongTypes(
-            ">=".to_string(),
-            left.ty(),
-            right.ty(),
-        ));
-    }
-
-    // TODO: Support gt for strings?
-    if left.ty() != Type::Int && left.ty() != Type::Float {
-        return Err(TypeError::BinaryOpWrongTypes(
-            ">=".to_string(),
-            left.ty(),
-            right.ty(),
-        ));
-    }
-
-    Ok(TypedExpr::Gte(Box::new(left), Box::new(right), Type::Bool))
-}
-
-fn analyze_lt(
-    value_scope_stack: &mut ScopeStack<AnalyzerScopeEntry>,
-    type_scope: &mut Scope<TypeBinding>,
-    left: Expr,
-    right: Expr,
-) -> Result<TypedExpr, TypeError> {
-    let left = analyze_expr(value_scope_stack, type_scope, &None, left)?;
-    let right = analyze_expr(value_scope_stack, type_scope, &None, right)?;
-
-    if left.ty() != right.ty() {
-        return Err(TypeError::BinaryOpWrongTypes(
-            "<".to_string(),
-            left.ty(),
-            right.ty(),
-        ));
-    }
-
-    // TODO: Support lt for strings?
-    if left.ty() != Type::Int && left.ty() != Type::Float {
-        return Err(TypeError::BinaryOpWrongTypes(
-            "<".to_string(),
-            left.ty(),
-            right.ty(),
-        ));
-    }
-
-    Ok(TypedExpr::Lt(Box::new(left), Box::new(right), Type::Bool))
-}
-
-fn analyze_lte(
-    value_scope_stack: &mut ScopeStack<AnalyzerScopeEntry>,
-    type_scope: &mut Scope<TypeBinding>,
-    left: Expr,
-    right: Expr,
-) -> Result<TypedExpr, TypeError> {
-    let left = analyze_expr(value_scope_stack, type_scope, &None, left)?;
-    let right = analyze_expr(value_scope_stack, type_scope, &None, right)?;
-
-    if left.ty() != right.ty() {
-        return Err(TypeError::BinaryOpWrongTypes(
-            "<=".to_string(),
-            left.ty(),
-            right.ty(),
-        ));
-    }
-
-    // TODO: Support lt for strings?
-    if left.ty() != Type::Int && left.ty() != Type::Float {
-        return Err(TypeError::BinaryOpWrongTypes(
-            "<=".to_string(),
-            left.ty(),
-            right.ty(),
-        ));
-    }
-
-    Ok(TypedExpr::Lte(Box::new(left), Box::new(right), Type::Bool))
-}
-
-fn analyze_add(
-    value_scope_stack: &mut ScopeStack<AnalyzerScopeEntry>,
-    type_scope: &mut Scope<TypeBinding>,
-    left: Expr,
-    right: Expr,
-) -> Result<TypedExpr, TypeError> {
-    let left = analyze_expr(value_scope_stack, type_scope, &None, left)?;
-    let right = analyze_expr(value_scope_stack, type_scope, &None, right)?;
-
-    if left.ty() != right.ty() {
-        return Err(TypeError::BinaryOpWrongTypes(
-            "+".to_string(),
-            left.ty(),
-            right.ty(),
-        ));
-    }
-
-    if left.ty() != Type::Int && left.ty() != Type::Float && left.ty() != Type::Str {
-        return Err(TypeError::BinaryOpWrongTypes(
-            "+".to_string(),
-            left.ty(),
-            right.ty(),
-        ));
-    }
-
-    let ty = left.ty();
-    Ok(TypedExpr::Add(Box::new(left), Box::new(right), ty))
-}
-
-fn analyze_sub(
-    value_scope_stack: &mut ScopeStack<AnalyzerScopeEntry>,
-    type_scope: &mut Scope<TypeBinding>,
-    left: Expr,
-    right: Expr,
-) -> Result<TypedExpr, TypeError> {
-    let left = analyze_expr(value_scope_stack, type_scope, &None, left)?;
-    let right = analyze_expr(value_scope_stack, type_scope, &None, right)?;
-
-    if left.ty() != right.ty() {
-        return Err(TypeError::BinaryOpWrongTypes(
-            "-".to_string(),
-            left.ty(),
-            right.ty(),
-        ));
-    }
-
-    if left.ty() != Type::Int && left.ty() != Type::Float {
-        return Err(TypeError::BinaryOpWrongTypes(
-            "-".to_string(),
-            left.ty(),
-            right.ty(),
-        ));
-    }
-
-    let ty = left.ty();
-    Ok(TypedExpr::Sub(Box::new(left), Box::new(right), ty))
-}
-
-fn analyze_mult(
-    value_scope_stack: &mut ScopeStack<AnalyzerScopeEntry>,
-    type_scope: &mut Scope<TypeBinding>,
-    left: Expr,
-    right: Expr,
-) -> Result<TypedExpr, TypeError> {
-    let left = analyze_expr(value_scope_stack, type_scope, &None, left)?;
-    let right = analyze_expr(value_scope_stack, type_scope, &None, right)?;
-
-    if left.ty() != right.ty() {
-        return Err(TypeError::BinaryOpWrongTypes(
-            "*".to_string(),
-            left.ty(),
-            right.ty(),
-        ));
-    }
-
-    if left.ty() != Type::Int && left.ty() != Type::Float {
-        return Err(TypeError::BinaryOpWrongTypes(
-            "*".to_string(),
-            left.ty(),
-            right.ty(),
-        ));
-    }
-
-    let ty = left.ty();
-    Ok(TypedExpr::Mult(Box::new(left), Box::new(right), ty))
-}
-
-fn analyze_div(
-    value_scope_stack: &mut ScopeStack<AnalyzerScopeEntry>,
-    type_scope: &mut Scope<TypeBinding>,
-    left: Expr,
-    right: Expr,
-) -> Result<TypedExpr, TypeError> {
-    let left = analyze_expr(value_scope_stack, type_scope, &None, left)?;
-    let right = analyze_expr(value_scope_stack, type_scope, &None, right)?;
-
-    if left.ty() != right.ty() {
-        return Err(TypeError::BinaryOpWrongTypes(
-            "/".to_string(),
-            left.ty(),
-            right.ty(),
-        ));
-    }
-
-    if left.ty() != Type::Int && left.ty() != Type::Float {
-        return Err(TypeError::BinaryOpWrongTypes(
-            "/".to_string(),
-            left.ty(),
-            right.ty(),
-        ));
-    }
-
-    if let TypedExpr::Literal(TypedLiteral::Int(0), _) = right {
-        return Err(TypeError::DivisionZero);
-    }
-
-    let ty = left.ty();
-    Ok(TypedExpr::Div(Box::new(left), Box::new(right), ty))
-}
-
-fn analyze_modulo(
-    value_scope_stack: &mut ScopeStack<AnalyzerScopeEntry>,
-    type_scope: &mut Scope<TypeBinding>,
-    left: Expr,
-    right: Expr,
-) -> Result<TypedExpr, TypeError> {
-    let left = analyze_expr(value_scope_stack, type_scope, &None, left)?;
-    let right = analyze_expr(value_scope_stack, type_scope, &None, right)?;
-
-    if left.ty() != right.ty() {
-        return Err(TypeError::BinaryOpWrongTypes(
-            "%".to_string(),
-            left.ty(),
-            right.ty(),
-        ));
-    }
-
-    if left.ty() != Type::Int && left.ty() != Type::Float {
-        return Err(TypeError::BinaryOpWrongTypes(
-            "%".to_string(),
-            left.ty(),
-            right.ty(),
-        ));
-    }
-
-    if let TypedExpr::Literal(TypedLiteral::Int(0), _) = right {
-        return Err(TypeError::DivisionZero);
-    }
-
-    let ty = left.ty();
-    Ok(TypedExpr::Modulo(Box::new(left), Box::new(right), ty))
 }
 
 // Unary operations
@@ -776,7 +487,11 @@ fn analyze_proto_type(
 
             if let TypeBinding::Applied { arity } = binding {
                 if inners.len() != *arity {
-                    todo!("Wrong number of type args.");
+                    return Err(TypeError::AppliedTypeWrongNumberArgs(
+                        ident,
+                        *arity,
+                        inners.len(),
+                    ));
                 }
 
                 // This is probably best done with type constructors bound to the scope instead of

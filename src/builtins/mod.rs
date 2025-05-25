@@ -60,5 +60,6 @@ pub fn get_builtin_type_bindings() -> Vec<(String, TypeBinding)> {
         (String::from("Void"), TypeBinding::Atomic(Type::Void)),
         (String::from("Bool"), TypeBinding::Atomic(Type::Bool)),
         (String::from("List"), TypeBinding::Applied { arity: 1 }),
+        (String::from("Func"), TypeBinding::Applied { arity: 2 }),
     ]
 }
